@@ -1,10 +1,15 @@
 #include <vector>
 #include <queue>
-#include "../DBG/DBG.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <fstream>
+#include <cstring>
+#include <iostream>
+#include <stack>
 #include "../DBG/PathGraph.h"
 
 //Constants for the path extension
-#define MAX_PATH_LEN 100
+#define MAX_PATH_LEN 30
 #define MAX_BRANCH 5
 #define ERROR_RATE 0.01
 #define NUM_PREV_POST_KMER 5
@@ -20,7 +25,9 @@
 struct stack_el{
     stack_el(Kmer kmer1, size_t pos1)
             :kmer(kmer1),pos(pos1)
-            {}
+            {
+                std::cout << "Me construyo "<<kmer1.str()<<"\n";
+            }
     Kmer kmer;
     size_t pos;
 };
@@ -29,10 +36,10 @@ class Path
 {
 public:
     //Constructor
-    Path(const DnaSequence seq):_seq(seq)
+    Path()
     {
         _DP = std::vector<size_t>((MAX_PATH_LEN+1)*(MAX_PATH_LEN+1),0);
-        for (uint i = 0; i < MAX_PATH_LEN; ++i)
+        for (uint i = 0; i < (1+ERROR_RATE)*MAX_PATH_LEN+1; ++i)
             _DP[i] = i;
     }
     //Extender
@@ -40,12 +47,10 @@ public:
             ,std::pair<Kmer,size_t>
             ,std::pair<Kmer,size_t>
             ,const DGB&
-            ,size_t&
-            ,size_t&
+            ,size_t*
             ,char*
             ,size_t&);
 private:
-    DnaSequence _seq;
     std::vector<size_t> _DP;
 };
 
@@ -65,7 +70,7 @@ public:
     //Mover PVT
     size_t check_read();
     int check_solids(size_t,size_t,size_t,size_t
-            ,size_t &,std::vector<Kmer>&,Kmer&);
+            ,size_t &,Kmer&);
 private:
     std::vector<Path> _path_extended;
     std::vector<std::pair<Kmer,size_t>> _solid;

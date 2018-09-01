@@ -136,6 +136,12 @@ public:
 		return *this;
 	}
 
+	void copy(const DnaSequence* other){
+		_data = other->_data;
+		_complement = other->_complement;
+		++_data->useCount;
+	}
+
 	std::vector<size_t> getChunk()const {
 		return _data->chunks;
 	}

@@ -7,13 +7,19 @@ class Kmer
 {
 public:
 	Kmer(){}
+	~Kmer(){}
 	Kmer(const DnaSequence&,size_t,size_t);
 	Kmer(DnaSequence seq):_seq(seq){}
 	Kmer(const Kmer & kmer){
-		_seq = DnaSequence(kmer.getSeq());
+		_seq = kmer.getSeq();
 	}
 	Kmer(const Kmer *kmer){
-		_seq = DnaSequence(kmer->getSeq());
+		_seq = kmer->getSeq();
+	}
+
+	Kmer(const std::string &string_own)
+	{
+		_seq = DnaSequence(string_own);
 	}
 
 	DnaSequence rc(){
@@ -27,8 +33,8 @@ public:
 		return _seq;
 	}
 
-	const DnaSequence& getSeq_ref() const{
-		return _seq;
+	const DnaSequence* getSeq_ref() const{
+		return &_seq;
 	}
 
 	DnaSequence::NuclType at(size_t index) const;

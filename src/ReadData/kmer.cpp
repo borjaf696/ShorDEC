@@ -3,7 +3,7 @@
 
 //Kmer
 Kmer::Kmer(const DnaSequence &ds, size_t start, size_t length) {
-    _seq = (&ds)->substr(start,length);
+    _seq = *(ds.substr(start,length));
 }
 
 void Kmer::appendRight(DnaSequence::NuclType symbol) {
@@ -20,16 +20,16 @@ DnaSequence::NuclType Kmer::at(size_t index) const
 }
 
 Kmer& Kmer::operator=(const Kmer &other) {
-    _seq = other.getSeq_ref();
+    _seq = other._seq;
     return *this;
 }
 
 bool Kmer::operator==(const Kmer& other) const {
-    return (this->_seq == other.getSeq());
+    return (_seq == other._seq);
 }
 
 bool Kmer::operator!=(const Kmer& other) const{
-    return _seq != other.getSeq();
+    return _seq != other._seq;
 }
 
 //Kmer iterator

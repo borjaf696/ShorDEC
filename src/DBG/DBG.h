@@ -9,6 +9,7 @@
 //Constants
 #define MIN_PATH_LEN 5
 
+using namespace std;
 class DGB;
 
 class DGB
@@ -17,7 +18,7 @@ public:
     DGB(){}
     virtual bool is_solid(Kmer kmer) const = 0;
     virtual size_t length() const = 0;
-    virtual std::vector<std::pair<Kmer,DnaSequence::NuclType>> getNeighbors
+    virtual std::vector<DnaSequence::NuclType> getNeighbors
             (const Kmer &) const = 0;
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
@@ -38,7 +39,7 @@ public:
     bool is_solid(Kmer) const;
     void check_path(Kmer,size_t&) const;
 
-    std::vector<std::pair<Kmer,DnaSequence::NuclType>> getNeighbors
+    std::vector<DnaSequence::NuclType> getNeighbors
             (const Kmer &) const;
 
     size_t length() const{
@@ -49,11 +50,13 @@ public:
     size_t out_degree(Kmer);
 
 private:
-    void _kmerCount(){
-        for (auto &read:_sc.getIndex()) {
+    void _kmerCount()
+    {
+        Kmer kmer;
+        for (auto &read:_sc.getIndex()){
             Progress::update(read.first.getId());
             for (auto kmer_r: IterKmers(read.second.sequence)) {
-                Kmer kmer = kmer_r.kmer;
+                kmer = kmer_r.kmer;//kmer_r.kmer;
                 std::unordered_map<Kmer, size_t>::const_iterator place =
                         _kmers_map.find(kmer);
                 if (place != _kmers_map.end()) {
@@ -66,7 +69,9 @@ private:
         }
         Progress::update(_sc.getIndex().size());
     }
-    void _remove_isolated_nodes(){
+
+    void _remove_isolated_nodes()
+    {
         std::vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
             size_t in = in_degree(kmer);
