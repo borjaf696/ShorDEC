@@ -131,7 +131,7 @@ size_t PathContainer::check_read(){
  *  Si estan solapados -> No se busca
  *  Si estan demasiado lejos no se busca
  * En cualquier otro caso se busca -> -1 trial
- * Mirar lo de como copiar Kmers eso tengo que resolverlo cuanto antes...
+ *
  * */
 int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
         ,size_t &num_trials, Kmer& kmer)
@@ -153,7 +153,7 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
     num_trials++;
     return 0;
 }
-
+//TODO: Treat Heads/Tails
 void PathContainer::correct_read() {
     PathGraphAdj path_graph = PathGraphAdj();
     Path path;
@@ -183,7 +183,7 @@ void PathContainer::correct_read() {
                                           _solid[j].second,i,j
                         ,num_trials,(j == (i+1)?_solid[i].first
                                                                :_solid[j].first));
-                
+
                 if (outcome == 0)
                 {
                     //Extension path

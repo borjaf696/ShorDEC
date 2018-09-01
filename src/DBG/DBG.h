@@ -33,6 +33,7 @@ public:
         Progress::get().size_total = _sc.getIndex().size();
         Progress::get().show = true;
         _kmerCount();
+        //TODO: Better cleaning approach. Remove short branches (Leenas idea)
         _remove_isolated_nodes();
     }
 
