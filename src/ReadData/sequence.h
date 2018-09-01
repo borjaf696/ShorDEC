@@ -58,12 +58,17 @@ public:
 
 	//Only accepts 1 nuc insertion -> Recordar que estan al reves en _data
 	void append_nuc_right (DnaSequence::NuclType dnaSymbol) const{
+		if (!_data->length && !_data->chunks.size())
+		{
+			_data->chunks.push_back(dnaSymbol);
+			return;
+		}
 		_data->length++;
 		if ((_data->length / NUCL_IN_CHUNK) == _data->chunks.size())
 			_data->chunks.push_back(dnaSymbol);
 		else
-			_data->chunks[_data->chunks.size()-1] |= dnaSymbol
-				<< (_data->length % NUCL_IN_CHUNK) *2;
+			_data->chunks[_data->chunks.size()-1] |= (dnaSymbol
+				<< (_data->length % NUCL_IN_CHUNK) *2);
 	}
 
 	void append_with_replace_right(DnaSequence::NuclType symbol) const {
@@ -263,14 +268,16 @@ inline std::string DnaSequence::str() const
 	return result;
 }
 
-inline DnaSequence DnaSequence::substr(size_t start, size_t length) const 
+inline DnaSequence DnaSequence::substr(size_t start, size_t length) const
 {
+	DnaSequence newSequence;
+	if (start >= _data->length)
+		return newSequence;
 	if (start + length > _data->length)
 	{
 		length = _data->length - start;
 	}
 
-	DnaSequence newSequence;
 	newSequence._data->length = length;
 	newSequence._data->chunks.assign((length - 1) / NUCL_IN_CHUNK + 1, 0);
 

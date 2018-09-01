@@ -47,9 +47,15 @@ public:
 	std::size_t hash() const{
 		return std::hash<std::string>()(_seq.str());
 	}
+
 	std::string str() const
 	{
 		return _seq.str();
+	}
+
+	DnaSequence substr(size_t start, size_t end) const
+	{
+		return _seq.substr(start,end);
 	}
 private:
 	DnaSequence _seq;

@@ -43,11 +43,13 @@ int main(int argv, char ** argc){
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
 	sc.loadFromFile(path_to_file);
+
     /*sc.getSeq(FastaRecord::Id(0)).set(3,11);
     std::cout << sc.getSeq(FastaRecord::Id(0).getId()).str() << "\n";
     std::cout << "Kmersize "<< Parameters::get().kmerSize << "\n";
     Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,10);
     std::cout << "Kmer "<<kmer.str()<<"\n";
+    std::cout << kmer.at(0)<<"\n";
     for (auto kmer:IterKmers(sc.getSeq(FastaRecord::Id(0))))
         std::cout << kmer.str() << "\n";
     Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,15);

@@ -33,7 +33,10 @@ public:
     virtual void add_edge(const Kmer&,const Kmer &,size_t,DnaSequence) = 0;
 
     //Transverse methods
-    virtual std::vector<Kmer> shortest_path(const Kmer&, const Kmer&) = 0;
+    virtual DnaSequence shortest_path(const Kmer&, const Kmer&) = 0;
+
+    //Re-build method
+    virtual DnaSequence build_optimal_read(std::vector<Node>) = 0;
 
     //Check methods
     virtual size_t num_vertex() = 0;
@@ -46,7 +49,10 @@ public:
     PathGraphAdj(){};
 
     void add_edge(const Kmer&,const Kmer&, size_t = 0, DnaSequence = DnaSequence());
-    std::vector<Kmer> shortest_path(const Kmer&, const Kmer&);
+    DnaSequence shortest_path(const Kmer&, const Kmer&);
+
+    //TODO:Change to pvt
+    DnaSequence build_optimal_read(std::vector<Node>);
 
     //Operations over the graph
     size_t num_vertex();
@@ -54,10 +60,8 @@ public:
     bool check_isolated()
     {
         for (auto k:_adj_list) {
-            std::cout << k.first.str()<<"1\n";
             if (is_isolated(k.first))
                 return true;
-            std::cout << k.first.str()<<"2\n";
         }
         return false;
     }

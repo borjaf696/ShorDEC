@@ -16,7 +16,7 @@ void Kmer::appendLeft(DnaSequence::NuclType symbol) {
 
 DnaSequence::NuclType Kmer::at(size_t index) const
 {
-    return _seq.at(index);
+    return _seq.atRaw(index);
 }
 
 Kmer& Kmer::operator=(const Kmer &other) {

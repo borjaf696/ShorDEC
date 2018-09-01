@@ -5,13 +5,17 @@ using namespace std;
 
 void PathGraphAdj::add_edge(const Kmer &source,const Kmer &target, size_t edit, DnaSequence path)
 {
+    size_t kmer_size = Parameters::get().kmerSize;
+    if (path.length() == kmer_size)
+        std::cout << "Path: "<<path.str() << "\n";
     unordered_map<Node,AdjList>::const_iterator it = _adj_list.find(source);
     if (it == _adj_list.end()) {
-        _adj_list[source] = AdjList({target}, {Edge(path, edit)});
+        _adj_list[source] = AdjList({target}, {Edge((path.length() < kmer_size)?
+                                                    path :path.substr(kmer_size,path.length()-kmer_size),edit)});
     }else{
         _adj_list[source].first.push_back(target);
-        _adj_list[source].second.push_back(Edge((!path.length())?path
-                                                :path.substr(Parameters::get().kmerSize,path.length()),edit));
+        _adj_list[source].second.push_back(Edge((path.length() < kmer_size)?path
+                                                :path.substr(kmer_size,path.length()-kmer_size),edit));
     }
 }
 
@@ -28,12 +32,53 @@ size_t PathGraphAdj::num_edges()
     return edges_count;
 }
 
-/*Dijkstra approach with priority queue*/
-vector<Kmer> PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
+//TODO:Remove this method
+DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
+{
+    /*
+     * From optimal Kmers re-build the optimal Read
+     * */
+    DnaSequence optimal_read;
+    for (uint i = 0; i < nodes.size()-2; ++i)
+    {
+        AdjList adj = _adj_list[nodes[i]];
+        vector<Node>::iterator pos = find(adj.first.begin(),adj.first.end(),nodes[i+1]);
+        uint pos_int = distance(adj.first.begin(),pos);
+        std::cout << nodes[i].str()<<"\n";
+        if (adj.second[pos_int].ed == 0) {
+            for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
+                optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
+                std::cout <<"1" <<adj.second[pos_int].seq.at(j);
+            }
+            std::cout << "Arriba: "<<optimal_read.str() << "\n";
+        }else
+        {
+
+            for (uint j = 0; j < Parameters::get().kmerSize; ++j) {
+                optimal_read.append_nuc_right(nodes[i].at(j));
+            }
+            for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
+                optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
+                std::cout << adj.second[pos_int].seq.at(j);
+            }
+            std::cout << "\n";
+            std::cout << optimal_read.str() << "\n";
+        }
+    }
+    std::cout << "A dormir "<<optimal_read.str() <<"\n";
+    sleep(10000);
+    return optimal_read;
+}
+
+/*Dijkstra approach with priority queue
+ * TODO: Use a better approach than re-build the path
+ * */
+DnaSequence PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
     //First lets check the nodes degree
     vector<Kmer> optimal_path;
     priority_queue<pair<int,vector<Kmer>>, vector<pair<int,vector<Kmer>>>, CompareDist> prior_q;
-    if (check_isolated()) {
+    if (check_isolated())
+    {
         cout << ":(\n";
         exit(1);
     }
@@ -55,10 +100,10 @@ vector<Kmer> PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target)
                 prior_q.push(i);
             }else {
                 optimal_path = i.second;
-                return optimal_path;
+                return build_optimal_read(optimal_path);
             }
         }
     }
 
-    return optimal_path;
+    return build_optimal_read(optimal_path);
 }
