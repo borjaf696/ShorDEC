@@ -60,13 +60,12 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
         }
     }
     uint j;
-    if (adj.second[pos_int].ed == 0)
+    /*if (adj.second[pos_int].ed == 0)
         j = Parameters::get().kmerSize-adj.second[pos_int].seq.length();
     else
-        j = 0;
-    for ((!adj.second[pos_int].ed)?j=Parameters::get().kmerSize-adj.second[pos_int].seq.length():j=0
-            ;j < Parameters::get().kmerSize;++j)
-        optimal_read.append_nuc_right(nodes[i].at(j));
+        j = 0;*/
+    for ((!adj.second[pos_int].ed)?j=adj.second[pos_int].seq.length():j=0
+            ;j < Parameters::get().kmerSize;++j) optimal_read.append_nuc_right(nodes[i].at(j));
 
     return optimal_read;
 }
@@ -76,6 +75,8 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
  * */
 DnaSequence PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
     //First lets check the nodes degree
+    if (source == target)
+        return source.getSeq();
     vector<Kmer> optimal_path;
     priority_queue<pair<int,vector<Kmer>>, vector<pair<int,vector<Kmer>>>, CompareDist> prior_q;
     if (check_isolated())
@@ -105,6 +106,14 @@ DnaSequence PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
             }
         }
     }
-
+    std::cout << "A por el optimo\n";
     return build_optimal_read(optimal_path);
+}
+
+/*
+ * Check if one solid kmer is being covered or not. Remember every kmer solid should be in the path graph
+ * */
+bool PathGraphAdj::covered(const Kmer &kmer)
+{
+    return !(_adj_list.end() == _adj_list.find(kmer));
 }

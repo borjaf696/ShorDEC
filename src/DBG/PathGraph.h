@@ -34,6 +34,7 @@ public:
 
     //Transverse methods
     virtual DnaSequence shortest_path(const Kmer&, const Kmer&) = 0;
+    virtual bool covered(const Kmer&) = 0;
 
     //Re-build method
     virtual DnaSequence build_optimal_read(std::vector<Node>) = 0;
@@ -50,6 +51,7 @@ public:
 
     void add_edge(const Kmer&,const Kmer&, size_t = 0, DnaSequence = DnaSequence()) ;
     DnaSequence shortest_path(const Kmer&, const Kmer&);
+    bool covered(const Kmer&);
 
     //TODO:Change to pvt
     DnaSequence build_optimal_read(std::vector<Node>);

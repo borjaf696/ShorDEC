@@ -9,7 +9,7 @@
 #include "../DBG/PathGraph.h"
 
 //Constants for the path extension
-#define MAX_PATH_LEN 30
+#define MAX_PATH_LEN 300
 #define MAX_BRANCH 5
 #define ERROR_RATE 0.01
 #define NUM_PREV_POST_KMER 5
@@ -25,9 +25,7 @@
 struct stack_el{
     stack_el(Kmer kmer1, size_t pos1)
             :kmer(kmer1),pos(pos1)
-            {
-                std::cout << "Me construyo "<<kmer1.str()<<"\n";
-            }
+            {}
     Kmer kmer;
     size_t pos;
 };
