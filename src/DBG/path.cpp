@@ -109,7 +109,8 @@ size_t Path::extend(const DnaSequence &sub_sequence
 
 //Container path
 //TODO: Posiciones salvarlas y empezar la correccion
-size_t PathContainer::check_read(){
+size_t PathContainer::check_read()
+{
     for (auto cur_kmer: IterKmers(_seq)){
         //Optimizar esto
         /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
@@ -153,10 +154,14 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
     num_trials++;
     return 0;
 }
-//TODO: Treat Heads/Tails
+//TODO: Add Head/Tails
 void PathContainer::correct_read() {
+    //For correction:
     PathGraphAdj path_graph = PathGraphAdj();
     Path path;
+    DnaSequence seq_head, seq_tail;
+    //Kmer_size
+    size_t kmer_size = Parameters::get().kmerSize;
     if (_solid.size() == 0) {
         Kmer source, target;
         bool sb = false;
@@ -171,65 +176,76 @@ void PathContainer::correct_read() {
             if (!sb)
                 path_graph.add_edge(source,target);
         }
-    } else
-        for (uint i = 0; i < _solid.size()-1; ++i) {
-            std::cout << "I: "<<i<<"\n";
+    } else {
+        //When first k-mer is not solid
+        if (_solid[0].second > 0)
+        {
+            seq_head = _seq.substr(0,_solid[0].second);
+            /*path_graph.add_edge(k_head
+                    ,_solid[0].first
+                    ,_solid[0].second
+                    ,_seq.substr(0,_solid[0].second));*/
+        }
+        //When the last k-mer is not solid
+        if (_solid[_solid.size()-1].second < _seq.length())
+        {
+            seq_tail = _seq.substr(_solid[_solid.size()-1].second+kmer_size,_seq.length());
+            /*path_graph.add_edge(_solid[_solid.size()-1].first
+                    ,k_tail
+                    ,_solid[_solid.size()-1].second
+                    ,_seq.substr(_solid[_solid.size()-1].second
+                            ,_seq.length()-_solid[_solid.size()-1].second));*/
+        }
+        for (uint i = 0; i < _solid.size() - 1; ++i) {
+            std::cout << "I: " << i << "\n";
             /*Check the head/tail of the read
              * Planned approach: copy head/tail (Naive so far)
              * */
             size_t num_trials = 0;
-            for (uint j = i + 1; j < _solid.size() && num_trials < MAX_NUM_TRIALS; ++j){
-                int outcome =check_solids(_solid[i].second,
-                                          _solid[j].second,i,j
-                        ,num_trials,(j == (i+1)?_solid[i].first
-                                                               :_solid[j].first));
-
-                if (outcome == 0)
-                {
+            for (uint j = i + 1; j < _solid.size() && num_trials < MAX_NUM_TRIALS; ++j) {
+                int outcome = check_solids(_solid[i].second,
+                                           _solid[j].second, i, j, num_trials, (j == (i + 1) ? _solid[i].first
+                                                                                             : _solid[j].first));
+                if (outcome == 0) {
                     //Extension path
-                    char way[MAX_PATH_LEN+1];
+                    char way[MAX_PATH_LEN + 1];
                     size_t ed_score = MAX_PATH_LEN, max_branch = MAX_BRANCH;
-                    size_t kmer_size = Parameters::get().kmerSize;
-                    size_t len = path.extend(_seq.substr(_solid[i].second
-                            ,_solid[j].second+kmer_size)
-                            ,_solid[i], _solid[j],_dbg
-                            ,&ed_score
-                            ,way, max_branch);
+                    size_t len = path.extend(_seq.substr(_solid[i].second, _solid[j].second + kmer_size), _solid[i],
+                                             _solid[j], _dbg, &ed_score, way, max_branch);
                     //Add minimum edit path to optimal paths.
-                    if (len < MAX_PATH_LEN){
+                    if (len < MAX_PATH_LEN) {
                         std::string way_string(way);
                         //std::cout << "Path Found: "<<way<<" "<<way_string<<"\n";
-                        path_graph.add_edge(_solid[i].first,_solid[j].first
-                                ,len-kmer_size,DnaSequence(way_string));
-                    }
-                    else {
+                        path_graph.add_edge(_solid[i].first, _solid[j].first, len - kmer_size, DnaSequence(way_string));
+                    } else {
                         if (max_branch == 0)
                             std::cout << "Maximum branches reached\n";
                         else
-                            std::cout << "No path from source to target "<<_solid[i].second<<"-"<<_solid[j].second<<"\n";
-                        path_graph.add_edge(_solid[i].first,_solid[j].first
-                                ,_solid[j].second-_solid[i].second-Parameters::get().kmerSize
-                                ,_seq.substr(_solid[i].second,_solid[j].second-_solid[i].second));
-                        std::cout << "De aqui paso "<<j<<" "<<_solid.size()<<"\n";
+                            std::cout << "No path from source to target " << _solid[i].second << "-" << _solid[j].second
+                                      << "\n";
+                        path_graph.add_edge(_solid[i].first, _solid[j].first,
+                                            _solid[j].second - _solid[i].second - Parameters::get().kmerSize,
+                                            _seq.substr(_solid[i].second, _solid[j].second - _solid[i].second));
+                        std::cout << "De aqui paso " << j << " " << _solid.size() << "\n";
                     }
-                }else{
+                } else {
                     if (outcome == 1)
                         continue;
                     else if (outcome == 2)
                         break;
-                    else
-                    {
-                        path_graph.add_edge(_solid[i].first,_solid[j].first
-                                ,0,_solid[i].first.substr(0,_solid[j].second-_solid[i].second));
+                    else {
+                        path_graph.add_edge(_solid[i].first, _solid[j].first, 0,
+                                            _solid[i].first.substr(0, _solid[j].second - _solid[i].second));
                     }
                 }
             }
         }
+    }
     std::cout << "Vertex of the path graph: "<<path_graph.num_vertex()<<" Edges in the path graph: "
                                                                      << path_graph.num_edges() << "\n";
-    std::cout << "Secuencia original: "<<_seq.str() <<"\n";
+    std::cout << "Secuencia original: "<<_seq.str() <<":"<<_solid[_solid.size()-1].first.str()<<"\n";
     DnaSequence path_found = path_graph.shortest_path(_solid[0].first,_solid[_solid.size()-1].first);
-    std::cout << "Relacon buscad: "<<_solid[0].first.str()<<"-"<<_solid[_solid.size()-1].first.str()<<"\n";
+    std::cout << "Relacion buscada: "<<seq_head.str()<<"-"<<seq_tail.str()<<"\n";
     std::cout << "Optimal Read: "<<path_found.str()<<"\n";
     sleep(1000000);
 }

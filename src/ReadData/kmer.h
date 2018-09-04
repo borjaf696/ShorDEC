@@ -6,7 +6,8 @@
 class Kmer 
 {
 public:
-	Kmer(){}
+	bool exist = true;
+	Kmer():exist(false){}
 	~Kmer(){}
 	Kmer(const DnaSequence&,size_t,size_t);
 	Kmer(DnaSequence seq):_seq(seq){}

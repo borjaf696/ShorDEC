@@ -48,7 +48,7 @@ class PathGraphAdj: public PathGrap
 public:
     PathGraphAdj(){};
 
-    void add_edge(const Kmer&,const Kmer&, size_t = 0, DnaSequence = DnaSequence());
+    void add_edge(const Kmer&,const Kmer&, size_t = 0, DnaSequence = DnaSequence()) ;
     DnaSequence shortest_path(const Kmer&, const Kmer&);
 
     //TODO:Change to pvt

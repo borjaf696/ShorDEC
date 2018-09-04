@@ -2,7 +2,7 @@
 #include "../Utils/utils.h"
 
 //Kmer
-Kmer::Kmer(const DnaSequence &ds, size_t start, size_t length) {
+Kmer::Kmer(const DnaSequence &ds, size_t start, size_t length):exist(true) {
     _seq = *(ds.substr(start,length));
 }
 

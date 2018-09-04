@@ -158,7 +158,8 @@ public:
 		return !_complement?id : ~id&3;
 	}
 
-	DnaSequence& operator*(){
+	//TODO: Revisar las constantes esas
+	const DnaSequence& operator*() const{
 		return *this;
 	}
 
