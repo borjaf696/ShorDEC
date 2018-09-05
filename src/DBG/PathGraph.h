@@ -30,11 +30,11 @@ public:
     PathGrap(){};
 
     //Constructor methods
-    virtual void add_edge(const Kmer&,const Kmer &,size_t,DnaSequence) = 0;
+    virtual void add_edge(const Node&,const Node &,size_t,DnaSequence) = 0;
 
     //Transverse methods
-    virtual DnaSequence shortest_path(const Kmer&, const Kmer&) = 0;
-    virtual bool covered(const Kmer&) = 0;
+    virtual DnaSequence shortest_path(const Node&, const Node&) = 0;
+    virtual bool covered(const Node&) = 0;
 
     //Re-build method
     virtual DnaSequence build_optimal_read(std::vector<Node>) = 0;
@@ -49,9 +49,9 @@ class PathGraphAdj: public PathGrap
 public:
     PathGraphAdj(){};
 
-    void add_edge(const Kmer&,const Kmer&, size_t = 0, DnaSequence = DnaSequence()) ;
-    DnaSequence shortest_path(const Kmer&, const Kmer&);
-    bool covered(const Kmer&);
+    void add_edge(const Node&,const Node&, size_t = 0, DnaSequence = DnaSequence()) ;
+    DnaSequence shortest_path(const Node&, const Node&);
+    bool covered(const Node&);
 
     //TODO:Change to pvt
     DnaSequence build_optimal_read(std::vector<Node>);
@@ -72,7 +72,7 @@ private:
     class CompareDist
     {
     public:
-        bool operator()(std::pair<int,std::vector<Kmer>> p1, std::pair<int,std::vector<Kmer>> p2)
+        bool operator()(std::pair<int,std::vector<Node>> p1, std::pair<int,std::vector<Node>> p2)
         {
             return p1.first > p2.first;
         }
@@ -99,30 +99,30 @@ private:
         return (!in_degree(k))&&(!out_degree(k));
     }
 
-    std::vector<std::pair<int,std::vector<Kmer>>> push_in_queue(std::pair<int,std::vector<Kmer>> q_el)
+    std::vector<std::pair<int,std::vector<Node>>> push_in_queue(std::pair<int,std::vector<Node>> q_el)
     {
         //List of all possible outcomes
-        std::vector<std::pair<int,std::vector<Kmer>>> output;
+        std::vector<std::pair<int,std::vector<Node>>> output;
 
-        //Evaluated Kmer
-        Kmer last_path_kmer = q_el.second.back();
+        //Evaluated Node
+        Node last_path_node = q_el.second.back();
         //Check all neighbors availables and add distances.
         int distance = q_el.first;
         //std::cout << last_path_kmer.str()<<"\n";
-        for (uint i = 0; i < _adj_list[last_path_kmer].first.size(); ++i)
+        for (uint i = 0; i < _adj_list[last_path_node].first.size(); ++i)
         {
             //Use the same instance I think is crazy
-            std::vector<Kmer> k_list = q_el.second;
-            Kmer kmer_aux;
+            std::vector<Node> k_list = q_el.second;
             //If the edge has been already visited just skip it
-            if (!_adj_list[last_path_kmer].second[i].vis) {
-                kmer_aux = _adj_list[last_path_kmer].first[i];
-                _adj_list[last_path_kmer].second[i].vis = true;
+            if (!_adj_list[last_path_node].second[i].vis) {
+                Node node_aux;
+                node_aux = _adj_list[last_path_node].first[i];
+                _adj_list[last_path_node].second[i].vis = true;
+                k_list.push_back(node_aux);
             }else
                 continue;
-            k_list.push_back(kmer_aux);
             //Add the elements which are going to go to the prior_queue!!!
-            output.push_back(std::pair<int,std::vector<Kmer>>(distance+_adj_list[last_path_kmer].second[i].ed,
+            output.push_back(std::pair<int,std::vector<Node>>(distance+_adj_list[last_path_node].second[i].ed,
                                        k_list));
         }
         /*for (uint i = 0; i < output.size(); ++i)
@@ -135,7 +135,7 @@ private:
 class PathGraphLemon: public PathGrap
 {
 public:
-    void add_edge(const Kmer& , const Kmer&, size_t = 0, DnaSequence = DnaSequence());
+    void add_edge(const Node& , const Node&, size_t = 0, DnaSequence = DnaSequence());
     size_t num_vertex();
     size_t num_edges();
 private:

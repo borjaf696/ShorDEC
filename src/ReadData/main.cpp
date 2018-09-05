@@ -21,7 +21,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 20;
+                Parameters::get().accumulative_h = 80;
                 break;
             case 't':
                 break;

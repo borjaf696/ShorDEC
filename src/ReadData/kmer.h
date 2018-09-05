@@ -74,9 +74,30 @@ struct KmerInfo{
 	KmerInfo(Kmer kmer1, size_t pos)
 			:kmer(kmer1),kmer_pos(pos)
 	{}
+	size_t hash() const
+	{
+		//TODO: Mirar como anhadir al kmer la posicion y asi sacar un hash particular del
+		return std::hash<std::string>()(kmer.str());
+	}
+	bool operator==(const KmerInfo & k_info) const
+	{
+		return(kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos);
+	}
 	Kmer kmer;
 	size_t kmer_pos;
 };
+
+namespace std
+{
+	template <>
+	struct hash<KmerInfo>
+	{
+		size_t operator()(const KmerInfo & k_info) const
+		{
+			return k_info.hash();
+		}
+	};
+}
 
 class KmerIt{
 public:

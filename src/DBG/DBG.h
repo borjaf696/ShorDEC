@@ -7,7 +7,7 @@
 #include "../Utils/utils.h"
 
 //Constants
-#define MIN_PATH_LEN 5
+#define MIN_PATH_LEN 9
 
 using namespace std;
 class DGB;
@@ -38,7 +38,7 @@ public:
     }
 
     bool is_solid(Kmer) const;
-    void check_path(Kmer,size_t&) const;
+    void check_path(size_t&, std::vector<Kmer>&) const;
 
     std::vector<DnaSequence::NuclType> getNeighbors
             (const Kmer &) const;
@@ -78,9 +78,13 @@ private:
             size_t in = in_degree(kmer);
             size_t len = 0;
             if (!in) {
-                check_path(kmer,len);
-                if ( len < MIN_PATH_LEN)
-                    erase.push_back(kmer);
+                std::vector<Kmer> aux;
+                aux.push_back(kmer);
+                check_path(len,aux);
+                if ( len < MIN_PATH_LEN) {
+                    for (auto k: aux)
+                        erase.push_back(k);
+                }
             }
         }
         for (auto kmer:erase)

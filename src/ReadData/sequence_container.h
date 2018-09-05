@@ -97,6 +97,10 @@ struct FastaRecord
 		description = std::move(other.description);
 		return *this;
 	}
+
+	std::string getDescription(){
+		return description;
+	}
 	
 	Id id;
 	DnaSequence sequence;
@@ -150,6 +154,8 @@ public:
 						   const std::string& fileName);
 	const FastaRecord&  addSequence(const DnaSequence& sequence, 
 									const std::string& description);
+
+	void setRead(FastaRecord::Id, DnaSequence);
 
 	const SequenceIndex& getIndex() const
 	{

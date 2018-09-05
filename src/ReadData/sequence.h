@@ -72,7 +72,7 @@ public:
 	}
 
 	void append_with_replace_right(DnaSequence::NuclType symbol) const {
-		for (int i = 0; i < std::max(0,(int)_data->chunks.size()-2); ++i)
+		for (int i = 0; i < std::max(0,(int)_data->chunks.size()-1); ++i)
 			_data->chunks[i] = (_data->chunks[i] >> 2) |
 					(_data->chunks[i+1] << (NUCL_IN_CHUNK-1)*2);
 		_data->chunks[_data->chunks.size()-1] = (_data->chunks[_data->chunks.size()-1]>> 2) |
@@ -94,7 +94,7 @@ public:
 		for (int i = _data->chunks.size()-1; i > 0; --i)
 			_data->chunks[i] = (_data->chunks[i]<<2) |
 					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*2);
-		_data->chunks[0] = (_data->chunks[0] << 2) | (symbol >> (NUCL_IN_CHUNK-1)*2);
+		_data->chunks[0] = (_data->chunks[0] << 2) | symbol;
 	}
 
 	void set(DnaSequence::NuclType dnaSymbol, size_t index) const

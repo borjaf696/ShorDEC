@@ -345,3 +345,9 @@ void SequenceContainer::writeFasta(const std::vector<FastaRecord>& records,
 			   contigSeq.size(), fout);
 	}
 }
+
+void SequenceContainer::setRead(FastaRecord::Id readId, DnaSequence newSeq)
+{
+	_seqIndex.at(readId) = FastaRecord(newSeq,_seqIndex.at(readId).getDescription()
+			,FastaRecord::Id(readId));
+}

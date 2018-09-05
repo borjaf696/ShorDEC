@@ -11,7 +11,7 @@
 //Constants for the path extension
 #define MAX_PATH_LEN 300
 #define MAX_BRANCH 5
-#define ERROR_RATE 0.01
+#define ERROR_RATE 0.5
 #define NUM_PREV_POST_KMER 5
 #define MAX_DISTANCE_READ 100
 #define MAX_NUM_TRIALS 5
@@ -52,6 +52,7 @@ private:
     std::vector<size_t> _DP;
 };
 
+//TODO: Change path container ¿why storeage std::pair<Kmer,size_t> when we have KmerInfo which actually is that
 class PathContainer
 {
 public:
@@ -61,7 +62,7 @@ public:
         check_read();
     };
 
-    void correct_read();
+    DnaSequence correct_read();
     size_t getSolidLength(){
         return _solid.size();
     }
@@ -80,7 +81,7 @@ private:
 class ReadCorrector
 {
 public:
-    ReadCorrector(const SequenceContainer &sc, const DGB &dbg):
+    ReadCorrector(SequenceContainer &sc, const DGB &dbg):
             _sc(sc),_dbg(dbg)
     {
         correct_reads();
@@ -88,6 +89,6 @@ public:
 
     void correct_reads();
 private:
-    const SequenceContainer &_sc;
+    SequenceContainer &_sc;
     const DGB &_dbg;
 };

@@ -3,7 +3,7 @@
 using namespace std;
 //PathGraphAdj
 
-void PathGraphAdj::add_edge(const Kmer &source,const Kmer &target, size_t edit, DnaSequence path)
+void PathGraphAdj::add_edge(const Node &source,const Node &target, size_t edit, DnaSequence path)
 {
     size_t kmer_size = Parameters::get().kmerSize;
     unordered_map<Node,AdjList>::const_iterator it = _adj_list.find(source);
@@ -55,7 +55,6 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
             }
             for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
                 optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
-                std::cout << adj.second[pos_int].seq.at(j);
             }
         }
     }
@@ -73,28 +72,28 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
 /*Dijkstra approach with priority queue
  * TODO: Use a better approach than re-build the path
  * */
-DnaSequence PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
+DnaSequence PathGraphAdj::shortest_path(const Node &source, const Node &target){
     //First lets check the nodes degree
     if (source == target)
         return source.getSeq();
-    vector<Kmer> optimal_path;
-    priority_queue<pair<int,vector<Kmer>>, vector<pair<int,vector<Kmer>>>, CompareDist> prior_q;
+    vector<Node> optimal_path;
+    priority_queue<pair<int,vector<Node>>, vector<pair<int,vector<Node>>>, CompareDist> prior_q;
     if (check_isolated())
     {
         cout << ":(\n";
         exit(1);
     }
-    prior_q.push(pair<int,vector<Kmer>>(0,{source}));
+    prior_q.push(pair<int,vector<Node>>(0,{source}));
     while (!prior_q.empty())
     {
         //Extract from the queue the top element
-        pair<int,vector<Kmer>> head = prior_q.top();
+        pair<int,vector<Node>> head = prior_q.top();
         prior_q.pop();
 
         /*cout << "Execute! "<<head.second.back().str()<<"\n";
         cout << "Size: "<<prior_q.size()<<" Empty: "<<prior_q.empty()<<"\n";*/
 
-        vector<pair<int,vector<Kmer>>> to_queue = push_in_queue(head);
+        vector<pair<int,vector<Node>>> to_queue = push_in_queue(head);
         for (auto i:to_queue)
         {
             if (i.second.back() != target) {
@@ -113,7 +112,7 @@ DnaSequence PathGraphAdj::shortest_path(const Kmer &source, const Kmer &target){
 /*
  * Check if one solid kmer is being covered or not. Remember every kmer solid should be in the path graph
  * */
-bool PathGraphAdj::covered(const Kmer &kmer)
+bool PathGraphAdj::covered(const Node &kmer)
 {
     return !(_adj_list.end() == _adj_list.find(kmer));
 }
