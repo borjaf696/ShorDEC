@@ -59,12 +59,11 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
         }
     }
     uint j;
-    /*if (adj.second[pos_int].ed == 0)
-        j = Parameters::get().kmerSize-adj.second[pos_int].seq.length();
-    else
-        j = 0;*/
     for ((!adj.second[pos_int].ed)?j=adj.second[pos_int].seq.length():j=0
-            ;j < Parameters::get().kmerSize;++j) optimal_read.append_nuc_right(nodes[i].kmer.at(j));
+            ;j < Parameters::get().kmerSize;++j) {
+        //std::cout << nodes[i].kmer.at(j);
+        optimal_read.append_nuc_right(nodes[i].kmer.at(j));
+    }
 
     return optimal_read;
 }

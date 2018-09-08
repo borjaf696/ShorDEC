@@ -11,7 +11,7 @@
 //Constants for the path extension
 #define MAX_PATH_LEN 300
 #define MAX_BRANCH 5
-#define ERROR_RATE 0.01
+#define ERROR_RATE 0.5
 #define NUM_PREV_POST_KMER 5
 #define MAX_DISTANCE_READ 100
 #define MAX_NUM_TRIALS 5

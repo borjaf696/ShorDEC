@@ -21,7 +21,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 300;
+                Parameters::get().accumulative_h = 150;
                 break;
             case 't':
                 break;
@@ -70,7 +70,7 @@ int main(int argv, char ** argc){
         std::cout<< "Correcto" << "\n";
     for (auto k: s)
         std::cout << k.str() << "\n";*/
-    size_t kmer_sizes[] = {1};
+    size_t kmer_sizes[] = {1,2,3};
     /*
      * Iteratively we are going to correct the reads
      */

@@ -61,14 +61,15 @@ public:
 		if (!_data->length && !_data->chunks.size())
 		{
 			_data->chunks.push_back(dnaSymbol);
+			_data->length++;
 			return;
 		}
-		_data->length++;
 		if ((_data->length / NUCL_IN_CHUNK) == _data->chunks.size())
 			_data->chunks.push_back(dnaSymbol);
 		else
 			_data->chunks[_data->chunks.size()-1] |= (dnaSymbol
 				<< (_data->length % NUCL_IN_CHUNK) *2);
+		_data->length++;
 	}
 
 	void append_with_replace_right(DnaSequence::NuclType symbol) const {
