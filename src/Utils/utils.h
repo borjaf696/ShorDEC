@@ -1,9 +1,17 @@
 #include <vector>
+#include <string>
 struct Parameters
 {
     static Parameters& get(){
         static Parameters param;
         return param;
+    }
+    void set(size_t param, std::string param_read)
+    {
+        if (param_read == "KmerSize")
+            Parameters::get().kmerSize = param;
+        if (param_read == "Accumulative")
+            Parameters::get().accumulative_h = param;
     }
     size_t accumulative_h;
     size_t kmerSize;
@@ -34,7 +42,7 @@ private:
     static void show_progress(size_t num_actual){
         size_t val = (size_t)((float)num_actual/
                               (float)Progress::get().size_total * 100);
-        std::cout << val << ((val==100)?"%\n":"% ");
+        std::cout << val << ((val==100)?"%\n":"% ") << std::flush;
         if (val == 100)
             _prepare_next();
     }

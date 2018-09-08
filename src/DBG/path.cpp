@@ -27,6 +27,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
         ,char *expected_path
         ,size_t & branches)
 {
+    std::cout << sub_sequence.str() << " "<<h.kmer.str() << " "<<t.kmer.str() << "\n";
     //Unicamente nos centraremos en el primer Head/Tail -> preguntar manhana
     size_t best_len = MAX_PATH_LEN;
     char path[MAX_PATH_LEN+1];
@@ -34,15 +35,17 @@ size_t Path::extend(const DnaSequence &sub_sequence
 
     std::vector<DnaSequence::NuclType> nts
             = dbg.getNeighbors(h.kmer);
-    std::cout<<"NUM NEIGHBORS: "<<nts.size()<<"\n";
+    //std::cout<<"NUM NEIGHBORS: "<<nts.size()<<"\n";
     //Continuacion del kmer actual
     for (uint i = 0; i < nts.size(); ++i)
     {
         Kmer kmer_aux = h.kmer;
         kmer_aux.appendRight(nts[i]);
-        std::cout << "Vecinos "<<nts[i]<<"\n";
-        neighbors.push(new stack_el(Kmer(kmer_aux.str()),1));
+        //std::cout << "Vecinos "<<nts[i]<<"\n";
+        neighbors.push(new stack_el(Kmer(kmer_aux.str()),1,nts[i]));
+        std::cout << nts[i]<<"-";
     }
+    std::cout << "\n";
     //Expected fail length
     size_t fail_len = t.kmer_pos - h.kmer_pos;
     while (neighbors.size() > 0 && branches > 0)
@@ -51,6 +54,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
         neighbors.pop();
         Kmer cur_kmer = el_kmer->kmer;
         size_t pos = el_kmer->pos;
+        DnaSequence::NuclType nuc = el_kmer->nuc;
 
         //Deallocate the stack_el
         delete el_kmer;
@@ -58,7 +62,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
         if (pos >= MAX_PATH_LEN)
             return MAX_PATH_LEN;
 
-        path[pos-1] = cur_kmer.at(0);
+        path[pos-1] = nuc;
         _DP[pos*(MAX_PATH_LEN+1)] = pos;
         size_t min = MAX_PATH_LEN;
         /*
@@ -89,22 +93,26 @@ size_t Path::extend(const DnaSequence &sub_sequence
                     (*score_ed) = edit_distance;
                     std::memcpy(expected_path, path, pos);
                     best_len = pos;
+                    std::cout << "Encontre una solucion\n";
                 }
             } else {
                 //We havent reached our objective we extend the path again
+                std::cout << cur_kmer.str() << "\n";
                 nts = dbg.getNeighbors(cur_kmer);
                 for (uint i = 0; i < nts.size(); i++){
                     Kmer kmer_aux = Kmer(cur_kmer.str());
                     kmer_aux.appendRight(nts[i]);
-                    neighbors.push(new stack_el(Kmer(kmer_aux.str()),pos+1));
+                    neighbors.push(new stack_el(Kmer(kmer_aux.str()),pos+1,nts[i]));
+                    std::cout << nts[i] << "-";
                 }
+                std::cout << "\n";
                 if (!nts.size())
                     branches--;
             }
         }else
             branches--;
     }
-    std::cout << "NumOfNeighbors "<<neighbors.size()<< " "<<best_len<< "\n";
+    //std::cout << "NumOfNeighbors "<<neighbors.size()<< " "<<best_len<< "\n";
     return best_len;
 }
 
@@ -154,7 +162,7 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
     num_trials++;
     return 0;
 }
-//TODO: Glue Head/Tails
+//TODO: Glue Head/Tails -> Right away
 DnaSequence PathContainer::correct_read() {
     //For correction:
     PathGraphAdj path_graph = PathGraphAdj();
@@ -163,7 +171,7 @@ DnaSequence PathContainer::correct_read() {
     KmerInfo first_kmer, last_kmer;
     //Kmer_size
     size_t kmer_size = Parameters::get().kmerSize;
-    std::cout << "Number of solid kmers: "<< _solid.size()<<"\n";
+    //std::cout << "Number of solid kmers: "<< _solid.size()<<"\n";
     if (_solid.size() == 0) {
         KmerInfo source, target;
         bool sb = false;
@@ -181,6 +189,7 @@ DnaSequence PathContainer::correct_read() {
         last_kmer = source;
     } else {
         //When first k-mer is not solid
+        std::cout << "Num Kmers solidos: "<<_solid.size()<<"\n";
         if (_solid[0].kmer_pos > 0)
         {
             seq_head = _seq.substr(0,_solid[0].kmer_pos);
@@ -203,7 +212,13 @@ DnaSequence PathContainer::correct_read() {
                     //Extension path
                     char way[MAX_PATH_LEN + 1];
                     size_t ed_score = MAX_PATH_LEN, max_branch = MAX_BRANCH;
-                    size_t len = path.extend(_seq.substr(_solid[i].kmer_pos, _solid[j].kmer_pos + kmer_size), _solid[i],
+                    /*
+                     * The path starts at the end of the first k-mer or in the middle, but never at the beginning
+                     */
+                    size_t start_path = std::min(_solid[i].kmer_pos+kmer_size
+                                                 ,_solid[j].kmer_pos);
+                    size_t distance = _solid[j].kmer_pos-_solid[i].kmer_pos;
+                    size_t len = path.extend(_seq.substr(start_path, distance), _solid[i],
                                              _solid[j], _dbg, &ed_score, way, max_branch);
                     //Add minimum edit path to optimal paths.
                     if (len < MAX_PATH_LEN) {
@@ -248,10 +263,10 @@ DnaSequence PathContainer::correct_read() {
             }
         }
     }
-    std::cout << "Vertex of the path graph: "<<path_graph.num_vertex()<<" Edges in the path graph: "
+    /*std::cout << "Vertex of the path graph: "<<path_graph.num_vertex()<<" Edges in the path graph: "
                                                                      << path_graph.num_edges() << "\n";
     //path_graph.show();
-    std::cout << "Secuencia original: "<<_seq.str() <<"\n";
+    std::cout << "Secuencia original: "<<_seq.str() <<"\n";*/
     if (_solid.size() > 0)
     {
         first_kmer = _solid[0];
@@ -266,18 +281,24 @@ DnaSequence PathContainer::correct_read() {
 
 //ReadsCorrector
 void ReadCorrector::correct_reads() {
-    std::cout << "Correcting reads\n";
+    std::cout << "READS CORRECTION!\n";
     for (auto &read: _sc.getIndex())
     {
-        /*if (read.first.getId() > 10)
-            continue;*/
-        std::cout << read.first.getId() <<" " << read.second.sequence.length()<<"\n";
+        if (read.first.getId() == 100)
+        {
+
+        //std::cout << read.first.getId() <<" " << read.second.sequence.length()<<"\n";
+        std::cout << read.second.sequence.str() << "\n";
         Progress::update(read.first.getId());
         PathContainer pc(read.first,_dbg,read.second.sequence);
         DnaSequence seq = pc.correct_read();
         _sc.setRead(read.first.getId(),seq);
-        std::cout << "Chain: "<<_sc.getSeq(read.first.getId()).str()<<"\n";
-        //std::cout << read.first.getId() << " "<<pc.getSolidLength()<<"\n";
+        std::cout << _sc.getSeq(read.first.getId()).str() << "\n";
+        //std::cout << "Chain: "<<_sc.getSeq(read.first.getId()).str()<<"\n";
+        //std::cout << read.first.getId() << " "<<pc.getSolidLength()<<"\n"
+            sleep(100000);
+            continue;
+        }
     }
     Progress::update(_sc.getIndex().size());
 }

@@ -1,9 +1,7 @@
 #include "DBG.h"
 bool NaiveDBG::is_solid(Kmer kmer) const
 {
-    std::unordered_set<Kmer>::const_iterator place
-            = _dbg_naive.find(kmer);
-    return (place != _dbg_naive.end());
+    return (_dbg_naive.find(kmer) != _dbg_naive.end());
 }
 
 vector<DnaSequence::NuclType> NaiveDBG::getNeighbors
@@ -55,4 +53,13 @@ size_t NaiveDBG::out_degree(Kmer k)
             out++;
     }
     return out;
+}
+
+void NaiveDBG::show_info()
+{
+    for (auto p_k: _kmers_map)
+    {
+        std::cout << p_k.first.str() <<" -> "<< p_k.second<<", Correct? "
+                  <<(_dbg_naive.find(p_k.first) == _dbg_naive.end())<<"\n";
+    }
 }

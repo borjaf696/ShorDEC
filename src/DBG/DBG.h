@@ -7,7 +7,7 @@
 #include "../Utils/utils.h"
 
 //Constants
-#define MIN_PATH_LEN 9
+#define MIN_PATH_LEN 10
 
 using namespace std;
 class DBG;
@@ -24,6 +24,9 @@ public:
             (const Kmer &) const = 0;
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
+
+    //Show methods
+    virtual void show_info() = 0;
 private:
     virtual void _kmerCount() = 0;
     virtual void _cleaning() = 0;
@@ -51,6 +54,8 @@ public:
     }
     size_t in_degree(Kmer);
     size_t out_degree(Kmer);
+
+    void show_info();
 
 
 private:

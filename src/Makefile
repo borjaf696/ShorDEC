@@ -12,12 +12,14 @@ release: test
 
 #test
 
+
+
 obj := ${patsubst %.cpp,%.o,${wildcard ReadData/*.cpp}}
-ReadData/%.o: ReadData/%.cpp ReadData/*.h Utils/*.h
+ReadData/%.o: ReadData/%.cpp ReadData/*.h 
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 dbg_obj := ${patsubst %.cpp,%.o,${wildcard DBG/*.cpp}}
-DBG/%.o: DBG/%.cpp DBG/*.h
+DBG/%.o: DBG/%.cpp DBG/*.h Utils/*.h
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 test: ${obj} ${dbg_obj}
