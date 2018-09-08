@@ -51,7 +51,7 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
         }else
         {
             for (uint j = 0; j < Parameters::get().kmerSize; ++j) {
-                optimal_read.append_nuc_right(nodes[i].at(j));
+                optimal_read.append_nuc_right(nodes[i].kmer.at(j));
             }
             for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
                 optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
@@ -64,7 +64,7 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
     else
         j = 0;*/
     for ((!adj.second[pos_int].ed)?j=adj.second[pos_int].seq.length():j=0
-            ;j < Parameters::get().kmerSize;++j) optimal_read.append_nuc_right(nodes[i].at(j));
+            ;j < Parameters::get().kmerSize;++j) optimal_read.append_nuc_right(nodes[i].kmer.at(j));
 
     return optimal_read;
 }
@@ -75,7 +75,7 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
 DnaSequence PathGraphAdj::shortest_path(const Node &source, const Node &target){
     //First lets check the nodes degree
     if (source == target)
-        return source.getSeq();
+        return source.kmer.getSeq();
     vector<Node> optimal_path;
     priority_queue<pair<int,vector<Node>>, vector<pair<int,vector<Node>>>, CompareDist> prior_q;
     if (check_isolated())
@@ -115,4 +115,15 @@ DnaSequence PathGraphAdj::shortest_path(const Node &source, const Node &target){
 bool PathGraphAdj::covered(const Node &kmer)
 {
     return !(_adj_list.end() == _adj_list.find(kmer));
+}
+
+/*
+ * Show methods
+ */
+void PathGraphAdj::show()
+{
+    for (auto k_list: _adj_list)
+    {
+        std::cout << " Kmer: "<<k_list.first.kmer.str() << " Pos: "<< k_list.first.kmer_pos << "\n";
+    }
 }

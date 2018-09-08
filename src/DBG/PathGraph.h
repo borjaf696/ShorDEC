@@ -23,7 +23,7 @@ struct Edge{
     //For check transversed
     bool vis;
 };
-typedef Kmer Node;
+typedef KmerInfo Node;
 
 class PathGrap{
 public:
@@ -35,6 +35,9 @@ public:
     //Transverse methods
     virtual DnaSequence shortest_path(const Node&, const Node&) = 0;
     virtual bool covered(const Node&) = 0;
+
+    //Show Methods
+    virtual void show() = 0;
 
     //Re-build method
     virtual DnaSequence build_optimal_read(std::vector<Node>) = 0;
@@ -52,6 +55,7 @@ public:
     void add_edge(const Node&,const Node&, size_t = 0, DnaSequence = DnaSequence()) ;
     DnaSequence shortest_path(const Node&, const Node&);
     bool covered(const Node&);
+    void show();
 
     //TODO:Change to pvt
     DnaSequence build_optimal_read(std::vector<Node>);
@@ -115,10 +119,9 @@ private:
             std::vector<Node> k_list = q_el.second;
             //If the edge has been already visited just skip it
             if (!_adj_list[last_path_node].second[i].vis) {
-                Node node_aux;
-                node_aux = _adj_list[last_path_node].first[i];
+                Kmer kmer_aux = _adj_list[last_path_node].first[i].kmer;
+                k_list.push_back(Node(kmer_aux,_adj_list[last_path_node].first[i].kmer_pos));
                 _adj_list[last_path_node].second[i].vis = true;
-                k_list.push_back(node_aux);
             }else
                 continue;
             //Add the elements which are going to go to the prior_queue!!!

@@ -42,8 +42,8 @@ public:
     }
     //Extender
     size_t extend(const DnaSequence&
-            ,std::pair<Kmer,size_t>
-            ,std::pair<Kmer,size_t>
+            ,KmerInfo
+            ,KmerInfo
             ,const DGB&
             ,size_t*
             ,char*
@@ -72,7 +72,7 @@ public:
             ,size_t &,Kmer&);
 private:
     std::vector<Path> _path_extended;
-    std::vector<std::pair<Kmer,size_t>> _solid;
+    std::vector<KmerInfo> _solid;
     FastaRecord::Id _readId;
     const DGB &_dbg;
     const DnaSequence &_seq;
