@@ -70,6 +70,6 @@ int main(int argv, char ** argc){
         std::cout<< "Correcto" << "\n";
     for (auto k: s)
         std::cout << k.str() << "\n";*/
-    NaiveDGB naiveDGB(sc);
-    ReadCorrector read(sc,naiveDGB);
+    NaiveDBG naiveDBG(sc);
+    ReadCorrector read(sc,naiveDBG);
 }

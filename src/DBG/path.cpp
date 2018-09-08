@@ -22,7 +22,7 @@ void insert_queue(std::queue<Kmer>& t, std::queue<size_t> &p_t, Kmer kmer, size_
 size_t Path::extend(const DnaSequence &sub_sequence
         ,KmerInfo h
         ,KmerInfo t
-        ,const DGB &dbg
+        ,const DBG &dbg
         ,size_t * score_ed
         ,char *expected_path
         ,size_t & branches)

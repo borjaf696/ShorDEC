@@ -44,7 +44,7 @@ public:
     size_t extend(const DnaSequence&
             ,KmerInfo
             ,KmerInfo
-            ,const DGB&
+            ,const DBG&
             ,size_t*
             ,char*
             ,size_t&);
@@ -56,7 +56,7 @@ private:
 class PathContainer
 {
 public:
-    PathContainer(FastaRecord::Id id, const DGB& dbg, const DnaSequence& seq):
+    PathContainer(FastaRecord::Id id, const DBG& dbg, const DnaSequence& seq):
             _readId(id),_dbg(dbg),_seq(seq)
     {
         check_read();
@@ -74,14 +74,14 @@ private:
     std::vector<Path> _path_extended;
     std::vector<KmerInfo> _solid;
     FastaRecord::Id _readId;
-    const DGB &_dbg;
+    const DBG &_dbg;
     const DnaSequence &_seq;
 };
 
 class ReadCorrector
 {
 public:
-    ReadCorrector(SequenceContainer &sc, const DGB &dbg):
+    ReadCorrector(SequenceContainer &sc, const DBG &dbg):
             _sc(sc),_dbg(dbg)
     {
         correct_reads();
@@ -90,5 +90,5 @@ public:
     void correct_reads();
 private:
     SequenceContainer &_sc;
-    const DGB &_dbg;
+    const DBG &_dbg;
 };

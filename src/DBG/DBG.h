@@ -10,45 +10,48 @@
 #define MIN_PATH_LEN 9
 
 using namespace std;
-class DGB;
+class DBG;
 
-class DGB
+class DBG
 {
 public:
-    DGB(){}
+    DBG(){}
     virtual bool is_solid(Kmer kmer) const = 0;
     virtual size_t length() const = 0;
-    virtual std::vector<DnaSequence::NuclType> getNeighbors
+    virtual vector<DnaSequence::NuclType> getNeighbors
+            (const Kmer &) const = 0;
+    virtual vector<Kmer> getKmerNeighbors
             (const Kmer &) const = 0;
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
 private:
     virtual void _kmerCount() = 0;
+    virtual void _cleaning() = 0;
 };
 
-class NaiveDGB: public DGB
+class NaiveDBG: public DBG
 {
 public:
-    NaiveDGB(SequenceContainer& sc):_sc(sc){
+    NaiveDBG(SequenceContainer& sc):_sc(sc)
+    {
         Progress::get().size_total = _sc.getIndex().size();
         Progress::get().show = true;
         _kmerCount();
-        //TODO: Better cleaning approach. Remove short branches (Leenas idea)
-        _remove_isolated_nodes();
+        _cleaning();
     }
 
     bool is_solid(Kmer) const;
-    void check_path(size_t&, std::vector<Kmer>&) const;
-
-    std::vector<DnaSequence::NuclType> getNeighbors
+    vector<DnaSequence::NuclType> getNeighbors
             (const Kmer &) const;
-
-    size_t length() const{
+    vector<Kmer> getKmerNeighbors
+            (const Kmer &) const;
+    size_t length() const
+    {
         return _dbg_naive.size();
     }
-
     size_t in_degree(Kmer);
     size_t out_degree(Kmer);
+
 
 private:
     void _kmerCount()
@@ -58,7 +61,7 @@ private:
             Progress::update(read.first.getId());
             for (auto kmer_r: IterKmers(read.second.sequence)) {
                 kmer = kmer_r.kmer;//kmer_r.kmer;
-                std::unordered_map<Kmer, size_t>::const_iterator place =
+                unordered_map<Kmer, size_t>::const_iterator place =
                         _kmers_map.find(kmer);
                 if (place != _kmers_map.end()) {
                     _kmers_map[kmer]++;
@@ -71,27 +74,74 @@ private:
         Progress::update(_sc.getIndex().size());
     }
 
+    void _cleaning()
+    {
+        _remove_isolated_nodes();
+    }
+
+    void _check_path(size_t& len, vector<Kmer>& k_vec) const
+    {
+        Kmer aux = k_vec.back();
+        std::vector<DnaSequence::NuclType> neigh = getNeighbors(aux);
+        if (neigh.size() == 1) {
+            len++;
+            if (len < MIN_PATH_LEN){
+                Kmer kmer_aux = aux;
+                kmer_aux.appendRight(neigh[0]);
+                k_vec.push_back(kmer_aux);
+                _check_path(len,k_vec);
+            }
+        }if (neigh.size() > 1)
+            len += MIN_PATH_LEN;
+        else
+            len += 0;
+    };
+
+    void _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
+    {
+        if (len < MIN_PATH_LEN)
+            for (auto k:aux)
+                erase.push_back(k);
+    }
+
     void _remove_isolated_nodes()
     {
-        std::vector<Kmer> erase;
+        vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
-            size_t in = in_degree(kmer);
             size_t len = 0;
-            if (!in) {
-                std::vector<Kmer> aux;
+            if (!in_degree(kmer)) {
+                /*
+                 * Check isolated nodes
+                 */
+                vector<Kmer> aux;
                 aux.push_back(kmer);
-                check_path(len,aux);
-                if ( len < MIN_PATH_LEN) {
-                    for (auto k: aux)
-                        erase.push_back(k);
+                _check_path(len,aux);
+                _asses(erase,aux,len);
+            }
+            //Implementar algo tipo cache para evitar pasar varias veces por un kmer
+            vector<Kmer> neighbors = getKmerNeighbors(kmer);
+            if ( neighbors.size() > 1)
+            {
+                /*
+                 * Check branches
+                 */
+                for (auto sibling:neighbors)
+                {
+                    len = 0;
+                    vector<Kmer> aux;
+                    aux.push_back(sibling);
+                    _check_path(len,aux);
+                    _asses(erase,aux,len);
                 }
             }
         }
+
         for (auto kmer:erase)
             _dbg_naive.erase(kmer);
-        std::cout << _dbg_naive.size() << "\n";
+        cout << _dbg_naive.size() << "\n";
     }
-    std::unordered_map<Kmer, size_t> _kmers_map;
-    std::unordered_set<Kmer> _dbg_naive;
+
+    unordered_map<Kmer, size_t> _kmers_map;
+    unordered_set<Kmer> _dbg_naive;
     const SequenceContainer& _sc;
 };
