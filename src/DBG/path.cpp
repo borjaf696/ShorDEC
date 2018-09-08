@@ -146,6 +146,7 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
     }
     //Kmers far away from eachother
     if (((pos_j-pos_i)*(1.0+ERROR_RATE)) >= MAX_PATH_LEN) {
+        num_trials = MAX_NUM_TRIALS;
         return 2;
     }
     //Both Kmers are overlapped.
@@ -255,7 +256,8 @@ DnaSequence PathContainer::correct_read() {
                 /*Agregas 5 aristas a los nodos adjacentes*/
                 for (uint d = 0; d < (uint)std::min(MAX_NUM_TRIALS,(int)(_solid.size()-i)); ++d) {
                     size_t fail_len = _solid[i + d].kmer_pos - _solid[i].kmer_pos;
-                    path_graph.add_edge(_solid[i], _solid[i + d], fail_len, _seq.substr(_solid[i].kmer_pos, fail_len));
+                    //TODO: Needs correction
+                    path_graph.add_edge(_solid[i], _solid[i + d], 0, _seq.substr(_solid[i].kmer_pos, fail_len));
                 }
             }
         }
@@ -277,7 +279,6 @@ DnaSequence PathContainer::correct_read() {
     if (_seq.str() != full_path.str())
         std::cout <<"\n"<< _seq.str() << "\n"
                   << full_path.str() << "\n";
-    sleep(10);
     return full_path;
 }
 
