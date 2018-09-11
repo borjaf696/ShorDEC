@@ -49,6 +49,13 @@ public:
             ,size_t*
             ,char*
             ,size_t&);
+    size_t extend_head(const DnaSequence&
+            ,KmerInfo
+            ,const DBG&
+            ,size_t*
+            ,char*
+            ,size_t&
+            ,bool);
 private:
     std::vector<size_t> _DP;
 };
@@ -73,6 +80,7 @@ public:
             ,size_t &,Kmer&);
 private:
     std::vector<Path> _path_extended;
+    std::vector<Kmer> _heads;
     std::vector<KmerInfo> _solid;
     FastaRecord::Id _readId;
     const DBG &_dbg;

@@ -12,6 +12,7 @@
 using namespace std;
 class DBG;
 
+typedef unordered_set<Kmer> Heads;
 class DBG
 {
 public:
@@ -24,6 +25,7 @@ public:
             (const Kmer &) const = 0;
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
+    virtual Heads  get(bool) const = 0;
 
     //Show methods
     virtual void show_info() = 0;
@@ -55,15 +57,28 @@ public:
     size_t in_degree(Kmer);
     size_t out_degree(Kmer);
 
+    Heads get(bool behaviour) const
+    {
+        return (behaviour)?_heads:_tails;
+    }
+
     void show_info();
 
 
 private:
+    /*
+     * Kmer Counting
+     * Naive DBG construction + heads + tails
+     */
     void _kmerCount()
     {
-        Kmer kmer;
+        Kmer kmer, tail;
+        bool first = false;
         for (auto &read:_sc.getIndex()){
+            if (first)
+                _tails.emplace(tail);
             Progress::update(read.first.getId());
+            first = false;
             for (auto kmer_r: IterKmers(read.second.sequence)) {
                 kmer = kmer_r.kmer;//kmer_r.kmer;
                 unordered_map<Kmer, size_t>::const_iterator place =
@@ -71,7 +86,14 @@ private:
                 if (place != _kmers_map.end()) {
                     _kmers_map[kmer]++;
                     if (_kmers_map[kmer] == Parameters::get().accumulative_h)
+                    {
+                        if (!first) {
+                            first = true;
+                            _heads.emplace(kmer);
+                        }
+                        tail = kmer;
                         _dbg_naive.emplace(kmer);
+                    }
                 } else
                     _kmers_map[kmer] = 1;
             }
@@ -147,6 +169,7 @@ private:
     }
 
     unordered_map<Kmer, size_t> _kmers_map;
-    unordered_set<Kmer> _dbg_naive;
+    //_dbg_naive graph, set of first solid k-mers
+    unordered_set<Kmer> _dbg_naive, _heads,_tails;
     const SequenceContainer& _sc;
 };

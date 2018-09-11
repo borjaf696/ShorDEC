@@ -63,7 +63,6 @@ DnaSequence PathGraphAdj::build_optimal_read(vector<Node> nodes)
      * If ed=0 the path already written belong to the first kmer
      */
     for (j=0;j < Parameters::get().kmerSize;++j) {
-        std::cout << nodes[i].kmer.at(j)<<" j: "<<j<<"\n";
         optimal_read.append_nuc_right(nodes[i].kmer.at(j));
     }
 

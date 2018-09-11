@@ -22,6 +22,19 @@ private:
 	};
 
 public:
+    static char nfi(size_t nuc)
+    {
+        if (!nuc)
+            return 'A';
+        if (nuc == 1)
+            return 'C';
+        if (nuc == 2)
+            return 'G';
+        if (nuc == 3)
+            return 'T';
+        return 'N';
+    }
+
 	DnaSequence():
 		_complement(false)
 	{

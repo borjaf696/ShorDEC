@@ -12,6 +12,78 @@ void insert_queue(std::queue<Kmer>& t, std::queue<size_t> &p_t, Kmer kmer, size_
 }
 
 /*
+ * Backtrack from the first solid k-mer until the beginning of the read.
+ */
+
+size_t Path::extend_head(const DnaSequence &sub_sequence
+        ,KmerInfo t
+        ,const DBG &dbg
+        ,size_t * score_ed
+        ,char * expected_path
+        ,size_t &branches
+        ,bool behaviour)
+{
+    size_t best_len = MAX_PATH_LEN, head_number = 0;
+    char path[MAX_PATH_LEN+1];
+    std::stack<stack_el*> neighbors;
+
+    //For each possible head we are going to look for a path
+    for (auto head: dbg.get(behaviour))
+    {
+        std::vector<DnaSequence::NuclType> nts
+                = dbg.getNeighbors(head);
+        for (uint i = 0; i < nts.size(); ++i)
+        {
+            Kmer kmer_aux = head;
+            kmer_aux.appendRight(nts[i]);
+            neighbors.push(new stack_el(kmer_aux,1,nts[i]));
+        }
+
+        size_t fail_len = t.kmer_pos;
+        while (neighbors.size() > 0 && branches > 0)
+        {
+            stack_el * el_kmer = neighbors.top();
+            neighbors.pop();
+            Kmer cur_kmer = el_kmer->kmer;
+            size_t pos = el_kmer->pos;
+            DnaSequence::NuclType nuc = DnaSequence::nfi(el_kmer->nuc);
+
+            //Deallocate the stack_el
+            delete el_kmer;
+
+            if (pos >= MAX_PATH_LEN)
+                return MAX_PATH_LEN;
+
+            path[pos-1] = nuc;
+            _DP[pos*(MAX_PATH_LEN+1)] = pos;
+            size_t min = MAX_PATH_LEN;
+
+            for (uint k = 1; k <= (fail_len); ++k)
+            {
+                size_t ev_pos = pos*(MAX_PATH_LEN+1)+k;
+                (path[pos-1] == sub_sequence.at(k-1))?
+                        _DP[ev_pos] = std::min(
+                                _DP[ev_pos-(MAX_PATH_LEN+1)-1]
+                                ,std::min(_DP[ev_pos-(MAX_PATH_LEN+1)]
+                                        ,_DP[ev_pos-1])+1):
+                        _DP[ev_pos] = std::min(
+                                _DP[ev_pos-(MAX_PATH_LEN+1)-1]+1
+                                ,std::min(_DP[ev_pos-(MAX_PATH_LEN+1)]
+                                        ,_DP[ev_pos-1])+1);
+                if (_DP[ev_pos] < min)
+                    min = _DP[ev_pos];
+            }
+        }
+        //std::cout << "NumOfNeighbors "<<neighbors.size()<< " "<<best_len<< "\n";
+        return best_len;
+
+
+    }
+
+    return best_len;
+}
+
+/*
  * Sub_sequence: part of the read to cover with the DBG
  * h: vector de posibles head-sources
  * t: vector de posibles tails
@@ -27,7 +99,6 @@ size_t Path::extend(const DnaSequence &sub_sequence
         ,char *expected_path
         ,size_t & branches)
 {
-    //Unicamente nos centraremos en el primer Head/Tail -> preguntar manhana
     size_t best_len = MAX_PATH_LEN;
     char path[MAX_PATH_LEN+1];
     std::stack<stack_el*> neighbors;
@@ -41,7 +112,13 @@ size_t Path::extend(const DnaSequence &sub_sequence
         Kmer kmer_aux = h.kmer;
         kmer_aux.appendRight(nts[i]);
         //std::cout << "Vecinos "<<nts[i]<<"\n";
-        neighbors.push(new stack_el(Kmer(kmer_aux.str()),1,nts[i]));
+        //neighbors.push(new stack_el(Kmer(kmer_aux.str()),1,nts[i]));
+        neighbors.push(new stack_el(kmer_aux,1,nts[i]));
+    }
+    if (nts.size() > 1) {
+        for (int i = 0; i < neighbors.size();++i)
+            std::cout << neighbors.top() << "\n";
+        sleep(10000);
     }
     //Expected fail length
     size_t fail_len = t.kmer_pos - h.kmer_pos;
@@ -51,7 +128,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
         neighbors.pop();
         Kmer cur_kmer = el_kmer->kmer;
         size_t pos = el_kmer->pos;
-        DnaSequence::NuclType nuc = el_kmer->nuc;
+        DnaSequence::NuclType nuc = DnaSequence::nfi(el_kmer->nuc);
 
         //Deallocate the stack_el
         delete el_kmer;
@@ -88,9 +165,10 @@ size_t Path::extend(const DnaSequence &sub_sequence
                 size_t edit_distance = _DP[pos * (MAX_PATH_LEN + 1) + fail_len];
                 if (edit_distance < (*score_ed)) {
                     (*score_ed) = edit_distance;
+                    path[pos] = '\0';
                     std::memcpy(expected_path, path, pos);
                     best_len = pos;
-                    std::cout << "Path discovered\n";
+                    //std::cout << "Path discovered "<<pos << "\n";
                 }
             } else {
                 //We havent reached our objective we extend the path again
@@ -114,6 +192,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
 //TODO: Posiciones salvarlas y empezar la correccion
 size_t PathContainer::check_read()
 {
+
     for (auto cur_kmer: IterKmers(_seq)){
         //Optimizar esto
         /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
@@ -157,7 +236,8 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
     num_trials++;
     return 0;
 }
-//TODO: Glue Head/Tails -> Right away
+
+//TODO: Correct head/tail
 DnaSequence PathContainer::correct_read() {
     //For correction:
     PathGraphAdj path_graph = PathGraphAdj();
@@ -217,6 +297,7 @@ DnaSequence PathContainer::correct_read() {
                     //Add minimum edit path to optimal paths.
                     if (len < MAX_PATH_LEN) {
                         std::string way_string(way);
+                        way_string = way_string.substr(0,len-kmer_size);
                         //std::cout << "Path Found: "<<way<<" "<<way_string<<"\n";
                         path_graph.add_edge(_solid[i], _solid[j], ed_score
                                 ,(!ed_score)?DnaSequence(_solid[i].kmer.str()+way_string)
@@ -276,9 +357,9 @@ DnaSequence PathContainer::correct_read() {
     /*std::cout << "Cabeza/Cola: "<<seq_head.str()<<"-"<<seq_tail.str()<<"\n";
     std::cout << "Optimal Read: "<<path_found.str()<<"\n";*/
     DnaSequence full_path(seq_head.str()+path_found.str()+seq_tail.str());
-    if (_seq.str() != full_path.str())
+    /*if (_seq.str() != full_path.str())
         std::cout <<"\n"<< _seq.str() << "\n"
-                  << full_path.str() << "\n";
+                  << full_path.str() << "\n";*/
     return full_path;
 }
 

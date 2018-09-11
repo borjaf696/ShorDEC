@@ -21,7 +21,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 150;
+                Parameters::get().accumulative_h = 250;
                 break;
             case 't':
                 break;
@@ -69,14 +69,24 @@ int main(int argv, char ** argc){
     if (it != s.end())
         std::cout<< "Correcto" << "\n";
     for (auto k: s)
-        std::cout << k.str() << "\n";*/
+        std::cout << k.str() << "\n";
+    Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,10);
+    std::vector<Kmer> k_vect;
+    for (uint i = 0; i < 4 ; ++i)
+    {
+        Kmer kmer_aux = kmer;
+        kmer_aux.appendRight(i);
+        k_vect.push_back(kmer_aux);
+    }
+    for (uint i = 0; i < 4; ++i)
+        std::cout << k_vect[i].str() << "\n";*/
+
     size_t kmer_sizes[] = {1,2,3};
     /*
      * Iteratively we are going to correct the reads
      */
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
-        std::cout << "Read1: "<<sc.getSeq(1).str()<<"\n";
         NaiveDBG naiveDBG(sc);
         //naiveDBG.show_info();
         ReadCorrector read(sc, naiveDBG);
