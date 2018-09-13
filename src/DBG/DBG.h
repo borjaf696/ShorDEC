@@ -99,8 +99,6 @@ private:
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
             }
         }
-        for (auto i : _kmers_map)
-            std::cout << i.first.str()<<" "<<i.second.first << "\n";
         _kmers_map.clear();
         Progress::update(_sc.getIndex().size());
     }

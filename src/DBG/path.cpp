@@ -389,8 +389,7 @@ DnaSequence PathContainer::correct_read() {
                         size_t start = _solid[i].kmer_pos+Parameters::get().kmerSize;
                         path_graph.add_edge(_solid[i], _solid[j],
                                             _solid[j].kmer_pos - start,
-                                            _seq.substr(start
-                                                    , _solid[j].kmer_pos - start));
+                                            _seq.substr(start,_solid[j].kmer_pos - start));
                     }
                 } else {
                     if (outcome == 1)

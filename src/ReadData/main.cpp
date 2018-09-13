@@ -21,7 +21,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 200;
+                Parameters::get().accumulative_h = 100;
                 break;
             case 't':
                 break;
@@ -81,7 +81,7 @@ int main(int argv, char ** argc){
     for (uint i = 0; i < 4; ++i)
         std::cout << k_vect[i].str() << "\n";*/
 
-    size_t kmer_sizes[] = {1};
+    size_t kmer_sizes[] = {1,2,4};
     /*
      * Iteratively we are going to correct the reads
      */
@@ -89,6 +89,6 @@ int main(int argv, char ** argc){
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
         NaiveDBG naiveDBG(sc);
         //naiveDBG.show_info();
-        //ReadCorrector read(sc, naiveDBG);
+        ReadCorrector read(sc, naiveDBG);
     }
 }
