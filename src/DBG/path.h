@@ -10,6 +10,7 @@
 
 //Constants for the path extension
 #define MAX_PATH_LEN 300
+#define EXTRA_LEN 1.15
 #define MAX_BRANCH 5
 #define ERROR_RATE 0.5
 #define NUM_PREV_POST_KMER 5
@@ -53,9 +54,11 @@ public:
             ,KmerInfo
             ,const DBG&
             ,size_t*
+            ,size_t*
             ,char*
             ,size_t&
-            ,bool);
+            ,bool
+            ,KmerInfo&);
 private:
     std::vector<size_t> _DP;
 };

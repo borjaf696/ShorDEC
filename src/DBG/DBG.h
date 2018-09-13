@@ -12,7 +12,7 @@
 using namespace std;
 class DBG;
 
-typedef unordered_set<Kmer> Heads;
+typedef unordered_set<KmerInfo> Heads;
 class DBG
 {
 public:
@@ -44,7 +44,6 @@ public:
         _kmerCount();
         _cleaning();
     }
-
     bool is_solid(Kmer) const;
     vector<DnaSequence::NuclType> getNeighbors
             (const Kmer &) const;
@@ -72,7 +71,8 @@ private:
      */
     void _kmerCount()
     {
-        Kmer kmer, tail;
+        Kmer kmer;
+        KmerInfo tail;
         bool first = false;
         for (auto &read:_sc.getIndex()){
             if (first)
@@ -80,24 +80,28 @@ private:
             Progress::update(read.first.getId());
             first = false;
             for (auto kmer_r: IterKmers(read.second.sequence)) {
-                kmer = kmer_r.kmer;//kmer_r.kmer;
-                unordered_map<Kmer, size_t>::const_iterator place =
+                kmer = kmer_r.kmer;
+                unordered_map<Kmer, pair<size_t,size_t>>::const_iterator place =
                         _kmers_map.find(kmer);
                 if (place != _kmers_map.end()) {
-                    _kmers_map[kmer]++;
-                    if (_kmers_map[kmer] == Parameters::get().accumulative_h)
+                    _kmers_map[kmer].first++;
+                    _kmers_map[kmer].second = min(_kmers_map[kmer].second,kmer_r.kmer_pos);
+                    if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
                     {
-                        if (!first) {
+                        if (_kmers_map[kmer].second < Parameters::get().kmerSize / 2) {
                             first = true;
-                            _heads.emplace(kmer);
+                            _heads.emplace(kmer_r);
                         }
-                        tail = kmer;
+                        tail = kmer_r;
                         _dbg_naive.emplace(kmer);
                     }
                 } else
-                    _kmers_map[kmer] = 1;
+                    _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
             }
         }
+        for (auto i : _kmers_map)
+            std::cout << i.first.str()<<" "<<i.second.first << "\n";
+        _kmers_map.clear();
         Progress::update(_sc.getIndex().size());
     }
 
@@ -168,8 +172,9 @@ private:
         cout << _dbg_naive.size() << "\n";
     }
 
-    unordered_map<Kmer, size_t> _kmers_map;
+    unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
     //_dbg_naive graph, set of first solid k-mers
-    unordered_set<Kmer> _dbg_naive, _heads,_tails;
+    unordered_set<Kmer> _dbg_naive;
+    unordered_set<KmerInfo> _heads,_tails;
     const SequenceContainer& _sc;
 };

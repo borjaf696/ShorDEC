@@ -59,7 +59,7 @@ void NaiveDBG::show_info()
 {
     for (auto p_k: _kmers_map)
     {
-        std::cout << p_k.first.str() <<" -> "<< p_k.second<<", Correct? "
+        std::cout << p_k.first.str() <<" -> "<< p_k.second.first<<", Correct? "
                   <<(_dbg_naive.find(p_k.first) == _dbg_naive.end())<<"\n";
     }
 }

@@ -1,5 +1,7 @@
 #include <vector>
 #include <string>
+
+#define infinite 9999999
 struct Parameters
 {
     static Parameters& get(){
