@@ -21,12 +21,15 @@ vector<Kmer> NaiveDBG::getKmerNeighbors
         (const Kmer & kmer) const
 {
     vector<Kmer> nts;
+    //std::cout << "Original Kmer: "<<kmer.str()<<"\n";
     for (DnaSequence::NuclType i=0; i < 4; ++i) {
         Kmer kmer_aux = kmer;
         kmer_aux.appendRight(i);
         if (is_solid(kmer_aux))
             nts.push_back( kmer_aux);
     }
+    /*for (uint i = 0; i < nts.size(); ++i)
+        std::cout <<"Neighbor: " <<nts[i].str() << "\n";*/
     return nts;
 }
 

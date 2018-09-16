@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 10
+#define MIN_PATH_LEN 5
 
 class NaiveDBG: public DBG
 {
@@ -85,6 +85,7 @@ private:
     void _cleaning()
     {
         _remove_isolated_nodes();
+        std::cout << "Sizes: "<< _in_0.size() << "-"<<_in_1.size() << "-"<<_out_0.size() << "\n";
     }
 
     void _getTigs()
@@ -108,48 +109,76 @@ private:
             len += 0;
     };
 
-    void _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
+    bool _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
     {
         if (len < MIN_PATH_LEN)
             for (auto k:aux)
                 erase.push_back(k);
+        return len < MIN_PATH_LEN;
+    }
+
+    void _erase(vector<Kmer>& kmer_to_erase)
+    {
+        for (auto kmer_erase:kmer_to_erase)
+            _dbg_naive.erase(kmer_erase);
+        kmer_to_erase.clear();
     }
 
     void _remove_isolated_nodes()
     {
+        bool in_erase = false, already_in = false;
         vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
-            size_t len = 0;
-            if (!in_degree(kmer)) {
+            size_t len = 0, in_nodes = in_degree(kmer);
+            if (!in_nodes) {
                 /*
                  * Check isolated nodes
                  */
                 vector<Kmer> aux;
                 aux.push_back(kmer);
                 _check_path(len,aux);
-                _asses(erase,aux,len);
+                in_erase = _asses(erase,aux,len);
+            }
+            /*
+             * Path origin: in_degree == 0 and path > min_path
+             */
+            if (!in_erase && !in_nodes) {
+                already_in = true;
+                _in_0.push_back(kmer);
+            }
+            if (in_nodes > 1){
+                already_in = true;
+                _in_1.push_back(kmer);
             }
             //Implementar algo tipo cache para evitar pasar varias veces por un kmer
             vector<Kmer> neighbors = getKmerNeighbors(kmer);
+            size_t cont_fake_branches = 0;
             if ( neighbors.size() > 1)
             {
+                std::cout << "Neighbors \n";
                 /*
                  * Check branches
                  */
                 for (auto sibling:neighbors)
                 {
-                    len = 0;
+                    len = 1;
                     vector<Kmer> aux;
                     aux.push_back(sibling);
                     _check_path(len,aux);
-                    _asses(erase,aux,len);
+                    if (_asses(erase,aux,len))
+                        cont_fake_branches++;
                 }
             }
+            if (cont_fake_branches == neighbors.size())
+                erase.push_back(kmer);
+            else if ((neighbors.size() - cont_fake_branches > 1) && !already_in)
+                /*
+                 * Path origin: out_degree > 0 and not inserted yet
+                 */
+                _out_0.push_back(kmer);
         }
-
-        for (auto kmer:erase)
-            _dbg_naive.erase(kmer);
-        cout << _dbg_naive.size() << "\n";
+        _erase(erase);
+        cout << "KmerSolids: "<<_dbg_naive.size() << "\n";
     }
 
     unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
@@ -158,6 +187,9 @@ private:
     unordered_set<Kmer> _dbg_naive;
     unordered_set<Kmer> _extenders;
     unordered_set<KmerInfo> _heads,_tails;
+
+    //Extension points
+    vector<Kmer> _in_0, _out_0, _in_1;
 
     //Extend
     const SequenceContainer& _sc;
