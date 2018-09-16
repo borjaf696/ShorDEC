@@ -32,4 +32,5 @@ test: ${obj} ${dbg_obj} ${extender_obj}
 clean:
 	-rm ${obj}
 	-rm ${dbg_obj}
+	-rm ${extender_obj}
 	-rm ${BIN}

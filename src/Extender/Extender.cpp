@@ -1,11 +1,20 @@
 #include "Extender.h"
 
-void UnitigExtender::Extend(Kmer kmer, vector <Kmer> &unitig, bool first)
+void Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig)
 {
-    vector<Kmer> neighbors = _dbg.getKmerNeighbors(kmer);
-    if ((_dbg.in_degree(kmer) == 1 || first) && neighbors.size()==1) {
+    vector<Kmer> neighbors = dbg.getKmerNeighbors(kmer);
+    if (dbg.in_degree(kmer) == 1 && neighbors.size() == 1) {
         unitig.push_back(kmer);
-        Extend(neighbors[0],unitig, false);
-    }else
-        unitig.push_back(kmer);
+        Extension(neighbors[0],dbg,unitig);
+    }
+}
+
+vector<Kmer> UnitigExtender::Extend(Kmer kmer, DBG &dbg)
+{
+    vector<Kmer> unitig;
+    unitig.push_back(kmer);
+    vector<Kmer> neighbors = dbg.getKmerNeighbors(kmer);
+    if (neighbors.size()==1)
+        Extension(neighbors[0], dbg, unitig);
+    return unitig;
 }

@@ -2,48 +2,11 @@
 #include <unordered_set>
 #include <vector>
 #include <stack>
-#include <unistd.h>
-#include "../ReadData/kmer.h"
-#include "../Utils/utils.h"
+#include "../Extender/Extender.h"
 
 
 //Constants
 #define MIN_PATH_LEN 10
-
-using namespace std;
-class DBG;
-
-typedef unordered_set<KmerInfo> Heads;
-struct Node_ext
-{
-    Kmer kmer;
-    size_t _in = 0, _out = 0;
-};
-
-class DBG
-{
-public:
-    DBG(){}
-    virtual bool is_solid(Kmer kmer) const = 0;
-    virtual size_t length() const = 0;
-    virtual vector<DnaSequence::NuclType> getNeighbors
-            (const Kmer &) const = 0;
-    virtual vector<Kmer> getKmerNeighbors
-            (const Kmer &) const = 0;
-    virtual size_t in_degree(Kmer) = 0;
-    virtual size_t out_degree(Kmer) = 0;
-    virtual Heads  get(bool) const = 0;
-    virtual void ProcessTigs() = 0;
-    //Show methods
-    virtual void show_info() = 0;
-private:
-    virtual void _kmerCount() = 0;
-    virtual void _cleaning() = 0;
-    virtual void _getTigs() = 0;
-
-    //All DBG can handle uni/omnitigs
-    vector<DnaSequence> _tigs;
-};
 
 class NaiveDBG: public DBG
 {
@@ -196,5 +159,6 @@ private:
     unordered_set<Kmer> _extenders;
     unordered_set<KmerInfo> _heads,_tails;
 
+    //Extend
     const SequenceContainer& _sc;
 };
