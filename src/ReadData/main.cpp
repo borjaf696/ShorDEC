@@ -8,10 +8,10 @@ auto print_use = [](char ** argc)
                 "-f [path_to_file][path_to_dir] -k [kmer_size] -t [num_threads]\n"
         ,argc[0]);};
 
-bool parse_args(int argv, char **argc, std::string& path_to_file)
+bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write)
 {
     int opt = 0;
-    char optString[] = "f:k:t";
+    char optString[] = "f:k:o:t";
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
         {
@@ -22,6 +22,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
                 Parameters::get().accumulative_h = 100;
+                break;
+            case 'o':
+                path_to_write = optarg;
                 break;
             case 't':
                 break;
@@ -37,8 +40,8 @@ bool parse_args(int argv, char **argc, std::string& path_to_file)
 
 int main(int argv, char ** argc){
 
-	std::string path_to_file(argc[1]);
-    if (!parse_args(argv,argc,path_to_file))
+	std::string path_to_file(argc[1]),path_to_write;
+    if (!parse_args(argv,argc,path_to_file,path_to_write))
         exit(0);
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
@@ -81,14 +84,20 @@ int main(int argv, char ** argc){
     for (uint i = 0; i < 4; ++i)
         std::cout << k_vect[i].str() << "\n";*/
 
-    size_t kmer_sizes[] = {1,2,4};
+    size_t kmer_sizes[] = {1,2,2};
     /*
      * Iteratively we are going to correct the reads
      */
+    std::cout << "Size sequence container: "<<sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
+        std::cout << "Building DBG, Kmer Size: "<<Parameters::get().kmerSize << "\n";
         NaiveDBG naiveDBG(sc);
         //naiveDBG.show_info();
         ReadCorrector read(sc, naiveDBG);
     }
+    std::cout <<"Size sequence container: " <<sc.getIndex().size() << "\n";
+    std::cout << "Writing new reads in: "<<path_to_write << "\n";
+    sc.writeSequenceContainer(path_to_write);
+    std::cout << "Creating unitigs\n";
 }

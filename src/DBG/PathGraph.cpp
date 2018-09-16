@@ -105,7 +105,7 @@ DnaSequence PathGraphAdj::shortest_path(const Node &source, const Node &target){
             }
         }
     }
-    std::cout << "A por el optimo\n";
+    std::cout << "Oups\n";
     return build_optimal_read(optimal_path);
 }
 

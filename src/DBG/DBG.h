@@ -6,6 +6,7 @@
 #include "../ReadData/kmer.h"
 #include "../Utils/utils.h"
 
+
 //Constants
 #define MIN_PATH_LEN 10
 
@@ -13,6 +14,12 @@ using namespace std;
 class DBG;
 
 typedef unordered_set<KmerInfo> Heads;
+struct Node_ext
+{
+    Kmer kmer;
+    size_t _in = 0, _out = 0;
+};
+
 class DBG
 {
 public:
@@ -26,12 +33,16 @@ public:
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
     virtual Heads  get(bool) const = 0;
-
+    virtual void ProcessTigs() = 0;
     //Show methods
     virtual void show_info() = 0;
 private:
     virtual void _kmerCount() = 0;
     virtual void _cleaning() = 0;
+    virtual void _getTigs() = 0;
+
+    //All DBG can handle uni/omnitigs
+    vector<DnaSequence> _tigs;
 };
 
 class NaiveDBG: public DBG
@@ -59,6 +70,11 @@ public:
     Heads get(bool behaviour) const
     {
         return (behaviour)?_heads:_tails;
+    }
+
+    void ProcessTigs()
+    {
+        _getTigs();
     }
 
     void show_info();
@@ -107,6 +123,9 @@ private:
     {
         _remove_isolated_nodes();
     }
+
+    void _getTigs()
+    {}
 
     void _check_path(size_t& len, vector<Kmer>& k_vec) const
     {
@@ -171,8 +190,11 @@ private:
     }
 
     unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
+
     //_dbg_naive graph, set of first solid k-mers
     unordered_set<Kmer> _dbg_naive;
+    unordered_set<Kmer> _extenders;
     unordered_set<KmerInfo> _heads,_tails;
+
     const SequenceContainer& _sc;
 };

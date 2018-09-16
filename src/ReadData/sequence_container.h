@@ -175,6 +175,8 @@ public:
 	}
 	int computeNxStat(float fraction) const;
 
+	void writeSequenceContainer(const std::string&) const;
+
 private:
 	size_t readFasta(std::vector<FastaRecord>& record, 
 				     const std::string& fileName);
