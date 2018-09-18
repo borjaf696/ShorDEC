@@ -313,7 +313,7 @@ void SequenceContainer::validateHeader(std::string& header)
 
 void SequenceContainer::validateSequence(std::string& sequence)
 {
-	const std::string VALID_CHARS = "ACGT";
+	const std::string VALID_CHARS = "ACGTN";
 	for (size_t i = 0; i < sequence.length(); ++i)
 	{
 		if (VALID_CHARS.find(toupper(sequence[i])) == std::string::npos) 

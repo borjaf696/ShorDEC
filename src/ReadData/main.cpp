@@ -21,7 +21,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 100;
+                Parameters::get().accumulative_h = 225;
                 break;
             case 'o':
                 path_to_write = optarg;

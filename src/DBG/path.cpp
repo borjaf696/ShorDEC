@@ -191,6 +191,7 @@ size_t Path::extend(const DnaSequence &sub_sequence
         for (uint k = 1; k <= (fail_len); ++k)
         {
             size_t ev_pos = pos*(MAX_PATH_LEN+1)+k;
+            DnaSequence::NuclType nt = (sub_sequence.at(k-1)=='N')?path[pos-1]:sub_sequence.at(k-1);
             (path[pos-1] == sub_sequence.at(k-1))?
                     _DP[ev_pos] = std::min(
                             _DP[ev_pos-(MAX_PATH_LEN+1)-1]

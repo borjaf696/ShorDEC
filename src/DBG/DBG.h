@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 5
+#define MIN_PATH_LEN 10
 
 class NaiveDBG: public DBG
 {
@@ -85,7 +85,6 @@ private:
     void _cleaning()
     {
         _remove_isolated_nodes();
-        std::cout << "Sizes: "<< _in_0.size() << "-"<<_in_1.size() << "-"<<_out_0.size() << "\n";
     }
 
     void _getTigs()
@@ -126,36 +125,26 @@ private:
 
     void _remove_isolated_nodes()
     {
-        bool in_erase = false, already_in = false;
+        bool change = false;
         vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
+            size_t cont = 0;
             size_t len = 0, in_nodes = in_degree(kmer);
             if (!in_nodes) {
+                cont ++;
                 /*
                  * Check isolated nodes
                  */
                 vector<Kmer> aux;
                 aux.push_back(kmer);
                 _check_path(len,aux);
-                in_erase = _asses(erase,aux,len);
-            }
-            /*
-             * Path origin: in_degree == 0 and path > min_path
-             */
-            if (!in_erase && !in_nodes) {
-                already_in = true;
-                _in_0.push_back(kmer);
-            }
-            if (in_nodes > 1){
-                already_in = true;
-                _in_1.push_back(kmer);
+                _asses(erase,aux,len);
             }
             //Implementar algo tipo cache para evitar pasar varias veces por un kmer
             vector<Kmer> neighbors = getKmerNeighbors(kmer);
             size_t cont_fake_branches = 0;
             if ( neighbors.size() > 1)
             {
-                std::cout << "Neighbors \n";
                 /*
                  * Check branches
                  */
@@ -169,15 +158,15 @@ private:
                         cont_fake_branches++;
                 }
             }
-            if (cont_fake_branches == neighbors.size())
-                erase.push_back(kmer);
-            else if ((neighbors.size() - cont_fake_branches > 1) && !already_in)
-                /*
-                 * Path origin: out_degree > 0 and not inserted yet
-                 */
-                _out_0.push_back(kmer);
         }
+        if (erase.size() > 0)
+            change = true;
         _erase(erase);
+        /*
+         * We have to iterate until convergence
+         */
+        if (change)
+            _remove_isolated_nodes();
         cout << "KmerSolids: "<<_dbg_naive.size() << "\n";
     }
 

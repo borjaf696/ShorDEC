@@ -1,5 +1,6 @@
 #include <cassert>
 #include <string>
+#include <unistd.h>
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -10,8 +11,10 @@ public:
 	typedef size_t NuclType;
 
 private:
-	static const int NUCL_BITS = 2;
+	static const int NUCL_BITS = 3;
+    static const int operator_and = 7;
 	static const int NUCL_IN_CHUNK = sizeof(NuclType) * 8 / NUCL_BITS;
+    static const int offset = NUCL_BITS;
 
 	struct SharedBuffer
 	{
@@ -47,7 +50,7 @@ public:
 		if (_data != nullptr)
 		{
 			--_data->useCount;
-			if (_data->useCount == 0) 
+			if (_data->useCount == 0)
 				delete _data;
 		}
 	}
@@ -62,11 +65,10 @@ public:
 
 		_data->length = string.length();
 		_data->chunks.assign((_data->length - 1) / NUCL_IN_CHUNK + 1, 0);
-		for (size_t i = 0; i < string.length(); ++i)
-		{
-			size_t chunkId = i / NUCL_IN_CHUNK;
-			_data->chunks[chunkId] |= dnaToId(string[i]) << (i % NUCL_IN_CHUNK) * 2;
-		}
+		for (size_t i = 0; i < string.length(); ++i) {
+            size_t chunkId = i / NUCL_IN_CHUNK;
+            _data->chunks[chunkId] |= dnaToId(string[i]) << (i % NUCL_IN_CHUNK) * offset;
+        }
 	}
 
 	//Only accepts 1 nuc insertion -> Recordar que estan al reves en _data
@@ -81,16 +83,16 @@ public:
 			_data->chunks.push_back(dnaSymbol);
 		else
 			_data->chunks[_data->chunks.size()-1] |= (dnaSymbol
-				<< (_data->length % NUCL_IN_CHUNK) *2);
+				<< (_data->length % NUCL_IN_CHUNK) *offset);
 		_data->length++;
 	}
 
 	void append_with_replace_right(DnaSequence::NuclType symbol) const {
 		for (int i = 0; i < std::max(0,(int)_data->chunks.size()-1); ++i)
-			_data->chunks[i] = (_data->chunks[i] >> 2) |
-					(_data->chunks[i+1] << (NUCL_IN_CHUNK-1)*2);
-		_data->chunks[_data->chunks.size()-1] = (_data->chunks[_data->chunks.size()-1]>> 2) |
-				(symbol << ((_data->length-1) % NUCL_IN_CHUNK)*2);
+			_data->chunks[i] = (_data->chunks[i] >> offset) |
+					(_data->chunks[i+1] << (NUCL_IN_CHUNK-1)*offset);
+		_data->chunks[_data->chunks.size()-1] = (_data->chunks[_data->chunks.size()-1]>> offset) |
+				(symbol << ((_data->length-1) % NUCL_IN_CHUNK)*offset);
 	}
 
 	//Only accepts 1 nuc insertion
@@ -98,24 +100,24 @@ public:
 		_data->length++;
 		if ((_data->length/NUCL_IN_CHUNK) == _data->chunks.size())_data->chunks.push_back(0);
 		for (uint i = _data->chunks.size()-1; i > 0; --i) {
-			_data->chunks[i] = (_data->chunks[i] << 2) | (
-					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*2));
+			_data->chunks[i] = (_data->chunks[i] << offset) | (
+					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset));
 		}
-		_data->chunks[0] = (_data->chunks[0] << 2) | (dnaSymbol >> (NUCL_IN_CHUNK-1)*2);
+		_data->chunks[0] = (_data->chunks[0] << offset) | (dnaSymbol >> (NUCL_IN_CHUNK-1)*offset);
 	}
 
 	void append_with_replace_left(DnaSequence::NuclType symbol) const{
 		for (int i = _data->chunks.size()-1; i > 0; --i)
-			_data->chunks[i] = (_data->chunks[i]<<2) |
-					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*2);
-		_data->chunks[0] = (_data->chunks[0] << 2) | symbol;
+			_data->chunks[i] = (_data->chunks[i]<<offset) |
+					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset);
+		_data->chunks[0] = (_data->chunks[0] << offset) | symbol;
 	}
 
 	void set(DnaSequence::NuclType dnaSymbol, size_t index) const
 	{
-		size_t aux_v = ~(3 << (index % NUCL_IN_CHUNK)*2);
+		size_t aux_v = ~(operator_and << (index % NUCL_IN_CHUNK)*offset);
 		_data->chunks[index / NUCL_IN_CHUNK] &= aux_v;
-		_data->chunks[index / NUCL_IN_CHUNK] |=dnaSymbol << ((index % NUCL_IN_CHUNK)*2);
+		_data->chunks[index / NUCL_IN_CHUNK] |=dnaSymbol << ((index % NUCL_IN_CHUNK)*offset);
 	}
 
 	DnaSequence(const DnaSequence& other):
@@ -168,8 +170,10 @@ public:
 	NuclType operator[](int index){
 		if (_complement)
 			index = _data->length-index+1;
-		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >> (index % NUCL_IN_CHUNK)*2)&3;
-		return !_complement?id : ~id&3;
+		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >> (index % NUCL_IN_CHUNK)*offset)&operator_and;
+        if (id > 3)
+            return 4;
+		return !_complement?id : ~id & 3;
 	}
 
 	//TODO: Revisar las constantes esas
@@ -200,28 +204,32 @@ public:
 
 	size_t length() const {return _data->length;}
 
-	char at(size_t index) const 
+	char at(size_t index) const
 	{
 		if (_complement)
 		{
 			index = _data->length - index - 1;
 		}
-		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >> 
-					 (index % NUCL_IN_CHUNK) * 2 ) & 3;
+		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >>
+					 (index % NUCL_IN_CHUNK) * offset ) & operator_and;
+        if (id > 3)
+            return 'N';
 		return idToDna(!_complement ? id : ~id & 3);
 	}
 
-	NuclType atRaw(size_t index) const 
+	NuclType atRaw(size_t index) const
 	{
 		if (_complement)
 		{
 			index = _data->length - index - 1;
 		}
-		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >> 
-					 (index % NUCL_IN_CHUNK) * 2 ) & 3;
+		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >>
+					 (index % NUCL_IN_CHUNK) * offset ) & operator_and;
+        if (id > 3)
+            return 4;
 		return !_complement ? id : ~id & 3;
 	}
-	
+
 	DnaSequence complement() const
 	{
 		DnaSequence complSequence(*this);
@@ -263,6 +271,8 @@ private:
 				_dnaTable[(size_t)'g'] = 2;
 				_dnaTable[(size_t)'T'] = 3;
 				_dnaTable[(size_t)'t'] = 3;
+                _dnaTable[(size_t)'N'] = 4;
+                _dnaTable[(size_t)'n'] = 4;
 			}
 		}
 	};
@@ -300,7 +310,7 @@ inline DnaSequence DnaSequence::substr(size_t start, size_t length) const
 	{
 		size_t nucId = this->atRaw(start + i);
 		size_t newChunkId = i / NUCL_IN_CHUNK;
-		newSequence._data->chunks[newChunkId] |= nucId << (i % NUCL_IN_CHUNK) * 2;
+		newSequence._data->chunks[newChunkId] |= nucId << (i % NUCL_IN_CHUNK) * offset;
 	}
 
 	return newSequence;
