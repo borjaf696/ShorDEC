@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 10
+#define MIN_PATH_LEN 1
 
 class NaiveDBG: public DBG
 {
@@ -76,6 +76,9 @@ private:
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
+                if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
+                    _dbg_naive.emplace(kmer);
+
             }
         }
         _kmers_map.clear();
@@ -125,11 +128,12 @@ private:
 
     void _remove_isolated_nodes()
     {
+        cout << "Iterative correction \n";
         bool change = false;
         vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
             size_t cont = 0;
-            size_t len = 0, in_nodes = in_degree(kmer);
+            size_t len = 1, in_nodes = in_degree(kmer);
             if (!in_nodes) {
                 cont ++;
                 /*
