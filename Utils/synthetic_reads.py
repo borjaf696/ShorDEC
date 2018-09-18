@@ -72,6 +72,13 @@ if __name__ == "__main__":
 			if ">" not in line:
 				reads.append(line)
 	reads = new_reads(reads)
+	parse = output_file.split('/')
+	parse[-1] = "haplotypes_"+parse[-1]
+	parse = "/".join(parse)
+        with open(parse,'w+') as f:
+		for i, read in enumerate(reads):
+			f.write("Haplotype number: "+str(i)+"\n")
+			f.write(read+"\n")
 	reads =	add_errors(reads)
 	with open(output_file,'w+') as f:
 		for i,read in enumerate(reads):
