@@ -29,13 +29,13 @@ public:
     virtual size_t in_degree(Kmer) = 0;
     virtual size_t out_degree(Kmer) = 0;
     virtual Heads  get(bool) const = 0;
-    virtual void ProcessTigs() = 0;
+    virtual void ProcessTigs(string) = 0;
     //Show methods
     virtual void show_info() = 0;
 private:
     virtual void _kmerCount() = 0;
     virtual void _cleaning() = 0;
-    virtual void _getTigs() = 0;
+    virtual void _getTigs(string) = 0;
 
     //All DBG can handle uni/omnitigs
     vector<DnaSequence> _tigs;

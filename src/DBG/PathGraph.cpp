@@ -5,7 +5,6 @@ using namespace std;
 
 void PathGraphAdj::add_edge(const Node &source,const Node &target, size_t edit, DnaSequence path)
 {
-    size_t kmer_size = Parameters::get().kmerSize;
     unordered_map<Node,AdjList>::const_iterator it = _adj_list.find(source);
     if (it == _adj_list.end()) {
         _adj_list[source] = AdjList({target}, {Edge(path,edit)});

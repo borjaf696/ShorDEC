@@ -35,12 +35,31 @@ public:
         return (behaviour)?_heads:_tails;
     }
 
-    void ProcessTigs()
+    void ProcessTigs(string path_to_write)
     {
-        _getTigs();
+        std::cout << "Lets start\n";
+        _getTigs(path_to_write);
+        std::cout << "End Unitigs\n";
     }
 
     void show_info();
+
+    //Operators
+    /*
+     * Check if this is working properly
+     */
+    NaiveDBG& operator=(const NaiveDBG& other)
+    {
+        if (this->length()!= other.length())
+        {
+            this->_sc = other._sc;
+            _dbg_naive = other._dbg_naive;
+            _heads = other._heads;
+            _tails = other._tails;
+            _in_0 = other._in_0;
+        }
+        return *this;
+    }
 
 
 private:
@@ -83,6 +102,8 @@ private:
             }
         }
         _kmers_map.clear();
+        /*for (auto &k: _dbg_naive)
+            cout << "Kmer: "<<k.str()<<"\n";*/
         Progress::update(_sc.getIndex().size());
     }
 
@@ -91,8 +112,63 @@ private:
         _remove_isolated_nodes();
     }
 
-    void _getTigs()
-    {}
+    void _getTigs(string path_to_unitigs)
+    {
+        unordered_set<Kmer> kmers_added;
+        /*
+         * Lists of kmers which have more than one out degree and in degree
+         */
+        vector<Kmer> out, in;
+        vector<vector<Kmer>> unitigs;
+        /*
+         * Paths started because 0 in_degree
+         */
+        for (auto &k: _in_0)
+            kmers_added.emplace(k);
+        for (auto &k:_in_0)
+        {
+            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
+            for (auto &vect:inter_unitigs)
+                unitigs.push_back(vect);
+        }
+        /*
+         * Paths started because > 1 out_degree
+         */
+        cout << "OUT\n";
+        for (auto &k:out)
+        {
+            cout << "Kmer: "<<k.str()<<"\n";
+            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
+            for (auto &vect:inter_unitigs)
+                unitigs.push_back(vect);
+        }
+        /*
+         * Paths started because > 1 in_degree
+         */
+        cout << "In\n";
+        for (auto &k:in)
+        {
+            cout << "Kmer: "<<k.str()<<"\n";
+            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
+            for (auto &vect:inter_unitigs)
+                unitigs.push_back(vect);
+        }
+        vector<DnaSequence> sequence_for_unitig = _get_sequences(unitigs);
+        //_write_unitigs(unitigs, path_to_unitigs);
+
+    }
+
+    vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
+    {
+        cout << "Unitigs\n";
+        vector<DnaSequence> dna_vect;
+        /*for (auto &vect: unitigs){
+            cout << "New Unitig: \n";
+            for (auto &k: vect)
+                cout << k.str() << "\n";
+            }*/
+        return dna_vect;
+    }
 
     void _check_path(size_t& len, vector<Kmer>& k_vec) const
     {
@@ -129,8 +205,7 @@ private:
 
     void _remove_isolated_nodes()
     {
-        cout << "Iterative correction \n";
-        bool change = false;
+        bool change = false, in_0_erase = true;
         vector<Kmer> erase;
         for (auto kmer:_dbg_naive) {
             size_t cont = 0;
@@ -143,8 +218,12 @@ private:
                 vector<Kmer> aux;
                 aux.push_back(kmer);
                 _check_path(len,aux);
-                _asses(erase,aux,len);
+                in_0_erase = _asses(erase,aux,len);
+                cout << "Len: "<<len<<"\n";
             }
+            if (!in_0_erase)
+                _in_0.push_back(kmer);
+            in_0_erase = true;
             //Implementar algo tipo cache para evitar pasar varias veces por un kmer
             vector<Kmer> neighbors = getKmerNeighbors(kmer);
             size_t cont_fake_branches = 0;
@@ -172,19 +251,36 @@ private:
          */
         if (change)
             _remove_isolated_nodes();
-        cout << "KmerSolids: "<<_dbg_naive.size() << "\n";
+        cout << "KmerSolids: "<<_dbg_naive.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
+    }
+
+    /*
+     * I/O
+     */
+    void _write_unitigs(vector<DnaSequence> dnaSequences, string filename)
+    {
+        FILE* fout = fopen(filename.c_str(), "w");
+        if (!fout)
+            throw std::runtime_error("Can't open " + filename);
+        //size_t num_unitig = 0;
+        for (auto& seq : dnaSequences)
+        {
+            std::string seq_ =seq.str();
+            std::string header = ">NumUnitig\n";
+            fwrite(header.data(), sizeof(header.data()[0]),
+                   header.size(), fout);
+            fwrite(seq_.data(), sizeof(seq_.data()[0]),
+                   seq_.size(), fout);
+        }
     }
 
     unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
-
     //_dbg_naive graph, set of first solid k-mers
     unordered_set<Kmer> _dbg_naive;
-    unordered_set<Kmer> _extenders;
     unordered_set<KmerInfo> _heads,_tails;
-
     //Extension points
     vector<Kmer> _in_0, _out_0, _in_1;
 
     //Extend
-    const SequenceContainer& _sc;
+    SequenceContainer& _sc;
 };

@@ -82,7 +82,7 @@ struct FastaRecord
 		*this = std::move(other);
 	}
 
-	FastaRecord& operator=(const FastaRecord& other)
+    FastaRecord& operator=(const FastaRecord& other)
 	{
 		id = other.id;
 		sequence = other.sequence;
@@ -176,6 +176,14 @@ public:
 	int computeNxStat(float fraction) const;
 
 	void writeSequenceContainer(const std::string&) const;
+
+    //Operators
+	const SequenceContainer& operator=(const SequenceContainer & sc) 
+	{
+		_seqIndex = sc._seqIndex;
+		g_nextSeqId = sc.g_nextSeqId;
+        return *this;
+	}
 
 private:
 	size_t readFasta(std::vector<FastaRecord>& record, 

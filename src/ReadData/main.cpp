@@ -5,13 +5,13 @@
 #include "../DBG/path.h"
 auto print_use = [](char ** argc)
 {printf("Usage: %s "
-                "-f [path_to_file][path_to_dir] -k [kmer_size] -t [num_threads]\n"
+                "-f [path_to_file][path_to_dir] -k [kmer_size] -t [num_threads]"
         ,argc[0]);};
 
-bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write)
+bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write, std::string& path_unitigs)
 {
     int opt = 0;
-    char optString[] = "f:k:o:t";
+    char optString[] = "f:k:o:u:t";
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
         {
@@ -26,11 +26,15 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             case 'o':
                 path_to_write = optarg;
                 break;
+            case 'u':
+                path_unitigs = optarg;
+                break;
             case 't':
                 break;
         }
     }
-    if (argv < 5) {
+    std::cout << "Number args: "<<argv<<"\n";
+    if (argv < 8) {
         print_use(argc);
         return false;
     }
@@ -40,8 +44,8 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
 
 int main(int argv, char ** argc){
 
-	std::string path_to_file(argc[1]),path_to_write;
-    if (!parse_args(argv,argc,path_to_file,path_to_write))
+	std::string path_to_file(argc[1]),path_to_write, path_unitigs;
+    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs))
         exit(0);
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
@@ -88,16 +92,19 @@ int main(int argv, char ** argc){
     /*
      * Iteratively we are going to correct the reads
      */
+    NaiveDBG naiveDBG(sc);
     std::cout << "Size sequence container: "<<sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
         std::cout << "Building DBG, Kmer Size: "<<Parameters::get().kmerSize << "\n";
-        NaiveDBG naiveDBG(sc);
         //naiveDBG.show_info();
+        if (i > 1)
+            naiveDBG =  NaiveDBG(sc);
         ReadCorrector read(sc, naiveDBG);
     }
     std::cout <<"Size sequence container: " <<sc.getIndex().size() << "\n";
     std::cout << "Writing new reads in: "<<path_to_write << "\n";
     sc.writeSequenceContainer(path_to_write);
-    std::cout << "Creating unitigs\n";
+    std::cout << "Creating unitigs and writing unitigs: "<<path_unitigs << "\n";
+    naiveDBG.ProcessTigs(path_unitigs);
 }
