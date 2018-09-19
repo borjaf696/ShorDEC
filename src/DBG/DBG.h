@@ -76,8 +76,9 @@ private:
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
-                if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
-                    _dbg_naive.emplace(kmer);
+                if (Parameters::get().accumulative_h == 1)
+                    if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
+                        _dbg_naive.emplace(kmer);
 
             }
         }

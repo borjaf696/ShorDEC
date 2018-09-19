@@ -8,12 +8,10 @@ void PathGraphAdj::add_edge(const Node &source,const Node &target, size_t edit, 
     size_t kmer_size = Parameters::get().kmerSize;
     unordered_map<Node,AdjList>::const_iterator it = _adj_list.find(source);
     if (it == _adj_list.end()) {
-        _adj_list[source] = AdjList({target}, {Edge((path.length() < kmer_size)?
-                                                    path :path.substr(kmer_size,path.length()-kmer_size),edit)});
+        _adj_list[source] = AdjList({target}, {Edge(path,edit)});
     }else{
         _adj_list[source].first.push_back(target);
-        _adj_list[source].second.push_back(Edge((path.length() < kmer_size)?path
-                                                :path.substr(kmer_size,path.length()-kmer_size),edit));
+        _adj_list[source].second.push_back(Edge(path,edit));
     }
 }
 
