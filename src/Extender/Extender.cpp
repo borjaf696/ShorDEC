@@ -10,9 +10,9 @@ void Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, vector<Kmer> & out, v
     }else if (added.find(kmer) == added.end())
     {
             added.emplace(kmer);
-            if (neighbors.size() > 1)
+            if (neighbors.size() > 1) {
                 out.push_back(kmer);
-            else
+            }else
                 in.push_back(kmer);
             unitig.push_back(kmer);
     }

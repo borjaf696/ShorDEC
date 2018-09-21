@@ -134,10 +134,8 @@ private:
         /*
          * Paths started because > 1 out_degree
          */
-        cout << "OUT\n";
         for (auto &k:out)
         {
-            cout << "Kmer: "<<k.str()<<"\n";
             vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
             for (auto &vect:inter_unitigs)
                 unitigs.push_back(vect);
@@ -145,28 +143,36 @@ private:
         /*
          * Paths started because > 1 in_degree
          */
-        cout << "In\n";
         for (auto &k:in)
         {
-            cout << "Kmer: "<<k.str()<<"\n";
             vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
             for (auto &vect:inter_unitigs)
                 unitigs.push_back(vect);
         }
         vector<DnaSequence> sequence_for_unitig = _get_sequences(unitigs);
-        //_write_unitigs(unitigs, path_to_unitigs);
+        _write_unitigs(sequence_for_unitig, path_to_unitigs);
 
     }
 
     vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
     {
+        /*
+         * From the vector of unitigs get all the unitigs
+         */
         cout << "Unitigs\n";
         vector<DnaSequence> dna_vect;
-        /*for (auto &vect: unitigs){
+        for (auto &vect: unitigs){
             cout << "New Unitig: \n";
-            for (auto &k: vect)
-                cout << k.str() << "\n";
-            }*/
+            size_t cont = 0;
+            DnaSequence seq_build(vect[0].str());
+            for (auto &k: vect) {
+                if (cont)
+                    seq_build.append_nuc_right(k.at(Parameters::get().kmerSize-1));
+                cont++;
+            }
+            dna_vect.push_back(seq_build);
+            cout << "FinalSequence: "<<seq_build.str() <<"\n";
+        }
         return dna_vect;
     }
 
@@ -219,7 +225,6 @@ private:
                 aux.push_back(kmer);
                 _check_path(len,aux);
                 in_0_erase = _asses(erase,aux,len);
-                cout << "Len: "<<len<<"\n";
             }
             if (!in_0_erase)
                 _in_0.push_back(kmer);
@@ -265,7 +270,7 @@ private:
         //size_t num_unitig = 0;
         for (auto& seq : dnaSequences)
         {
-            std::string seq_ =seq.str();
+            std::string seq_ =seq.str()+"\n";
             std::string header = ">NumUnitig\n";
             fwrite(header.data(), sizeof(header.data()[0]),
                    header.size(), fout);
