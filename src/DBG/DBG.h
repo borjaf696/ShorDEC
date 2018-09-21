@@ -11,6 +11,7 @@
 class NaiveDBG: public DBG
 {
 public:
+
     NaiveDBG(SequenceContainer& sc):_sc(sc)
     {
         Progress::get().size_total = _sc.getIndex().size();
@@ -38,7 +39,7 @@ public:
     void ProcessTigs(string path_to_write)
     {
         std::cout << "Lets start\n";
-        _getTigs(path_to_write);
+        UnitigExtender::full_extension(*this,_in_0);
         std::cout << "End Unitigs\n";
     }
 
@@ -110,48 +111,6 @@ private:
     void _cleaning()
     {
         _remove_isolated_nodes();
-    }
-
-    void _getTigs(string path_to_unitigs)
-    {
-        unordered_set<Kmer> kmers_added;
-        /*
-         * Lists of kmers which have more than one out degree and in degree
-         */
-        vector<Kmer> out, in;
-        vector<vector<Kmer>> unitigs;
-        /*
-         * Paths started because 0 in_degree
-         */
-        for (auto &k: _in_0)
-            kmers_added.emplace(k);
-        for (auto &k:_in_0)
-        {
-            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
-            for (auto &vect:inter_unitigs)
-                unitigs.push_back(vect);
-        }
-        /*
-         * Paths started because > 1 out_degree
-         */
-        for (auto &k:out)
-        {
-            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
-            for (auto &vect:inter_unitigs)
-                unitigs.push_back(vect);
-        }
-        /*
-         * Paths started because > 1 in_degree
-         */
-        for (auto &k:in)
-        {
-            vector<vector<Kmer>> inter_unitigs = UnitigExtender::Extend(k,*this,out,in,kmers_added);
-            for (auto &vect:inter_unitigs)
-                unitigs.push_back(vect);
-        }
-        vector<DnaSequence> sequence_for_unitig = _get_sequences(unitigs);
-        _write_unitigs(sequence_for_unitig, path_to_unitigs);
-
     }
 
     vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
@@ -284,7 +243,7 @@ private:
     unordered_set<Kmer> _dbg_naive;
     unordered_set<KmerInfo> _heads,_tails;
     //Extension points
-    vector<Kmer> _in_0, _out_0, _in_1;
+    vector<Kmer> _in_0;
 
     //Extend
     SequenceContainer& _sc;

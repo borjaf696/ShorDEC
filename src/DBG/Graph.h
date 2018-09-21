@@ -35,7 +35,6 @@ public:
 private:
     virtual void _kmerCount() = 0;
     virtual void _cleaning() = 0;
-    virtual void _getTigs(string) = 0;
 
     //All DBG can handle uni/omnitigs
     vector<DnaSequence> _tigs;
