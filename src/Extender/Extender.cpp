@@ -47,7 +47,7 @@ vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, vector<Kmer> & 
 
 
 
-void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0)
+void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_to_write)
 {
     /*
      * Set of already assesed heads
@@ -93,7 +93,14 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0)
                 unitigs.push_back(p);
         }
     }
+    /*
+     * Construct the DnaSequences
+     */
     _construct_sequences(unitigs);
+    /*
+     * Lets write them
+     */
+    _write_gfa(path_to_write);
 }
 
 void UnitigExtender::_construct_sequences(vector<vector<Kmer>> unitigs)
@@ -109,6 +116,37 @@ void UnitigExtender::_construct_sequences(vector<vector<Kmer>> unitigs)
     /*
      * Lets check the results
      */
-    for (auto seq : _seqs)
-        cout << "Seqs: "<<seq.str() << "\n";
+    /*for (auto seq : _seqs)
+        cout << "Seqs: "<<seq.str() << "\n";*/
+}
+
+void UnitigExtender::_write_gfa(string filename)
+{
+    FILE* fout = fopen(filename.c_str(), "w");
+    if (!fout)
+        throw std::runtime_error("Can't open " + filename);
+    //size_t num_unitig = 0;
+    string header = "H\tVN:Z:1\n";
+    fwrite(header.data(), sizeof(header.data()[0])
+            ,header.size(), fout);
+    int num_seq = 0;
+    /*
+     * Write seqs -> gfa
+     */
+    for (auto& seq : _seqs)
+    {
+        string s_line = "S\t"+to_string(num_seq++)+"\t";
+        s_line+= seq.str()+"\n";
+        fwrite(s_line.data(), sizeof(s_line.data()[0]),
+               s_line.size(), fout);
+    }
+    /*
+     * Write Links
+     */
+    for (auto & link:_links)
+    {
+        string l_line = "L\t"+to_string(link.first)+"\t"+to_string(link.second)+"\t*\n";
+        fwrite(l_line.data(), sizeof(l_line.data()[0])
+                ,l_line.size(), fout);
+    }
 }

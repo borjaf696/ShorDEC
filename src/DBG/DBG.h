@@ -39,7 +39,7 @@ public:
     void ProcessTigs(string path_to_write)
     {
         std::cout << "Lets start\n";
-        UnitigExtender::full_extension(*this,_in_0);
+        UnitigExtender::full_extension(*this,_in_0,path_to_write);
         std::cout << "End Unitigs\n";
     }
 
