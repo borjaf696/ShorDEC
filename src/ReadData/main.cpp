@@ -5,13 +5,14 @@
 #include "../DBG/path.h"
 auto print_use = [](char ** argc)
 {printf("Usage: %s "
-                "-f [path_to_file][path_to_dir] -k [kmer_size] -t [num_threads]"
+                "-f [path_to_file][path_to_dir] -k [kmer_size] -u [path_to_unitigs.gfa] -p [pair_end] -t [num_threads]"
         ,argc[0]);};
 
-bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write, std::string& path_unitigs)
+bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write
+        ,std::string& path_unitigs, bool &pair_end)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:t";
+    char optString[] = "f:k:o:u:t:p";
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
         {
@@ -29,6 +30,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             case 'u':
                 path_unitigs = optarg;
                 break;
+            case 'p':
+                pair_end = true;
+                break;
             case 't':
                 break;
         }
@@ -45,11 +49,13 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
 int main(int argv, char ** argc){
 
 	std::string path_to_file(argc[1]),path_to_write, path_unitigs;
-    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs))
+    bool pair_end = false;
+    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs, pair_end))
         exit(0);
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
-	sc.loadFromFile(path_to_file);
+    sc.load(path_to_file, pair_end);
+	//sc.loadFromFile(path_to_file);
 
     /*sc.getSeq(FastaRecord::Id(0)).set(3,11);
     std::cout << sc.getSeq(FastaRecord::Id(0).getId()).str() << "\n";

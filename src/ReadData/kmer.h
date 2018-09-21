@@ -127,6 +127,7 @@ public:
 	KmerIt& operator++();
 protected:
 	const DnaSequence* _own_seq;
+	bool _paired;
 	size_t _pos;
 	Kmer _kmer;
 };

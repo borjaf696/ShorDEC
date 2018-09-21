@@ -6,11 +6,14 @@
 
 #include <vector>
 #include <unordered_map>
+#include <boost/filesystem.hpp>
 #include <map>
 #include <string>
 #include <limits>
 
 #include "sequence.h"
+
+namespace fs = boost::filesystem;
 
 struct FastaRecord
 {
@@ -149,11 +152,16 @@ public:
 	typedef std::map<FastaRecord::Id, FastaRecord> SequenceIndex;
 	SequenceContainer() {}
 
-	void loadFromFile(const std::string& filename);
+    void load(const std::string& path, bool);
+
+	void loadFromFile(const std::string& filename, bool, size_t = 1 );
 	static void writeFasta(const std::vector<FastaRecord>& records,
 						   const std::string& fileName);
 	const FastaRecord&  addSequence(const DnaSequence& sequence, 
 									const std::string& description);
+
+    const FastaRecord& addPairedSequences(std::pair<DnaSequence,DnaSequence> pair_sequences
+            ,std::pair<std::string,std::string> pair_description);
 
 	void setRead(FastaRecord::Id, DnaSequence);
 
@@ -186,15 +194,15 @@ public:
 	}
 
 private:
-	size_t readFasta(std::vector<FastaRecord>& record, 
-				     const std::string& fileName);
-	size_t readFastq(std::vector<FastaRecord>& record, 
-				     const std::string& fileName);
+	size_t readFasta(std::vector<FastaRecord>& record
+            ,const std::string&,bool,size_t);
+	size_t readFastq(std::vector<FastaRecord>& record
+            ,const std::string&,bool,size_t);
 	bool isFasta(const std::string& fileName);
 	void 	validateSequence(std::string& sequence);
 	void 	validateHeader(std::string& header);
 
 	SequenceIndex _seqIndex;
-	static size_t g_nextSeqId;
+	static size_t g_nextSeqId, g_nextRightSeqId;
 };
 

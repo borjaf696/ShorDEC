@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 1
+#define MIN_PATH_LEN 10
 
 class NaiveDBG: public DBG
 {
@@ -213,8 +213,10 @@ private:
         /*
          * We have to iterate until convergence
          */
-        if (change)
+        if (change) {
+            _in_0.clear();
             _remove_isolated_nodes();
+        }
         cout << "KmerSolids: "<<_dbg_naive.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
     }
 

@@ -1,13 +1,13 @@
 #Primero irian las librerias
 
 #Si quiero extender el Makefile poner el +=
-CXXFLAGS = -Wall -std=c++11 -g
+CXXFLAGS = -Wall -std=c++11 -g 
 
 #Poner luego un bin
 BIN = test
 
 #El resto de la ejecucion
-release: CXXFLAGS += -O3 -DNDEBUG
+release: CXXFLAGS += -O3 -DNDEBUG 
 release: test
 
 #Read, seq, kmer
@@ -26,7 +26,7 @@ DBG/%.o: DBG/%.cpp DBG/*.h Utils/*.h
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 test: ${obj} ${dbg_obj} ${extender_obj}
-	${CXX} ${obj} ${extender_obj} ${dbg_obj}  -o ${BIN} ${LDFLAGS}
+	${CXX} ${obj} ${extender_obj} ${dbg_obj} -o ${BIN} ${LDFLAGS}
 
 #Clean
 clean:

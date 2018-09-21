@@ -13,6 +13,7 @@
 #include "sequence_container.h"
 
 size_t SequenceContainer::g_nextSeqId = 0;
+size_t SequenceContainer::g_nextRightSeqId = 2;
 
 const FastaRecord::Id FastaRecord::ID_NONE = 
 			Id(std::numeric_limits<uint32_t>::max());
@@ -32,7 +33,6 @@ bool SequenceContainer::isFasta(const std::string& fileName)
 		throw ParseException("Can't identify input file type");
 	}
 	std::string suffix = withoutGz.substr(dotPos + 1);
-
 	if (suffix == "fasta" || suffix == "fa")
 	{
 		return true;
@@ -44,20 +44,52 @@ bool SequenceContainer::isFasta(const std::string& fileName)
 	throw ParseException("Can't identify input file type");
 }
 
-void SequenceContainer::loadFromFile(const std::string& fileName)
+void SequenceContainer::load(const std::string &path, bool is_paired)
+{
+    fs::path doc_path(path);
+    if (fs::is_directory(doc_path))
+    {
+        std::cout << "Is directory \n";
+        for (auto &f : fs::directory_iterator(doc_path))
+        {
+            std::ostringstream oss;
+            oss << f;
+            std::string converted_path = oss.str().substr(1,oss.str().size()-2);
+            std::cout << "File: "<< converted_path<<"\n";
+            if (!is_paired)
+			    loadFromFile(converted_path,is_paired);
+            else
+            {
+                std::string side_read = converted_path.substr(converted_path.rfind('.')-1,1);
+                std::cout << "Read: "<<side_read << "\n";
+                if (side_read != "1" && side_read != "2")
+                    throw ParseException("Fail in pair_end reads");
+                else if (side_read == "1")
+                    loadFromFile(converted_path, is_paired);
+                else
+                    loadFromFile(converted_path, is_paired, 0);
+            }
+        }
+    }
+	if (fs::is_regular_file(doc_path))
+    {
+        std::cout << path<<"->Sequence Container\n";
+        loadFromFile(path, false);
+    }
+	if (!fs::exists(doc_path))
+		std::cout << "Path does not exist\n";
+}
+
+void SequenceContainer::loadFromFile(const std::string& fileName, bool is_paired, size_t side_read)
 {
 	std::vector<FastaRecord> records;
 
 	if (this->isFasta(fileName))
-	{
-		this->readFasta(records, fileName);
-	}
+		this->readFasta(records, fileName, is_paired, side_read);
 	else
-	{
-		this->readFastq(records, fileName);
-	}
-
-	records.reserve(records.size() * 2);
+		this->readFastq(records, fileName, is_paired, side_read);
+    if (side_read)
+	    records.reserve(records.size() * (is_paired)?4:2);
 	std::vector<FastaRecord> complements;
 	for (auto &record : records)
 	{
@@ -132,8 +164,40 @@ const FastaRecord&
 	return _seqIndex[newId];
 }
 
-size_t SequenceContainer::readFasta(std::vector<FastaRecord>& record, 
-									const std::string& fileName)
+const FastaRecord&
+SequenceContainer::addPairedSequences(std::pair<DnaSequence, DnaSequence> pair_sequences,
+                                      std::pair<std::string, std::string> pair_description)
+{
+    /*
+     * First_read + reverse_complement
+     */
+    FastaRecord::Id newId = FastaRecord::Id(g_nextSeqId);
+    FastaRecord fwdRecord(pair_sequences.first, "+" + pair_description.first, newId);
+    _seqIndex[fwdRecord.id] = std::move(fwdRecord);
+
+    FastaRecord revRecord(pair_sequences.first.complement(), "-" + pair_description.first,
+                          newId.rc());
+    _seqIndex[revRecord.id] = std::move(revRecord);
+    /*
+     * Second_read + reverse_complement
+     */
+    g_nextSeqId += 2;
+    FastaRecord::Id paired_id = FastaRecord::Id(g_nextSeqId);
+    FastaRecord paired_fwdRecord(pair_sequences.second, "+" + pair_description.second, paired_id);
+    _seqIndex[paired_fwdRecord.id] = std::move(paired_fwdRecord);
+
+    FastaRecord paired_revRecord(pair_sequences.second.complement(), "-" + pair_description.second,
+                          paired_id.rc());
+    _seqIndex[paired_revRecord.id] = std::move(paired_revRecord);
+    /*
+     * Update seqId
+     */
+    g_nextSeqId += 2;
+    return _seqIndex[newId];
+}
+
+size_t SequenceContainer::readFasta(std::vector<FastaRecord>& record
+        ,const std::string& fileName, bool is_paired, size_t side_read)
 {
 	size_t BUF_SIZE = 32 * 1024 * 1024;
 	char* rawBuffer = new char[BUF_SIZE];
@@ -177,8 +241,8 @@ size_t SequenceContainer::readFasta(std::vector<FastaRecord>& record,
 
 					sequence.shrink_to_fit();
 					record.emplace_back(DnaSequence(sequence), header, 
-										FastaRecord::Id(g_nextSeqId));
-					g_nextSeqId += 2;
+										FastaRecord::Id((side_read)?g_nextSeqId:g_nextRightSeqId));
+                    (side_read)?g_nextSeqId += (is_paired)?4:2:g_nextRightSeqId+=4;
 					sequence.clear();
 					header.clear();
 				}
@@ -201,8 +265,8 @@ size_t SequenceContainer::readFasta(std::vector<FastaRecord>& record,
 			throw ParseException("Fasta fromat error");
 		}
 		record.emplace_back(DnaSequence(sequence), header, 
-							FastaRecord::Id(g_nextSeqId));
-		g_nextSeqId += 2;
+							FastaRecord::Id((side_read)?g_nextSeqId:g_nextRightSeqId));
+        (side_read)?g_nextSeqId += (is_paired)?4:2:g_nextRightSeqId+=4;
 
 	}
 	catch (ParseException& e)
@@ -218,8 +282,8 @@ size_t SequenceContainer::readFasta(std::vector<FastaRecord>& record,
 	return record.size();
 }
 
-size_t SequenceContainer::readFastq(std::vector<FastaRecord>& record, 
-									const std::string& fileName)
+size_t SequenceContainer::readFastq(std::vector<FastaRecord>& record
+        ,const std::string& fileName, bool is_paired, size_t side_read)
 {
 
 	size_t BUF_SIZE = 32 * 1024 * 1024;
@@ -270,8 +334,8 @@ size_t SequenceContainer::readFastq(std::vector<FastaRecord>& record,
 			{
 				this->validateSequence(nextLine);
 				record.emplace_back(DnaSequence(nextLine), header, 
-									FastaRecord::Id(g_nextSeqId));
-				g_nextSeqId += 2;
+									FastaRecord::Id((side_read)?g_nextSeqId:g_nextRightSeqId));
+                (side_read)?g_nextSeqId += (is_paired)?4:2:g_nextRightSeqId+=4;
 			}
 			else if (stateCounter == 2)
 			{
