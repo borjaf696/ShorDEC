@@ -216,8 +216,8 @@ private:
         if (change) {
             _in_0.clear();
             _remove_isolated_nodes();
-        }
-        cout << "KmerSolids: "<<_dbg_naive.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
+        }else
+            cout << "KmerSolids: "<<_dbg_naive.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
     }
 
     /*

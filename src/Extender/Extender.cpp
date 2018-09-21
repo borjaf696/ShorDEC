@@ -12,20 +12,22 @@ pair<size_t, Kmer> Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, vector<
     size_t in_ = dbg.in_degree(kmer);
     if (in_ == 1 && neighbors.size() == 1) {
         unitig.push_back(kmer);
-        Extension(neighbors[0],dbg,unitig,out,in,added);
-    }else if (added.find(kmer) == added.end())
+        return Extension(neighbors[0],dbg,unitig,out,in,added);
+    }else if (neighbors.size () == 0)
+        return pair<size_t, Kmer>(0,kmer);
+    else if (added.find(kmer) == added.end())
     {
         added.emplace(kmer);
         if (neighbors.size() > 1) {
             out.push_back(kmer);
             unitig.push_back(kmer);
-            return {1,kmer};
+            return pair<size_t,Kmer>(1,kmer);
         }
         in.push_back(kmer);
         unitig.push_back(kmer);
-        return {2,kmer};
+        return pair<size_t, Kmer>(2,kmer);
     }
-    return {0,kmer};
+    return pair<size_t, Kmer>(0,kmer);
 }
 
 vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, vector<Kmer> & out, vector<Kmer> & in,
@@ -38,8 +40,9 @@ vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, vector<Kmer> & 
         vector<Kmer> unitig;
         unitig.push_back(kmer);
         pair<size_t,Kmer> result = Extension(k, dbg, unitig, out, in, added);
-        if (result.first == 1 || result.first == 2)
-                _fin_segs[result.second].push_back(_curr_segment++);
+        if (result.first == 1 || result.first == 2) {
+            _fin_segs[result.second].push_back(_curr_segment++);
+        }
         unitigs.push_back(unitig);
     }
     return unitigs;
@@ -81,6 +84,7 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_t
             for (auto &p: Extend(k,dbg,out,in,added))
                 unitigs.push_back(p);
         }
+        out.clear();
         /*
          * Lets check kmers with in_degree > 1
          */
@@ -92,6 +96,7 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_t
             for (auto &p: Extend(k,dbg,out,in,added))
                 unitigs.push_back(p);
         }
+        in.clear();
     }
     /*
      * Construct the DnaSequences
@@ -145,7 +150,7 @@ void UnitigExtender::_write_gfa(string filename)
      */
     for (auto & link:_links)
     {
-        string l_line = "L\t"+to_string(link.first)+"\t"+to_string(link.second)+"\t*\n";
+        string l_line = "L\t"+to_string(link.second)+"\t"+to_string(link.first)+"\t*\n";
         fwrite(l_line.data(), sizeof(l_line.data()[0])
                 ,l_line.size(), fout);
     }
