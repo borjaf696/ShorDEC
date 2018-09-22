@@ -32,7 +32,7 @@ public:
     size_t in_degree(typename NodeType<P>::DBGNode);
     size_t out_degree(typename NodeType<P>::DBGNode);
 
-    Heads get(bool behaviour) const
+    typename DBG<P>::Heads get(bool behaviour) const
     {
         return (behaviour)?_heads:_tails;
     }
@@ -69,45 +69,7 @@ private:
      * Kmer Counting
      * Naive DBG construction + heads + tails
      */
-    void _kmerCount()
-    {
-        Kmer kmer;
-        KmerInfo tail;
-        bool first = false;
-        for (auto &read:_sc.getIndex()){
-            if (first)
-                _tails.emplace(tail);
-            Progress::update(read.first.getId());
-            first = false;
-            for (auto kmer_r: IterKmers(read.second.sequence)) {
-                kmer = kmer_r.kmer;
-                unordered_map<Kmer, pair<size_t,size_t>>::const_iterator place =
-                        _kmers_map.find(kmer);
-                if (place != _kmers_map.end()) {
-                    _kmers_map[kmer].first++;
-                    _kmers_map[kmer].second = min(_kmers_map[kmer].second,kmer_r.kmer_pos);
-                    if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
-                    {
-                        if (_kmers_map[kmer].second < Parameters::get().kmerSize / 2) {
-                            first = true;
-                            _heads.emplace(kmer_r);
-                        }
-                        tail = kmer_r;
-                        _dbg_naive.emplace(kmer);
-                    }
-                } else
-                    _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
-                if (Parameters::get().accumulative_h == 1)
-                    if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
-                        _dbg_naive.emplace(kmer);
-
-            }
-        }
-        _kmers_map.clear();
-        /*for (auto &k: _dbg_naive)
-            cout << "Kmer: "<<k.str()<<"\n";*/
-        Progress::update(_sc.getIndex().size());
-    }
+    void _kmerCount();
 
     void _cleaning()
     {
@@ -244,7 +206,7 @@ private:
     unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
     //_dbg_naive graph, set of first solid k-mers
     unordered_set<Kmer> _dbg_naive;
-    unordered_set<KmerInfo> _heads,_tails;
+    unordered_set<KmerInfo<P>> _heads,_tails;
     //Extension points
     vector<Kmer> _in_0;
 

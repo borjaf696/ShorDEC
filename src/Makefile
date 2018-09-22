@@ -4,15 +4,19 @@
 CXXFLAGS = -Wall -std=c++11 -g 
 
 #Poner luego un bin
-BIN = test
+BIN_release = test
+BIN_test = test_test
 
 #El resto de la ejecucion
 release: CXXFLAGS += -O3 -DNDEBUG 
 release: test
 
+tests: CXXFLGS += -O3 -DNDEBUG
+tests: test_environment
+
 #Read, seq, kmer
 obj := ${patsubst %.cpp,%.o,${wildcard ReadData/*.cpp}}
-ReadData/%.o: ReadData/%.cpp ReadData/*.h 
+ReadData/%.o: ReadData/%.cpp ReadData/*.h
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 #Extender
@@ -25,12 +29,24 @@ dbg_obj := ${patsubst %.cpp,%.o,${wildcard DBG/*.cpp}}
 DBG/%.o: DBG/%.cpp DBG/*.h Utils/*.h
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
-test: ${obj} ${dbg_obj} ${extender_obj}
-	${CXX} ${obj} ${extender_obj} ${dbg_obj} -o ${BIN} ${LDFLAGS}
+#Main_code
+m_main_obj := ${patsubst %.cpp,%.o,${wildcard Main/*.cpp}}
+Main/%.o: Main/%.cpp 
+	${CXX} -c ${CXXFLAGS} $< -o $@
+m_code_release := Main/main.o
+m_code_tests := Main/test_environment.o
+
+
+test: ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
+	${CXX} ${obj} ${extender_obj} ${dbg_obj} ${m_code_release} -o ${BIN_release} ${LDFLAGS}
+
+test_environment: ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
+	${CXX} ${obj} ${extender_obj} ${dbg_obj} ${m_code_tests} -o ${BIN_test} ${LDFLAGS}
 
 #Clean
 clean:
 	-rm ${obj}
 	-rm ${dbg_obj}
 	-rm ${extender_obj}
+	-rm ${m_main_obj}
 	-rm ${BIN}

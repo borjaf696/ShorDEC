@@ -16,7 +16,6 @@ template<> struct NodeType<true>{
     typedef Kmer DBGNode;
 };
 
-typedef unordered_set<KmerInfo> Heads;
 struct Node_ext
 {
     Kmer kmer;
@@ -26,6 +25,7 @@ template<bool P>
 class DBG:public NodeType<P>
 {
 public:
+    typedef unordered_set<KmerInfo<P>> Heads;
     DBG(){}
     virtual bool is_solid(typename NodeType<P>::DBGNode) const = 0;
     virtual size_t length() const = 0;

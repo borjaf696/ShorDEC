@@ -49,7 +49,8 @@ void SequenceContainer::load(const std::string &path, bool is_paired)
     fs::path doc_path(path);
     if (fs::is_directory(doc_path))
     {
-        std::cout << "Is directory \n";
+        std::cout << "Is directory: ";
+        (is_paired)?std::cout << " Pair_end\n":std::cout << " Single_End\n";
         for (auto &f : fs::directory_iterator(doc_path))
         {
             std::ostringstream oss;

@@ -17,14 +17,14 @@ void insert_queue(std::queue<Kmer>& t, std::queue<size_t> &p_t, Kmer kmer, size_
  */
 template<>
 size_t Path<false>::extend_head(const DnaSequence &sub_sequence
-        ,KmerInfo t
+        ,KmerInfo<false> t
         ,const DBG<false> &dbg
         ,size_t * score_ed
         ,size_t * max_pos
         ,char * expected_head
         ,size_t &branches
         ,bool behaviour
-        ,KmerInfo &which)
+        ,KmerInfo<false> &which)
 {
     size_t max_allowed_len = (t.kmer_pos*EXTRA_LEN);
     size_t best_len = MAX_PATH_LEN, count_heads = 0;
@@ -139,8 +139,8 @@ size_t Path<false>::extend_head(const DnaSequence &sub_sequence
  * */
 template<>
 size_t Path<false>::extend(const DnaSequence &sub_sequence
-        ,KmerInfo h
-        ,KmerInfo t
+        ,KmerInfo<false> h
+        ,KmerInfo<false> t
         ,const DBG<false> &dbg
         ,size_t * score_ed
         ,char *expected_path
@@ -244,13 +244,13 @@ template<>
 size_t PathContainer<false>::check_read()
 {
 
-    for (auto cur_kmer: IterKmers(_seq)){
+    for (auto cur_kmer: IterKmers<false>(_seq)){
         //Optimizar esto
         /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
                 ,cur_kmer.kmer.getSeq().length()));*/
         Kmer kmer = cur_kmer.kmer;
         if (_dbg.is_solid(kmer))
-            _solid.push_back(KmerInfo(kmer,cur_kmer.kmer_pos));
+            _solid.push_back(KmerInfo<false>(kmer,cur_kmer.kmer_pos));
     }
     /*for (uint i = 0; i < _solid.size(); ++i)
         std::cout << _solid[i].first.str()<<"\n";*/
@@ -292,10 +292,10 @@ int PathContainer<false>::check_solids(size_t pos_i, size_t pos_j, size_t i,size
 template<>
 DnaSequence PathContainer<false>::correct_read() {
     //For correction:
-    PathGraphAdj path_graph = PathGraphAdj();
+    PathGraphAdj<false> path_graph = PathGraphAdj<false>();
     Path<false> path;
     DnaSequence seq_head, seq_tail;
-    KmerInfo first_kmer, last_kmer;
+    KmerInfo<false> first_kmer, last_kmer;
     //Kmer_size
     size_t kmer_size = Parameters::get().kmerSize;
     //Empty solids
@@ -309,7 +309,7 @@ DnaSequence PathContainer<false>::correct_read() {
         {
             seq_head = _seq.substr(0, _solid[0].kmer_pos);
             Kmer selected_kmer;
-            KmerInfo studied_kmer(_solid[0].kmer,_solid[0].kmer_pos);
+            KmerInfo<false> studied_kmer(_solid[0].kmer,_solid[0].kmer_pos);
             size_t selected_pos = _solid[0].kmer_pos;
             std::string way_string("");
             seq_head = _seq.substr(0,selected_pos);
@@ -486,14 +486,14 @@ void ReadCorrector<false>::correct_reads() {
 
 template<>
 size_t Path<true>::extend_head(const DnaSequence &sub_sequence
-        ,KmerInfo t
+        ,KmerInfo<true> t
         ,const DBG<true> &dbg
         ,size_t * score_ed
         ,size_t * max_pos
         ,char * expected_head
         ,size_t &branches
         ,bool behaviour
-        ,KmerInfo &which)
+        ,KmerInfo<true> &which)
 {
     size_t best_len = MAX_PATH_LEN;
     return best_len;
@@ -509,8 +509,8 @@ size_t Path<true>::extend_head(const DnaSequence &sub_sequence
  * */
 template<>
 size_t Path<true>::extend(const DnaSequence &sub_sequence
-        ,KmerInfo h
-        ,KmerInfo t
+        ,KmerInfo<true> h
+        ,KmerInfo<true> t
         ,const DBG<true> &dbg
         ,size_t * score_ed
         ,char *expected_path
