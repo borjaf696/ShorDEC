@@ -8,6 +8,13 @@
 #include "../Utils/utils.h"
 
 using namespace std;
+template <bool> struct NodeType;
+template<> struct NodeType<false>{
+    typedef Kmer DBGNode;
+};
+template<> struct NodeType<true>{
+    typedef Kmer DBGNode;
+};
 
 typedef unordered_set<KmerInfo> Heads;
 struct Node_ext
@@ -15,19 +22,19 @@ struct Node_ext
     Kmer kmer;
     size_t _in = 0, _out = 0;
 };
-
-class DBG
+template<bool P>
+class DBG:public NodeType<P>
 {
 public:
     DBG(){}
-    virtual bool is_solid(Kmer kmer) const = 0;
+    virtual bool is_solid(typename NodeType<P>::DBGNode) const = 0;
     virtual size_t length() const = 0;
-    virtual vector<DnaSequence::NuclType> getNeighbors
-            (const Kmer &) const = 0;
-    virtual vector<Kmer> getKmerNeighbors
-            (const Kmer &) const = 0;
-    virtual size_t in_degree(Kmer) = 0;
-    virtual size_t out_degree(Kmer) = 0;
+    virtual vector<typename DnaSequence::NuclType> getNeighbors
+            (const typename NodeType<P>::DBGNode &) const = 0;
+    virtual vector<typename NodeType<P>::DBGNode> getKmerNeighbors
+            (const typename NodeType<P>::DBGNode &) const = 0;
+    virtual size_t in_degree(typename NodeType<P>::DBGNode) = 0;
+    virtual size_t out_degree(typename NodeType<P>::DBGNode) = 0;
     virtual Heads  get(bool) const = 0;
     virtual void ProcessTigs(string) = 0;
     //Show methods

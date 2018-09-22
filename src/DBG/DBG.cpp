@@ -1,11 +1,16 @@
 #include "DBG.h"
-bool NaiveDBG::is_solid(Kmer kmer) const
+/*
+ * First false template -> single_end reads
+ */
+template<>
+bool NaiveDBG<false>::is_solid(typename NodeType::DBGNode kmer) const
 {
     return (_dbg_naive.find(kmer) != _dbg_naive.end());
 }
 
-vector<DnaSequence::NuclType> NaiveDBG::getNeighbors
-        (const Kmer& kmer) const
+template<>
+vector<DnaSequence::NuclType> NaiveDBG<false>::getNeighbors
+        (const typename NodeType::DBGNode& kmer) const
 {
     vector<DnaSequence::NuclType> nts;
     for (DnaSequence::NuclType i=0; i < 4; ++i) {
@@ -17,8 +22,9 @@ vector<DnaSequence::NuclType> NaiveDBG::getNeighbors
     return nts;
 }
 
-vector<Kmer> NaiveDBG::getKmerNeighbors
-        (const Kmer & kmer) const
+template<>
+vector<typename NodeType<false>::DBGNode> NaiveDBG<false>::getKmerNeighbors
+        (const typename NodeType<false>::DBGNode & kmer) const
 {
     vector<Kmer> nts;
     //std::cout << "Original Kmer: "<<kmer.str()<<"\n";
@@ -33,7 +39,8 @@ vector<Kmer> NaiveDBG::getKmerNeighbors
     return nts;
 }
 
-size_t NaiveDBG::in_degree(Kmer k)
+template<>
+size_t NaiveDBG<false>::in_degree(typename NodeType<false>::DBGNode k)
 {
     size_t out = 0;
     for (DnaSequence::NuclType i = 0; i < 4; ++i) {
@@ -45,7 +52,8 @@ size_t NaiveDBG::in_degree(Kmer k)
     return out;
 }
 
-size_t NaiveDBG::out_degree(Kmer k)
+template<>
+size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
 {
     size_t out = 0;
     Kmer kmer_aux;
@@ -58,11 +66,58 @@ size_t NaiveDBG::out_degree(Kmer k)
     return out;
 }
 
-void NaiveDBG::show_info()
+template<>
+void NaiveDBG<false>::show_info()
 {
     for (auto p_k: _kmers_map)
     {
         std::cout << p_k.first.str() <<" -> "<< p_k.second.first<<", Correct? "
                   <<(_dbg_naive.find(p_k.first) == _dbg_naive.end())<<"\n";
     }
+}
+
+/*
+ * Paired_end reads
+ */
+
+template<>
+bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode kmer) const
+{
+    return (_dbg_naive.find(kmer) != _dbg_naive.end());
+}
+
+template<>
+vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
+        (const typename NodeType::DBGNode& kmer) const
+{
+    vector<DnaSequence::NuclType> nts;
+    return nts;
+}
+
+template<>
+vector<typename NodeType<true>::DBGNode> NaiveDBG<true>::getKmerNeighbors
+        (const typename NodeType::DBGNode & kmer) const
+{
+    vector<Kmer> nts;
+    return nts;
+}
+
+template<>
+size_t NaiveDBG<true>::in_degree(typename NodeType<false>::DBGNode k)
+{
+    size_t out = 0;
+    return out;
+}
+
+template<>
+size_t NaiveDBG<true>::out_degree(typename NodeType<false>::DBGNode k)
+{
+    size_t out = 0;
+    return out;
+}
+
+template<>
+void NaiveDBG<true>::show_info()
+{
+
 }

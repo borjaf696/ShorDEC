@@ -1,12 +1,18 @@
 #include "Extender.h"
 
+/*
+ * SingleEnd -> false
+ */
+template<bool P>
+size_t UnitigExtender<P>::_curr_segment = 0;
+template<bool P>
+unordered_map <Kmer, vector<size_t>> UnitigExtender<P>::_fin_segs;
+template<bool P >
+vector <pair<size_t, size_t>> UnitigExtender<P>::_links;
+template<bool P>
+vector <DnaSequence> UnitigExtender<P>::_seqs;
 
-size_t UnitigExtender::_curr_segment = 0;
-unordered_map<Kmer, vector<size_t>> UnitigExtender::_fin_segs;
-vector<pair<size_t,size_t>> UnitigExtender::_links;
-vector<DnaSequence> UnitigExtender::_seqs;
-
-pair<size_t, Kmer> Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, stack<Kmer> & out, stack<Kmer> & in,
+pair<size_t, Kmer> Extension(Kmer kmer, DBG<false> &dbg, vector<Kmer> & unitig, stack<Kmer> & out, stack<Kmer> & in,
                              unordered_set<Kmer> added)
 {
     vector<Kmer> neighbors = dbg.getKmerNeighbors(kmer);
@@ -31,8 +37,8 @@ pair<size_t, Kmer> Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, stack<K
     }
     return pair<size_t, Kmer>(0,kmer);
 }
-
-vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, stack<Kmer> & out, stack<Kmer> & in,
+template<>
+vector<vector<Kmer>> UnitigExtender<false>::Extend(Kmer kmer, DBG<false> &dbg, stack<Kmer> & out, stack<Kmer> & in,
                             unordered_set<Kmer> added)
 {
     vector<vector<Kmer>> unitigs;
@@ -53,8 +59,8 @@ vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, stack<Kmer> & o
 }
 
 
-
-void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_to_write)
+template<>
+void UnitigExtender<false>::full_extension(DBG<false> & dbg, vector <Kmer> in_0, string path_to_write)
 {
     /*
      * Set of already assesed heads
@@ -116,52 +122,29 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_t
     _write_gfa(path_to_write);
 }
 
-void UnitigExtender::_construct_sequences(vector<vector<Kmer>> unitigs)
+/*
+ * Pair_end
+ */
+/*
+ * SingleEnd -> false
+ */
+
+pair<size_t, Kmer> Extension(Kmer kmer, DBG<true> &dbg, vector<Kmer> & unitig, stack<Kmer> & out, stack<Kmer> & in,
+                             unordered_set<Kmer> added)
 {
-    for (auto & vect:unitigs) {
-        size_t cont = 0;
-        DnaSequence seq_local;
-        if (_fin_segs.find(vect[0]) == _fin_segs.end())
-            seq_local = DnaSequence(vect[0].str());
-        for (auto k: vect)
-            if (cont++)
-                seq_local.append_nuc_right(k.at(Parameters::get().kmerSize-1));
-        _seqs.push_back(seq_local);
-    }
-    /*
-     * Lets check the results
-     */
-    /*for (auto seq : _seqs)
-        cout << "Seqs: "<<seq.str() << "\n";*/
+    vector<Kmer> neighbors = dbg.getKmerNeighbors(kmer);
+    return pair<size_t, Kmer>(0,Kmer());
+}
+template<>
+vector<vector<Kmer>> UnitigExtender<true>::Extend(Kmer kmer, DBG<true> &dbg, stack<Kmer> & out, stack<Kmer> & in,
+                                                   unordered_set<Kmer> added)
+{
+    vector<vector<Kmer>> unitigs;
+    return unitigs;
 }
 
-void UnitigExtender::_write_gfa(string filename)
+template<>
+void UnitigExtender<true>::full_extension(DBG<true> & dbg, vector <Kmer> in_0, string path_to_write)
 {
-    FILE* fout = fopen(filename.c_str(), "w");
-    if (!fout)
-        throw std::runtime_error("Can't open " + filename);
-    //size_t num_unitig = 0;
-    string header = "H\tVN:Z:1\n";
-    fwrite(header.data(), sizeof(header.data()[0])
-            ,header.size(), fout);
-    int num_seq = 0;
-    /*
-     * Write seqs -> gfa
-     */
-    for (auto& seq : _seqs)
-    {
-        string s_line = "S\t"+to_string(num_seq++)+"\t";
-        s_line+= seq.str()+"\n";
-        fwrite(s_line.data(), sizeof(s_line.data()[0]),
-               s_line.size(), fout);
-    }
-    /*
-     * Write Links
-     */
-    for (auto & link:_links)
-    {
-        string l_line = "L\t"+to_string(link.second)+"\t"+to_string(link.first)+"\t*\n";
-        fwrite(l_line.data(), sizeof(l_line.data()[0])
-                ,l_line.size(), fout);
-    }
+
 }

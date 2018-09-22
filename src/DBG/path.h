@@ -31,7 +31,7 @@ struct stack_el{
     size_t pos;
     DnaSequence::NuclType nuc;
 };
-
+template<bool P>
 class Path
 {
 public:
@@ -46,13 +46,13 @@ public:
     size_t extend(const DnaSequence&
             ,KmerInfo
             ,KmerInfo
-            ,const DBG&
+            ,const DBG<P>&
             ,size_t*
             ,char*
             ,size_t&);
     size_t extend_head(const DnaSequence&
             ,KmerInfo
-            ,const DBG&
+            ,const DBG<P>&
             ,size_t*
             ,size_t*
             ,char*
@@ -63,11 +63,11 @@ private:
     std::vector<size_t> _DP;
 };
 
-//TODO: Change path container ¿why storeage std::pair<Kmer,size_t> when we have KmerInfo which actually is that
+template<bool P>
 class PathContainer
 {
 public:
-    PathContainer(FastaRecord::Id id, const DBG& dbg, const DnaSequence& seq):
+    PathContainer(FastaRecord::Id id, const DBG<P>& dbg, const DnaSequence& seq):
             _readId(id),_dbg(dbg),_seq(seq)
     {
         check_read();
@@ -82,18 +82,19 @@ public:
     int check_solids(size_t,size_t,size_t,size_t
             ,size_t &,Kmer&);
 private:
-    std::vector<Path> _path_extended;
+    std::vector<Path<P>> _path_extended;
     std::vector<Kmer> _heads;
     std::vector<KmerInfo> _solid;
     FastaRecord::Id _readId;
-    const DBG &_dbg;
+    const DBG<P> &_dbg;
     const DnaSequence &_seq;
 };
 
+template<bool P>
 class ReadCorrector
 {
 public:
-    ReadCorrector(SequenceContainer &sc, const DBG &dbg):
+    ReadCorrector(SequenceContainer &sc, const DBG<P> &dbg):
             _sc(sc),_dbg(dbg)
     {
         correct_reads();
@@ -102,5 +103,5 @@ public:
     void correct_reads();
 private:
     SequenceContainer &_sc;
-    const DBG &_dbg;
+    const DBG<P> &_dbg;
 };

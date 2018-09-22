@@ -8,7 +8,8 @@
 //Constants
 #define MIN_PATH_LEN 10
 
-class NaiveDBG: public DBG
+template<bool P>
+class NaiveDBG: public DBG<P>
 {
 public:
 
@@ -19,17 +20,17 @@ public:
         _kmerCount();
         _cleaning();
     }
-    bool is_solid(Kmer) const;
+    bool is_solid(typename NodeType<P>::DBGNode) const;
     vector<DnaSequence::NuclType> getNeighbors
-            (const Kmer &) const;
-    vector<Kmer> getKmerNeighbors
-            (const Kmer &) const;
+            (const typename NodeType<P>::DBGNode &) const;
+    vector<typename NodeType<P>::DBGNode> getKmerNeighbors
+            (const typename NodeType<P>::DBGNode &) const;
     size_t length() const
     {
         return _dbg_naive.size();
     }
-    size_t in_degree(Kmer);
-    size_t out_degree(Kmer);
+    size_t in_degree(typename NodeType<P>::DBGNode);
+    size_t out_degree(typename NodeType<P>::DBGNode);
 
     Heads get(bool behaviour) const
     {
@@ -39,7 +40,7 @@ public:
     void ProcessTigs(string path_to_write)
     {
         std::cout << "Lets start\n";
-        UnitigExtender::full_extension(*this,_in_0,path_to_write);
+        UnitigExtender<P>::full_extension(*this,_in_0,path_to_write);
         std::cout << "End Unitigs\n";
     }
 

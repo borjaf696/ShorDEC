@@ -15,9 +15,10 @@ void insert_queue(std::queue<Kmer>& t, std::queue<size_t> &p_t, Kmer kmer, size_
  * Backtrack from the first solid k-mer until the beginning of the read.
  * TODO: Need test
  */
-size_t Path::extend_head(const DnaSequence &sub_sequence
+template<>
+size_t Path<false>::extend_head(const DnaSequence &sub_sequence
         ,KmerInfo t
-        ,const DBG &dbg
+        ,const DBG<false> &dbg
         ,size_t * score_ed
         ,size_t * max_pos
         ,char * expected_head
@@ -136,10 +137,11 @@ size_t Path::extend_head(const DnaSequence &sub_sequence
  * score_ed: mejor score encontrado hasta el momento
  * length_cover: parte de la lectura cubierta
  * */
-size_t Path::extend(const DnaSequence &sub_sequence
+template<>
+size_t Path<false>::extend(const DnaSequence &sub_sequence
         ,KmerInfo h
         ,KmerInfo t
-        ,const DBG &dbg
+        ,const DBG<false> &dbg
         ,size_t * score_ed
         ,char *expected_path
         ,size_t & branches)
@@ -238,7 +240,8 @@ size_t Path::extend(const DnaSequence &sub_sequence
 
 //Container path
 //TODO: Posiciones salvarlas y empezar la correccion
-size_t PathContainer::check_read()
+template<>
+size_t PathContainer<false>::check_read()
 {
 
     for (auto cur_kmer: IterKmers(_seq)){
@@ -262,7 +265,8 @@ size_t PathContainer::check_read()
  * En cualquier otro caso se busca -> -1 trial
  *
  * */
-int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
+template<>
+int PathContainer<false>::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
         ,size_t &num_trials, Kmer& kmer)
 {
     //Kmer are all adjacent.
@@ -285,10 +289,11 @@ int PathContainer::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
 }
 
 //TODO: Correct tail->Optimize all process
-DnaSequence PathContainer::correct_read() {
+template<>
+DnaSequence PathContainer<false>::correct_read() {
     //For correction:
     PathGraphAdj path_graph = PathGraphAdj();
-    Path path;
+    Path<false> path;
     DnaSequence seq_head, seq_tail;
     KmerInfo first_kmer, last_kmer;
     //Kmer_size
@@ -457,7 +462,8 @@ DnaSequence PathContainer::correct_read() {
 }
 
 //ReadsCorrector
-void ReadCorrector::correct_reads() {
+template<>
+void ReadCorrector<false>::correct_reads() {
     std::cout << "READS CORRECTION!\n";
     for (auto &read: _sc.getIndex())
     {
@@ -465,11 +471,87 @@ void ReadCorrector::correct_reads() {
         /*if (read.first.getId() != 280)
             continue;*/
         Progress::update(read.first.getId());
-        PathContainer pc(read.first,_dbg,read.second.sequence);
+        PathContainer<false> pc(read.first,_dbg,read.second.sequence);
         DnaSequence seq = pc.correct_read();
         _sc.setRead(read.first.getId(),seq);
         //std::cout << "Chain: "<<_sc.getSeq(read.first.getId()).str()<<"\n";
         //std::cout << read.first.getId() << " "<<pc.getSolidLength()<<"\n"
     }
     Progress::update(_sc.getIndex().size());
+}
+
+/*
+ * Pair_end
+ */
+
+template<>
+size_t Path<true>::extend_head(const DnaSequence &sub_sequence
+        ,KmerInfo t
+        ,const DBG<true> &dbg
+        ,size_t * score_ed
+        ,size_t * max_pos
+        ,char * expected_head
+        ,size_t &branches
+        ,bool behaviour
+        ,KmerInfo &which)
+{
+    size_t best_len = MAX_PATH_LEN;
+    return best_len;
+}
+
+/*
+ * Sub_sequence: part of the read to cover with the DBG
+ * h: vector de posibles head-sources
+ * t: vector de posibles tails
+ * DBG: grafo de bruijn
+ * score_ed: mejor score encontrado hasta el momento
+ * length_cover: parte de la lectura cubierta
+ * */
+template<>
+size_t Path<true>::extend(const DnaSequence &sub_sequence
+        ,KmerInfo h
+        ,KmerInfo t
+        ,const DBG<true> &dbg
+        ,size_t * score_ed
+        ,char *expected_path
+        ,size_t & branches)
+{
+    size_t best_len = MAX_PATH_LEN;
+    return best_len;
+}
+
+//Container path
+//TODO: Posiciones salvarlas y empezar la correccion
+template<>
+size_t PathContainer<true>::check_read()
+{
+    return 1;
+}
+
+/*Mirar para cada Kmer solido todos los kmers siguientes a este susceptibles de trazar
+ *un camino entre ellos:
+ *  Si son adyacentes -> No se busca -> -1 trial
+ *  Si estan solapados -> No se busca
+ *  Si estan demasiado lejos no se busca
+ * En cualquier otro caso se busca -> -1 trial
+ *
+ * */
+template<>
+int PathContainer<true>::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
+        ,size_t &num_trials, Kmer& kmer)
+{
+    return 0;
+}
+
+//TODO: Correct tail->Optimize all process
+template<>
+DnaSequence PathContainer<true>::correct_read() {
+    return _seq;
+}
+
+//ReadsCorrector
+template<>
+void ReadCorrector<true>::correct_reads() {
+    std::cout << "PAIR_END READS CORRECTION!\n";
+
 }

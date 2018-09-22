@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include "sequence_container.h"
 #include "../DBG/path.h"
+
 auto print_use = [](char ** argc)
 {printf("Usage: %s "
                 "-f [path_to_file][path_to_dir] -k [kmer_size] -u [path_to_unitigs.gfa] -p [pair_end] -t [num_threads]"
@@ -98,19 +99,38 @@ int main(int argv, char ** argc){
     /*
      * Iteratively we are going to correct the reads
      */
-    NaiveDBG naiveDBG(sc);
-    std::cout << "Size sequence container: "<<sc.getIndex().size() << "\n";
+    //TODO: Correct with Parameter packs templates
+    if (pair_end) {
+        NaiveDBG<true> naiveDBG(sc);
+        std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
+        for (auto i: kmer_sizes) {
+            Parameters::get().kmerSize = Parameters::get().kmerSize * i;
+            std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
+            //naiveDBG.show_info();
+            if (i > 1)
+                naiveDBG = NaiveDBG<true>(sc);
+            ReadCorrector<true> read(sc, naiveDBG);
+        }
+        std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
+        std::cout << "Writing new reads in: " << path_to_write << "\n";
+        sc.writeSequenceContainer(path_to_write);
+        std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
+        naiveDBG.ProcessTigs(path_unitigs);
+        exit(1);
+    }
+    NaiveDBG<false> naiveDBG(sc);
+    std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
-        std::cout << "Building DBG, Kmer Size: "<<Parameters::get().kmerSize << "\n";
+        std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
         //naiveDBG.show_info();
         if (i > 1)
-            naiveDBG =  NaiveDBG(sc);
-        ReadCorrector read(sc, naiveDBG);
+            naiveDBG = NaiveDBG<false>(sc);
+        ReadCorrector<false> read(sc, naiveDBG);
     }
-    std::cout <<"Size sequence container: " <<sc.getIndex().size() << "\n";
-    std::cout << "Writing new reads in: "<<path_to_write << "\n";
+    std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
+    std::cout << "Writing new reads in: " << path_to_write << "\n";
     sc.writeSequenceContainer(path_to_write);
-    std::cout << "Creating unitigs and writing unitigs: "<<path_unitigs << "\n";
+    std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
     naiveDBG.ProcessTigs(path_unitigs);
 }
