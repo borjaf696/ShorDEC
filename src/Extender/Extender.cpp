@@ -6,31 +6,33 @@ unordered_map<Kmer, vector<size_t>> UnitigExtender::_fin_segs;
 vector<pair<size_t,size_t>> UnitigExtender::_links;
 vector<DnaSequence> UnitigExtender::_seqs;
 
-pair<size_t, Kmer> Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, vector<Kmer> & out, vector<Kmer> & in, unordered_set<Kmer> added)
+pair<size_t, Kmer> Extension(Kmer kmer, DBG &dbg, vector<Kmer> & unitig, stack<Kmer> & out, stack<Kmer> & in,
+                             unordered_set<Kmer> added)
 {
     vector<Kmer> neighbors = dbg.getKmerNeighbors(kmer);
     size_t in_ = dbg.in_degree(kmer);
     if (in_ == 1 && neighbors.size() == 1) {
         unitig.push_back(kmer);
         return Extension(neighbors[0],dbg,unitig,out,in,added);
-    }else if (neighbors.size () == 0)
-        return pair<size_t, Kmer>(0,kmer);
-    else if (added.find(kmer) == added.end())
+    }else if (neighbors.size () == 0) {
+        unitig.push_back(kmer);
+        return pair<size_t, Kmer>(0, kmer);
+    }else if (added.find(kmer) == added.end())
     {
         added.emplace(kmer);
         if (neighbors.size() > 1) {
-            out.push_back(kmer);
+            out.push(kmer);
             unitig.push_back(kmer);
             return pair<size_t,Kmer>(1,kmer);
         }
-        in.push_back(kmer);
+        in.push(kmer);
         unitig.push_back(kmer);
         return pair<size_t, Kmer>(2,kmer);
     }
     return pair<size_t, Kmer>(0,kmer);
 }
 
-vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, vector<Kmer> & out, vector<Kmer> & in,
+vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, stack<Kmer> & out, stack<Kmer> & in,
                             unordered_set<Kmer> added)
 {
     vector<vector<Kmer>> unitigs;
@@ -40,9 +42,11 @@ vector<vector<Kmer>> UnitigExtender::Extend(Kmer kmer, DBG &dbg, vector<Kmer> & 
         vector<Kmer> unitig;
         unitig.push_back(kmer);
         pair<size_t,Kmer> result = Extension(k, dbg, unitig, out, in, added);
-        if (result.first == 1 || result.first == 2) {
-            _fin_segs[result.second].push_back(_curr_segment++);
+        if (result.first == 1 || result.first == 2)
+        {
+            _fin_segs[result.second].push_back(_curr_segment);
         }
+        _curr_segment++;
         unitigs.push_back(unitig);
     }
     return unitigs;
@@ -59,7 +63,7 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_t
     /*
      * New heads with out and in > 1
      */
-    vector<Kmer> in, out;
+    stack<Kmer> in, out;
     /*
      * Unitigs: entran por orden de curr_segment, ¡Nos ahorramos indexar las secuencias!
      */
@@ -71,32 +75,36 @@ void UnitigExtender::full_extension(DBG & dbg, vector <Kmer> in_0, string path_t
     }
     //Remove the kmers from in_0
     in_0.clear();
-    while (in.size() && out.size())
+    while (!in.empty() && !out.empty())
     {
         /*
          * Lets check kmers with out_degree > 1
          */
-        for (auto k: out)
+        while (!out.empty())
         {
+            Kmer k = out.top();
+            out.pop();
             if (_fin_segs.find(k) != _fin_segs.end())
-                for (uint i = 0; i < _fin_segs[k].size(); i++)
-                    _links.push_back(pair<size_t,size_t>(_curr_segment,_fin_segs[k][i]));
+                for (uint i = 0; i < _fin_segs[k].size(); i++) {
+                    _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[k][i]));
+                }
             for (auto &p: Extend(k,dbg,out,in,added))
                 unitigs.push_back(p);
         }
-        out.clear();
         /*
          * Lets check kmers with in_degree > 1
          */
-        for (auto k: in)
+        while(!in.empty())
         {
+            Kmer k = in.top();
+            in.pop();
             if (_fin_segs.find(k) != _fin_segs.end())
-                for (uint i = 0; i < _fin_segs[k].size(); i++)
-                     _links.push_back(pair<size_t,size_t>(_curr_segment,_fin_segs[k][i]));
+                for (uint i = 0; i < _fin_segs[k].size(); i++) {
+                    _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[k][i]));
+                }
             for (auto &p: Extend(k,dbg,out,in,added))
                 unitigs.push_back(p);
         }
-        in.clear();
     }
     /*
      * Construct the DnaSequences
@@ -112,7 +120,9 @@ void UnitigExtender::_construct_sequences(vector<vector<Kmer>> unitigs)
 {
     for (auto & vect:unitigs) {
         size_t cont = 0;
-        DnaSequence seq_local(vect[0].str());
+        DnaSequence seq_local;
+        if (_fin_segs.find(vect[0]) == _fin_segs.end())
+            seq_local = DnaSequence(vect[0].str());
         for (auto k: vect)
             if (cont++)
                 seq_local.append_nuc_right(k.at(Parameters::get().kmerSize-1));

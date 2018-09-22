@@ -11,7 +11,7 @@ public:
 	typedef size_t NuclType;
 
 private:
-	static const int NUCL_BITS = 2;
+	static const int NUCL_BITS = 3;
     static const int operator_and = 3;
 	static const int NUCL_IN_CHUNK = sizeof(NuclType) * 8 / NUCL_BITS;
     static const int offset = NUCL_BITS;

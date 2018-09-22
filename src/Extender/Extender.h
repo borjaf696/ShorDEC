@@ -1,4 +1,5 @@
 #include "../DBG/Graph.h"
+#include <stack>
 
 using namespace std;
 
@@ -6,7 +7,7 @@ class UnitigExtender
 {
 public:
     //TODO: Esto hay que mirarlo
-    static vector<vector<Kmer>> Extend(Kmer,DBG&,vector<Kmer>&,vector<Kmer>&,unordered_set<Kmer>);
+    static vector<vector<Kmer>> Extend(Kmer,DBG&,stack<Kmer>&,stack<Kmer>&,unordered_set<Kmer>);
     static void full_extension(DBG&, vector<Kmer>, string);
 
 private:
