@@ -197,8 +197,4 @@ bool PathGraphAdj<true>::covered(const Node &kmer)
 template<>
 void PathGraphAdj<true>::show()
 {
-    for (auto k_list: _adj_list)
-    {
-        std::cout << " Kmer: "<<k_list.first.kmer.str() << " Pos: "<< k_list.first.kmer_pos << "\n";
-    }
 }

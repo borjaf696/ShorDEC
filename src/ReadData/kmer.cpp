@@ -26,6 +26,14 @@ Kmer& Kmer::operator=(const Kmer &other) {
     return *this;
 }
 
+bool Kmer::operator<(const Kmer &other) const {
+    return (_seq < other._seq);
+}
+
+bool Kmer::operator>(const Kmer &other) const {
+    return (_seq > other._seq);
+}
+
 bool Kmer::operator==(const Kmer& other) const {
     return (_seq == other._seq);
 }

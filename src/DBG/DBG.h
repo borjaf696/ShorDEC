@@ -12,7 +12,9 @@ template<bool P>
 class NaiveDBG: public DBG<P>
 {
 public:
-
+    /*
+     * Define how to check if rc or just forward
+     */
     NaiveDBG(SequenceContainer& sc):_sc(sc)
     {
         Progress::get().size_total = _sc.getIndex().size();

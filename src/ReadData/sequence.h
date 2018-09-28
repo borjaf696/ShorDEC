@@ -202,6 +202,32 @@ public:
 		return false;
 	}
 
+    bool operator<(const DnaSequence & other) const
+    {
+        for (uint i = 0; i < _data->chunks.size(); ++i)
+        {
+            if (_data->chunks[i] != other._data->chunks[i]){
+                if (_data->chunks[i] < other._data->chunks[i])
+                    return true;
+                return false;
+            }
+        }
+        return false;
+    }
+
+    bool operator>(const DnaSequence & other) const
+    {
+        for (uint i = 0; i < _data->chunks.size(); ++i)
+        {
+            if (_data->chunks[i] != other._data->chunks[i]){
+                if (_data->chunks[i] > other._data->chunks[i])
+                    return true;
+                return false;
+            }
+        }
+        return false;
+    }
+
 	size_t length() const {return _data->length;}
 
 	char at(size_t index) const

@@ -1,0 +1,7 @@
+Todo:
+	- De bruijn graph -> que almacene solo el kmer más chiquitito no todos, y que cuando se haga la unión esta pueda ser tanto con el guardado como con el reverso complementario. -> Queda probarlo actualmente ya existe la versión que transforma cada Kmer en su versión estándar. Es decir, aquella que a priori debe ser la más pequeña. Por desgracia no dispongo ahora mismo el tiempo para chequear el correcto funcionamiento. TODO: Probar que todo funciona correctamente y que obtenemos únicamente 3 haplotipos en el caso de prueba.
+	- Siguiente parte usar los paired de bruijn graph: (Semana que viene tiene que quedar listo)
+		- Lo primero hacer toda la faena de la corrección de la manera regular.
+		- Construir el de bruijn graph normal, pero almacenando para cada {K1, {k2,k3...kn}} es decir sus posibles conexiones.
+		- Crear un grafo que unifique las conexiones entre los kmers definidos con anterioridad.
+

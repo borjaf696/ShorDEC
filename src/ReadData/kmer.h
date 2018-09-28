@@ -27,9 +27,9 @@ public:
 		_seq = DnaSequence(string_own);
 	}
 
-	DnaSequence rc(){
-		return _seq.complement();
-	}
+    Kmer rc(){
+        return Kmer(_seq.complement());
+    }
 
 	void appendRight(DnaSequence::NuclType);
 	void appendLeft(DnaSequence::NuclType);
@@ -42,8 +42,15 @@ public:
 		return &_seq;
 	}
 
+    void standard(){
+        if ((*this) < this->rc())
+            (*this) = this->rc();
+    }
+
 	DnaSequence::NuclType at(size_t index) const;
 
+    bool operator>(const Kmer&) const;
+    bool operator<(const Kmer&) const;
 	bool operator==(const Kmer&) const;
 	bool operator!=(const Kmer&) const;
 	Kmer& operator=(const Kmer&);
@@ -65,14 +72,90 @@ private:
 	DnaSequence _seq;
 };
 
-namespace std{
-	template <>
-	struct hash<Kmer>{
-		std::size_t operator()(const Kmer& kmer) const{
-			return kmer.hash();
-		}
-	};
+/*
+ * Pair_End Kmers
+ */
+class Pair_Kmer
+{
+public:
+    bool exist = true;
+    Pair_Kmer():exist(false){}
+    ~Pair_Kmer(){}
+    Pair_Kmer(const DnaSequence&,size_t,size_t,
+              const DnaSequence&,size_t,size_t);
+    Pair_Kmer(DnaSequence seq_left, DnaSequence seq_right):
+            _seq_left(seq_left),_seq_right(seq_right){}
+    Pair_Kmer(const Pair_Kmer & kmer){
+        pair<DnaSequence,DnaSequence> seqs = kmer.getSeq();
+        _seq_left = seqs.first;
+        _seq_right = seqs.second;
+    }
+    Pair_Kmer(const Pair_Kmer *kmer){
+        pair<DnaSequence,DnaSequence> seqs = kmer->getSeq();
+        _seq_left = seqs.first;
+        _seq_right = seqs.second;
+    }
+
+    Pair_Kmer(const string &string_own_left, const string &string_own_right)
+    {
+        _seq_left = DnaSequence(string_own_left);
+        _seq_right = DnaSequence(string_own_right);
+    }
+
+    Pair_Kmer rc(){
+        return Pair_Kmer(_seq_left.complement(),_seq_right.complement());
+    }
+
+    void appendRight(DnaSequence::NuclType, DnaSequence::NuclType);
+    void appendLeft(DnaSequence::NuclType, DnaSequence::NuclType);
+
+    pair<DnaSequence,DnaSequence> getSeq() const {
+        return pair<DnaSequence,DnaSequence>(_seq_left,_seq_right);
+    }
+
+    pair<const DnaSequence*,const DnaSequence*> getSeq_ref() const{
+        return pair<const DnaSequence*,const DnaSequence*>(&_seq_left,&_seq_right);
+    }
+
+    pair<DnaSequence::NuclType,DnaSequence::NuclType> at(size_t index) const;
+
+    bool operator==(const Pair_Kmer&) const;
+    bool operator!=(const Pair_Kmer&) const;
+    Pair_Kmer& operator=(const Pair_Kmer&);
+
+    std::size_t hash() const{
+        return std::hash<std::string>()(_seq_left.str()+_seq_right.str());
+    }
+
+    pair<string,string> str() const
+    {
+        return pair<string,string>(_seq_left.str(),_seq_right.str());
+    }
+
+    pair<DnaSequence,DnaSequence> substr(size_t start, size_t end) const
+    {
+        return pair<DnaSequence,DnaSequence>(_seq_left.substr(start,end),_seq_right.substr(start,end));
+    }
+private:
+    DnaSequence _seq_left,_seq_right;
 };
+namespace std{
+    template <>
+    struct hash<Kmer>{
+        std::size_t operator()(const Kmer& kmer) const{
+            return kmer.hash();
+        }
+    };
+    template<>
+    struct hash<Pair_Kmer>{
+        std::size_t operator()(const Pair_Kmer& pair_kmer) const{
+            return pair_kmer.hash();
+        }
+    };
+};
+/*
+ * Complementos Kmer
+ */
 template <bool> struct KmerInfo;
 template<> struct KmerInfo<false>{
     KmerInfo()
@@ -105,36 +188,39 @@ template<> struct KmerInfo<false>{
     Kmer kmer;
     size_t kmer_pos;
 };
+
 template<> struct KmerInfo<true>{
     KmerInfo()
     {}
-    KmerInfo(Kmer kmer1, size_t pos)
-            :kmer(kmer1),kmer_pos(pos)
+    KmerInfo(Pair_Kmer kmer, size_t pos)
+            :pair_kmer(kmer),kmer_pos(pos)
     {}
     size_t hash() const
     {
-        return std::hash<std::string>()(kmer.str()+std::to_string(kmer_pos));
+        pair<string,string> str_p_kmer = pair_kmer.str();
+        return std::hash<std::string>()(str_p_kmer.first+to_string(kmer_pos)+str_p_kmer.second+to_string(dist));
     }
     KmerInfo(const KmerInfo & k_info)
-            :kmer(k_info.kmer),kmer_pos(k_info.kmer_pos)
+            :pair_kmer(k_info.pair_kmer),kmer_pos(k_info.kmer_pos),dist(k_info.dist)
     {
     }
     KmerInfo& operator=(const KmerInfo& k_info)
     {
-        kmer = k_info.kmer;
+        pair_kmer = k_info.pair_kmer;
         kmer_pos = k_info.kmer_pos;
+        dist = k_info.dist;
         return *this;
     }
     bool operator==(const KmerInfo & k_info) const
     {
-        return(kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos);
+        return (pair_kmer == k_info.pair_kmer) && (kmer_pos == k_info.kmer_pos) && (dist == k_info.dist);
     }
     bool operator!=(const KmerInfo & k_info) const
     {
-        return !((kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos));
+        return !((pair_kmer == k_info.pair_kmer) && (kmer_pos == k_info.kmer_pos) && (dist == k_info.dist));
     }
-    Kmer kmer;
-    size_t kmer_pos;
+    Pair_Kmer pair_kmer;
+    size_t kmer_pos, dist = 0;
 };
 
 namespace std
@@ -221,71 +307,4 @@ public:
 
 private:
     const DnaSequence& _seq_left, _seq_right;
-};
-/*
- * Pair_End Kmers
- */
-class Pair_Kmer
-{
-public:
-    bool exist = true;
-    Pair_Kmer():exist(false){}
-    ~Pair_Kmer(){}
-    Pair_Kmer(const DnaSequence&,size_t,size_t,
-         const DnaSequence&,size_t,size_t);
-    Pair_Kmer(DnaSequence seq_left, DnaSequence seq_right):
-            _seq_left(seq_left),_seq_right(seq_right){}
-    Pair_Kmer(const Pair_Kmer & kmer){
-        pair<DnaSequence,DnaSequence> seqs = kmer.getSeq();
-        _seq_left = seqs.first;
-        _seq_right = seqs.second;
-    }
-    Pair_Kmer(const Pair_Kmer *kmer){
-        pair<DnaSequence,DnaSequence> seqs = kmer->getSeq();
-        _seq_left = seqs.first;
-        _seq_right = seqs.second;
-    }
-
-    Pair_Kmer(const string &string_own_left, const string &string_own_right)
-    {
-        _seq_left = DnaSequence(string_own_left);
-        _seq_right = DnaSequence(string_own_right);
-    }
-
-    Pair_Kmer rc(){
-        return Pair_Kmer(_seq_left.complement(),_seq_right.complement());
-    }
-
-    void appendRight(DnaSequence::NuclType, DnaSequence::NuclType);
-    void appendLeft(DnaSequence::NuclType, DnaSequence::NuclType);
-
-    pair<DnaSequence,DnaSequence> getSeq() const {
-        return pair<DnaSequence,DnaSequence>(_seq_left,_seq_right);
-    }
-
-    pair<const DnaSequence*,const DnaSequence*> getSeq_ref() const{
-        return pair<const DnaSequence*,const DnaSequence*>(&_seq_left,&_seq_right);
-    }
-
-    pair<DnaSequence::NuclType,DnaSequence::NuclType> at(size_t index) const;
-
-    bool operator==(const Pair_Kmer&) const;
-    bool operator!=(const Pair_Kmer&) const;
-    Pair_Kmer& operator=(const Pair_Kmer&);
-
-    std::size_t hash() const{
-        return std::hash<std::string>()(_seq_left.str()+_seq_right.str());
-    }
-
-    pair<string,string> str() const
-    {
-        return pair<string,string>(_seq_left.str(),_seq_right.str());
-    }
-
-    pair<DnaSequence,DnaSequence> substr(size_t start, size_t end) const
-    {
-        return pair<DnaSequence,DnaSequence>(_seq_left.substr(start,end),_seq_right.substr(start,end));
-    }
-private:
-    DnaSequence _seq_left,_seq_right;
 };
