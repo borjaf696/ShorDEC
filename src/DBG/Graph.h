@@ -27,7 +27,7 @@ class DBG:public NodeType<P>
 public:
     typedef unordered_set<KmerInfo<P>> Heads;
     DBG(){}
-    virtual bool is_solid(typename NodeType<P>::DBGNode) const = 0;
+    virtual bool is_solid(typename NodeType<P>::DBGNode&) const = 0;
     virtual size_t length() const = 0;
     virtual vector<typename DnaSequence::NuclType> getNeighbors
             (const typename NodeType<P>::DBGNode &) const = 0;

@@ -193,6 +193,16 @@ public:
         return *this;
 	}
 
+	//ShowInfo
+	void ShowInfo()
+	{
+        std::cout << "POS si entro\n";
+		for (auto fr:_seqIndex)
+		{
+			std::cout << fr.first << " "<<fr.second.sequence.str()<<"\n";
+		}
+	}
+
 private:
 	size_t readFasta(std::vector<FastaRecord>& record
             ,const std::string&,bool,size_t);

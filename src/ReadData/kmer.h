@@ -43,7 +43,7 @@ public:
 	}
 
     void standard(){
-        if ((*this) < this->rc())
+        if ((*this) > this->rc())
             (*this) = this->rc();
     }
 

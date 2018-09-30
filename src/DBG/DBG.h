@@ -22,7 +22,7 @@ public:
         _kmerCount();
         _cleaning();
     }
-    bool is_solid(typename NodeType<P>::DBGNode) const;
+    bool is_solid(typename NodeType<P>::DBGNode&) const;
     vector<DnaSequence::NuclType> getNeighbors
             (const typename NodeType<P>::DBGNode &) const;
     vector<typename NodeType<P>::DBGNode> getKmerNeighbors
@@ -137,11 +137,13 @@ private:
     {
         bool change = false, in_0_erase = true;
         vector<Kmer> erase;
+        size_t cont_2 = 0;
         for (auto kmer:_dbg_naive) {
             size_t cont = 0;
             size_t len = 1, in_nodes = in_degree(kmer);
             if (!in_nodes) {
                 cont ++;
+                cont_2++;
                 /*
                  * Check isolated nodes
                  */
@@ -172,6 +174,7 @@ private:
                 }
             }
         }
+        std::cout << "Indegree 0  count: "<<cont_2<<"\n";
         if (erase.size() > 0)
             change = true;
         _erase(erase);

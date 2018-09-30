@@ -46,7 +46,7 @@ bool Kmer::operator!=(const Kmer& other) const{
 KmerIt<false>::KmerIt(const DnaSequence *seq, size_t pos)
         :_own_seq(seq),_pos(pos)
 {
-    if (pos != seq->length() - Parameters::get().kmerSize )
+    if (pos != seq->length() - Parameters::get().kmerSize+1)
         _kmer = Kmer(*seq,0,Parameters::get().kmerSize);
 }
 
@@ -60,7 +60,8 @@ bool KmerIt<false>::operator!=(const KmerIt &kmerIt) const {
 
 KmerIt<false>& KmerIt<false>::operator++() {
     size_t newPos = _pos + Parameters::get().kmerSize;
-    _kmer.appendRight(_own_seq->atRaw(newPos));
+    if (newPos < _own_seq->length())
+        _kmer.appendRight(_own_seq->atRaw(newPos));
     ++_pos;
     return *this;
 }
@@ -77,7 +78,7 @@ KmerIt<false> IterKmers<false>::begin() {
 }
 
 KmerIt<false> IterKmers<false>::end() {
-    return KmerIt<false>(&_seq, _seq.length()-Parameters::get().kmerSize);
+    return KmerIt<false>(&_seq, _seq.length()-Parameters::get().kmerSize+1);
 }
 
 /*

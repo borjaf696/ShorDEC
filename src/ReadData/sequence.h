@@ -107,10 +107,11 @@ public:
 	}
 
 	void append_with_replace_left(DnaSequence::NuclType symbol) const{
-		for (int i = _data->chunks.size()-1; i > 0; --i)
-			_data->chunks[i] = (_data->chunks[i]<<offset) |
-					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset);
-		_data->chunks[0] = (_data->chunks[0] << offset) | symbol;
+		for (int i = _data->chunks.size()-1; i > 0; --i){
+			_data->chunks[i] = ((_data->chunks[i]<<offset) |
+					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset));
+        }
+		_data->chunks[0] = (_data->chunks[0] << offset) | symbol ;
 	}
 
 	void set(DnaSequence::NuclType dnaSymbol, size_t index) const
@@ -204,28 +205,12 @@ public:
 
     bool operator<(const DnaSequence & other) const
     {
-        for (uint i = 0; i < _data->chunks.size(); ++i)
-        {
-            if (_data->chunks[i] != other._data->chunks[i]){
-                if (_data->chunks[i] < other._data->chunks[i])
-                    return true;
-                return false;
-            }
-        }
-        return false;
+        return (str() < other.str());
     }
 
     bool operator>(const DnaSequence & other) const
     {
-        for (uint i = 0; i < _data->chunks.size(); ++i)
-        {
-            if (_data->chunks[i] != other._data->chunks[i]){
-                if (_data->chunks[i] > other._data->chunks[i])
-                    return true;
-                return false;
-            }
-        }
-        return false;
+        return (str() > other.str());
     }
 
 	size_t length() const {return _data->length;}

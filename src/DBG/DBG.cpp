@@ -13,7 +13,18 @@ void NaiveDBG<false>::_kmerCount() {
             Progress::update(read.first.getId());
             first = false;
             for (auto kmer_r: IterKmers<false>(read.second.sequence)) {
+                /*
+                 * TODO: Para hacer la parte de almancenar solo el kmer de menor tamanho chequear cada kmer con standar.
+                 * recordar que falta testear el metodo y que por tanto antes de nada habra que asegurar esto.
+                 */
                 kmer = kmer_r.kmer;
+                /*
+                 * Lets change into standard form
+                 */
+                //kmer.standard();
+                /*std::cout << "Kmer: "<<kmer.str()<<" Kmer(rc): " << kmer.rc().str()<<" ¿Es Menor? "<<(kmer < kmer.rc())<<"\n";
+                if (kmer < kmer.rc())
+                    exit(1);*/
                 unordered_map<Kmer, pair<size_t,size_t>>::const_iterator place =
                                                                                  _kmers_map.find(kmer);
                 if (place != _kmers_map.end()) {
@@ -30,12 +41,11 @@ void NaiveDBG<false>::_kmerCount() {
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
-                if (Parameters::get().accumulative_h == 1)
-                    if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
-                        _dbg_naive.emplace(kmer);
-
+                if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
+                    _dbg_naive.emplace(kmer);
             }
         }
+        std::cout << "Sizes: "<<_kmers_map.size()<<" "<<_dbg_naive.size()<<"\n";
         _kmers_map.clear();
         /*for (auto &k: _dbg_naive)
             cout << "Kmer: "<<k.str()<<"\n";*/
@@ -43,9 +53,11 @@ void NaiveDBG<false>::_kmerCount() {
 }
 
 template<>
-bool NaiveDBG<false>::is_solid(typename NodeType::DBGNode kmer) const
+bool NaiveDBG<false>::is_solid(typename NodeType::DBGNode& kmer) const
 {
-    return (_dbg_naive.find(kmer) != _dbg_naive.end());
+    Kmer kmer_aux = kmer;
+    //kmer_aux.standard();
+    return (_dbg_naive.find(kmer_aux) != _dbg_naive.end());
 }
 
 template<>
@@ -54,10 +66,10 @@ vector<DnaSequence::NuclType> NaiveDBG<false>::getNeighbors
 {
     vector<DnaSequence::NuclType> nts;
     for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        Kmer kmer_aux = kmer;
+        Kmer kmer_aux(kmer.str());
         kmer_aux.appendRight(i);
         if (is_solid(kmer_aux))
-            nts.push_back( i);
+            nts.push_back(i);
     }
     return nts;
 }
@@ -69,7 +81,7 @@ vector<typename NodeType<false>::DBGNode> NaiveDBG<false>::getKmerNeighbors
     vector<Kmer> nts;
     //std::cout << "Original Kmer: "<<kmer.str()<<"\n";
     for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        Kmer kmer_aux = kmer;
+        Kmer kmer_aux(kmer.str());
         kmer_aux.appendRight(i);
         if (is_solid(kmer_aux))
             nts.push_back( kmer_aux);
@@ -84,7 +96,7 @@ size_t NaiveDBG<false>::in_degree(typename NodeType<false>::DBGNode k)
 {
     size_t out = 0;
     for (DnaSequence::NuclType i = 0; i < 4; ++i) {
-        Kmer kmer_aux = k;
+        Kmer kmer_aux(k.str());
         kmer_aux.appendLeft(i);
         if (is_solid(kmer_aux))
             out++;
@@ -96,9 +108,8 @@ template<>
 size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
 {
     size_t out = 0;
-    Kmer kmer_aux;
     for (DnaSequence::NuclType i = 0; i < 4; ++i){
-        kmer_aux = k;
+        Kmer kmer_aux(k.str());
         kmer_aux.appendRight(i);
         if (is_solid(kmer_aux))
             out++;
@@ -124,7 +135,7 @@ void NaiveDBG<true>::_kmerCount() {
 }
 
 template<>
-bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode kmer) const
+bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode &kmer) const
 {
     return (_dbg_naive.find(kmer) != _dbg_naive.end());
 }

@@ -57,43 +57,5 @@ int main(int argv, char ** argc){
 	SequenceContainer sc;
     sc.load(path_to_file, pair_end);
 
-
-	//sc.loadFromFile(path_to_file);
-
-    /*sc.getSeq(FastaRecord::Id(0)).set(3,11);
-    std::cout << sc.getSeq(FastaRecord::Id(0).getId()).str() << "\n";
-    std::cout << "Kmersize "<< Parameters::get().kmerSize << "\n";
-    Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,10);
-    std::cout << "Kmer "<<kmer.str()<<"\n";
-    std::cout << kmer.at(0)<<"\n";
-    for (auto kmer:IterKmers(sc.getSeq(FastaRecord::Id(0))))
-        std::cout << kmer.str() << "\n";
-    Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,15);
-    DnaSequence s1 = sc.getSeq(FastaRecord::Id(0).getId());
-    std::cout << s1.str() << " \n";
-    DnaSequence s2 = s1;
-    s2.append_nuc_right(0);
-    std::cout << s2.str() << " \n";
-    Kmer kmer2 = kmer;
-    std::cout << "Kmer "<< kmer.str() << "\n";
-    kmer2.appendRight(0);
-    std::cout << "Kmer " << kmer2.str() << "\n";
-    std::unordered_set<Kmer> s;
-    s.insert(kmer);
-    s.insert(kmer2);
-    std::unordered_set<Kmer>::const_iterator it = s.find(kmer);
-    if (it != s.end())
-        std::cout<< "Correcto" << "\n";
-    for (auto k: s)
-        std::cout << k.str() << "\n";
-    Kmer kmer(sc.getSeq(FastaRecord::Id(0).getId()),0,10);
-    std::vector<Kmer> k_vect;
-    for (uint i = 0; i < 4 ; ++i)
-    {
-        Kmer kmer_aux = kmer;
-        kmer_aux.appendRight(i);
-        k_vect.push_back(kmer_aux);
-    }
-    for (uint i = 0; i < 4; ++i)
-        std::cout << k_vect[i].str() << "\n";*/
+    NaiveDBG<false> graph(sc);
 }

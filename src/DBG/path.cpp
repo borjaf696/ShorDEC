@@ -313,43 +313,6 @@ DnaSequence PathContainer<false>::correct_read() {
             size_t selected_pos = _solid[0].kmer_pos;
             std::string way_string("");
             seq_head = _seq.substr(0,selected_pos);
-            /*while (true) {
-                std::cout << "Times\n";
-                char * way = (char*) malloc((MAX_PATH_LEN + 1)* sizeof(char));
-                size_t max_pos = 0, ed_score = MAX_PATH_LEN, max_branch = MAX_BRANCH;
-                KmerInfo kmer_head;
-                std::cout << "Time after time "<<ed_score<<" "<<studied_kmer.kmer_pos<<"\n";
-                size_t len = path.extend_head(_seq.substr(0, studied_kmer.kmer_pos), studied_kmer,
-                                              _dbg, &ed_score, &max_pos,way, max_branch, true, kmer_head);
-                std::cout << "Time after time "<<kmer_head.kmer.str()<<" "<<kmer_head.kmer_pos<<" "<<len<<"\n";
-                if (len < MAX_PATH_LEN) {
-                    std::string local_string;
-                    if (len < kmer_size) {
-                        local_string = kmer_head.kmer.substr(0,len).str();
-                    } else {
-                        local_string = kmer_head.kmer.str() + local_string;
-                    }
-                    studied_kmer = KmerInfo(kmer_head.kmer,kmer_head.kmer_pos);
-                    way_string = local_string + way_string;
-                    selected_kmer = kmer_head.kmer;
-                    selected_pos = kmer_head.kmer_pos;
-                    std::cout << selected_pos <<"\n";
-                    //Free
-                    free(way);
-                    if (!selected_pos)
-                        break;
-                } else {
-                    free(way);
-                    break;
-                }
-            }
-            KmerInfo final_kmer(selected_kmer,selected_pos);
-            if (way_string != "")
-                path_graph.add_edge(final_kmer, _solid[0], 0,DnaSequence(way_string));
-            if (selected_pos)
-                seq_head = _seq.substr(0,selected_pos);
-            first_kmer = final_kmer;
-            std::cout << "Corregir cabecita: Salida\n";*/
         }
         //When the last k-mer is not solid
         if (_solid[_solid.size()-1].kmer_pos < _seq.length())
