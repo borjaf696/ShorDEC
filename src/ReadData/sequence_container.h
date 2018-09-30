@@ -196,7 +196,6 @@ public:
 	//ShowInfo
 	void ShowInfo()
 	{
-        std::cout << "POS si entro\n";
 		for (auto fr:_seqIndex)
 		{
 			std::cout << fr.first << " "<<fr.second.sequence.str()<<"\n";

@@ -15,7 +15,7 @@
 #define ERROR_RATE 0.01
 #define NUM_PREV_POST_KMER 5
 #define MAX_DISTANCE_READ 100
-#define MAX_NUM_TRIALS 5
+#define MAX_NUM_TRIALS 3
 
 /*El camino se extiende desde un k-mer source (head) hasta un k-mer source (tail).
  * De todos los caminos extendidos se selecciona aquel con distancia de edicion minima con

@@ -26,7 +26,7 @@ private:
                 seq_local = DnaSequence(vect[0].str());
             for (auto k: vect)
                 if (cont++)
-                    seq_local.append_nuc_right(k.at(Parameters::get().kmerSize-1));
+                    seq_local.append_nuc_right(k.at(Parameters::get().kmerSize-2));
             _seqs.push_back(seq_local);
         }
         /*

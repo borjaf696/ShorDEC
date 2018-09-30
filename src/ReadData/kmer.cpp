@@ -9,10 +9,20 @@ Kmer::Kmer(const DnaSequence &ds, size_t start, size_t length):exist(true) {
 }
 
 void Kmer::appendRight(DnaSequence::NuclType symbol) {
-    _seq.append_with_replace_right(symbol);
+    //_seq.append_with_replace_right(symbol);
+    _seq.append_nuc_right(symbol);
 }
 
 void Kmer::appendLeft(DnaSequence::NuclType symbol) {
+    //_seq.append_with_replace_left(symbol);
+    _seq.append_nuc_left(symbol);
+}
+
+void Kmer::appendRightReplace(DnaSequence::NuclType symbol) {
+    _seq.append_with_replace_right(symbol);
+}
+
+void Kmer::appendLeftReplace(DnaSequence::NuclType symbol) {
     _seq.append_with_replace_left(symbol);
 }
 
@@ -61,7 +71,7 @@ bool KmerIt<false>::operator!=(const KmerIt &kmerIt) const {
 KmerIt<false>& KmerIt<false>::operator++() {
     size_t newPos = _pos + Parameters::get().kmerSize;
     if (newPos < _own_seq->length())
-        _kmer.appendRight(_own_seq->atRaw(newPos));
+        _kmer.appendRightReplace(_own_seq->atRaw(newPos));
     ++_pos;
     return *this;
 }

@@ -33,6 +33,8 @@ public:
 
 	void appendRight(DnaSequence::NuclType);
 	void appendLeft(DnaSequence::NuclType);
+    void appendRightReplace(DnaSequence::NuclType);
+    void appendLeftReplace(DnaSequence::NuclType);
 
 	const DnaSequence getSeq() const {
 		return _seq;
@@ -68,6 +70,13 @@ public:
 	{
 		return _seq.substr(start,end);
 	}
+    /*
+     * Odd but need :(
+     */
+    size_t length() const
+    {
+        return _seq.length();
+    }
 private:
 	DnaSequence _seq;
 };

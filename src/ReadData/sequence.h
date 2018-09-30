@@ -103,7 +103,7 @@ public:
 			_data->chunks[i] = (_data->chunks[i] << offset) | (
 					(_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset));
 		}
-		_data->chunks[0] = (_data->chunks[0] << offset) | (dnaSymbol >> (NUCL_IN_CHUNK-1)*offset);
+		_data->chunks[0] = (_data->chunks[0] << offset) | dnaSymbol;
 	}
 
 	void append_with_replace_left(DnaSequence::NuclType symbol) const{

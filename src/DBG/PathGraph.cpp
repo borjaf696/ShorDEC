@@ -98,6 +98,7 @@ DnaSequence PathGraphAdj<false>::shortest_path(const typename PathGrap<false>::N
         /*cout << "Execute! "<<head.second.back().str()<<"\n";
         cout << "Size: "<<prior_q.size()<<" Empty: "<<prior_q.empty()<<"\n";*/
 
+
         vector<pair<int,vector<typename PathGrap<false>::Node>>> to_queue = push_in_queue(head);
         for (auto i:to_queue)
         {
@@ -131,7 +132,12 @@ void PathGraphAdj<false>::show()
 {
     for (auto k_list: _adj_list)
     {
-        std::cout << " Kmer: "<<k_list.first.kmer.str() << " Pos: "<< k_list.first.kmer_pos << "\n";
+        std::cout << " Kmer: "<<k_list.first.kmer.str() << " Pos: "<< k_list.first.kmer_pos << "->\n";
+        for (uint i = 0; i < k_list.second.first.size(); ++i){
+            std::cout << k_list.second.first[i].kmer.str() << " "<<k_list.second.second[i].seq.str()
+                      <<":"<<k_list.second.second[i].ed<<"\t";
+        }
+        std::cout << "\n";
     }
 }
 

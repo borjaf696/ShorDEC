@@ -30,9 +30,9 @@ public:
     virtual bool is_solid(typename NodeType<P>::DBGNode&) const = 0;
     virtual size_t length() const = 0;
     virtual vector<typename DnaSequence::NuclType> getNeighbors
-            (const typename NodeType<P>::DBGNode &) const = 0;
+            (typename NodeType<P>::DBGNode) const = 0;
     virtual vector<typename NodeType<P>::DBGNode> getKmerNeighbors
-            (const typename NodeType<P>::DBGNode &) const = 0;
+            (typename NodeType<P>::DBGNode) const = 0;
     virtual size_t in_degree(typename NodeType<P>::DBGNode) = 0;
     virtual size_t out_degree(typename NodeType<P>::DBGNode) = 0;
     virtual Heads  get(bool) const = 0;

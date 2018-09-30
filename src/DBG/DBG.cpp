@@ -3,6 +3,78 @@
  * First false template -> single_end reads
  */
 template<>
+bool NaiveDBG<false>::is_solid(typename NodeType::DBGNode& kmer) const
+{
+    if (_is_standard) {
+        Kmer kmer_aux = kmer;
+        kmer_aux.standard();
+        return (_dbg_naive.find(kmer_aux) != _dbg_naive.end());
+    }else
+        return (_dbg_naive.find(kmer) != _dbg_naive.end());
+}
+
+template<>
+vector<DnaSequence::NuclType> NaiveDBG<false>::getNeighbors
+        (typename NodeType::DBGNode kmer) const
+{
+    if (kmer.length() == Parameters::get().kmerSize)
+        kmer = kmer.substr(1, Parameters::get().kmerSize);
+    vector<DnaSequence::NuclType> nts;
+    Kmer kmer_aux;
+    for (DnaSequence::NuclType i = 0; i < 4; ++i) {
+        kmer_aux = Kmer(kmer.str());
+        kmer_aux.appendRight(i);
+        if (is_solid(kmer_aux))
+            nts.push_back(i);
+    }
+    return nts;
+}
+
+template<>
+vector<typename NodeType<false>::DBGNode> NaiveDBG<false>::getKmerNeighbors
+        (typename NodeType<false>::DBGNode kmer) const
+{
+    if (kmer.length() == Parameters::get().kmerSize)
+        kmer = kmer.substr(1, Parameters::get().kmerSize);
+    vector<Kmer> nts;
+    Kmer kmer_aux;
+    for (DnaSequence::NuclType i=0; i < 4; ++i) {
+        kmer_aux = Kmer(kmer.str());
+        kmer_aux.appendRight(i);
+        if (is_solid(kmer_aux))
+            nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
+    }
+    return nts;
+}
+
+template<>
+size_t NaiveDBG<false>::in_degree(typename NodeType<false>::DBGNode k)
+{
+    size_t out = 0;
+    Kmer kmer_aux;
+    for (DnaSequence::NuclType i = 0; i < 4; ++i) {
+        kmer_aux = Kmer(k.str());
+        kmer_aux.appendLeft(i);
+        if (is_solid(kmer_aux))
+            out++;
+    }
+    return out;
+}
+
+template<>
+size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
+{
+    size_t out = 0;
+    Kmer kmer_aux;
+    for (DnaSequence::NuclType i = 0; i < 4; ++i){
+        kmer_aux = Kmer(k.str());
+        kmer_aux.appendRight(i);
+        if (is_solid(kmer_aux))
+            out++;
+    }
+    return out;
+}
+template<>
 void NaiveDBG<false>::_kmerCount() {
         Kmer kmer;
         KmerInfo<false> tail;
@@ -21,7 +93,8 @@ void NaiveDBG<false>::_kmerCount() {
                 /*
                  * Lets change into standard form
                  */
-                //kmer.standard();
+                if (_is_standard)
+                    kmer.standard();
                 /*std::cout << "Kmer: "<<kmer.str()<<" Kmer(rc): " << kmer.rc().str()<<" ¿Es Menor? "<<(kmer < kmer.rc())<<"\n";
                 if (kmer < kmer.rc())
                     exit(1);*/
@@ -38,83 +111,29 @@ void NaiveDBG<false>::_kmerCount() {
                         }
                         tail = kmer_r;
                         _dbg_naive.emplace(kmer);
+                        _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
+                        _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
-                if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
+                if (_kmers_map[kmer].first == Parameters::get().accumulative_h) {
                     _dbg_naive.emplace(kmer);
+                    _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
+                    _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+                }
             }
         }
-        std::cout << "Sizes: "<<_kmers_map.size()<<" "<<_dbg_naive.size()<<"\n";
+        std::cout << "Sizes: "<<_kmers_map.size()<<" "<<_dbg_naive.size()<<" "<<_dbg_nodes.size()<<"\n";
         _kmers_map.clear();
         /*for (auto &k: _dbg_naive)
-            cout << "Kmer: "<<k.str()<<"\n";*/
+            cout << "KmerNaive: "<<k.str()<<"\n";*/
+        /*for (auto &k: _dbg_nodes) {
+            cout << "KmerNodes: " << k.str() << "\n";
+            vector<Kmer> neigh = getKmerNeighbors(k);
+            for (auto n: neigh)
+                cout << "Vecinos: "<<n.str() << "\n";
+        }*/
         Progress::update(_sc.getIndex().size());
-}
-
-template<>
-bool NaiveDBG<false>::is_solid(typename NodeType::DBGNode& kmer) const
-{
-    Kmer kmer_aux = kmer;
-    //kmer_aux.standard();
-    return (_dbg_naive.find(kmer_aux) != _dbg_naive.end());
-}
-
-template<>
-vector<DnaSequence::NuclType> NaiveDBG<false>::getNeighbors
-        (const typename NodeType::DBGNode& kmer) const
-{
-    vector<DnaSequence::NuclType> nts;
-    for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        Kmer kmer_aux(kmer.str());
-        kmer_aux.appendRight(i);
-        if (is_solid(kmer_aux))
-            nts.push_back(i);
-    }
-    return nts;
-}
-
-template<>
-vector<typename NodeType<false>::DBGNode> NaiveDBG<false>::getKmerNeighbors
-        (const typename NodeType<false>::DBGNode & kmer) const
-{
-    vector<Kmer> nts;
-    //std::cout << "Original Kmer: "<<kmer.str()<<"\n";
-    for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        Kmer kmer_aux(kmer.str());
-        kmer_aux.appendRight(i);
-        if (is_solid(kmer_aux))
-            nts.push_back( kmer_aux);
-    }
-    /*for (uint i = 0; i < nts.size(); ++i)
-        std::cout <<"Neighbor: " <<nts[i].str() << "\n";*/
-    return nts;
-}
-
-template<>
-size_t NaiveDBG<false>::in_degree(typename NodeType<false>::DBGNode k)
-{
-    size_t out = 0;
-    for (DnaSequence::NuclType i = 0; i < 4; ++i) {
-        Kmer kmer_aux(k.str());
-        kmer_aux.appendLeft(i);
-        if (is_solid(kmer_aux))
-            out++;
-    }
-    return out;
-}
-
-template<>
-size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
-{
-    size_t out = 0;
-    for (DnaSequence::NuclType i = 0; i < 4; ++i){
-        Kmer kmer_aux(k.str());
-        kmer_aux.appendRight(i);
-        if (is_solid(kmer_aux))
-            out++;
-    }
-    return out;
 }
 
 template<>
@@ -135,14 +154,14 @@ void NaiveDBG<true>::_kmerCount() {
 }
 
 template<>
-bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode &kmer) const
+bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode& kmer) const
 {
     return (_dbg_naive.find(kmer) != _dbg_naive.end());
 }
 
 template<>
 vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
-        (const typename NodeType::DBGNode& kmer) const
+        (typename NodeType::DBGNode kmer) const
 {
     vector<DnaSequence::NuclType> nts;
     return nts;
@@ -150,7 +169,7 @@ vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
 
 template<>
 vector<typename NodeType<true>::DBGNode> NaiveDBG<true>::getKmerNeighbors
-        (const typename NodeType::DBGNode & kmer) const
+        (typename NodeType::DBGNode  kmer) const
 {
     vector<Kmer> nts;
     return nts;

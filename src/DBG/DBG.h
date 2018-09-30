@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 10
+#define MIN_PATH_LEN 2
 
 template<bool P>
 class NaiveDBG: public DBG<P>
@@ -24,9 +24,9 @@ public:
     }
     bool is_solid(typename NodeType<P>::DBGNode&) const;
     vector<DnaSequence::NuclType> getNeighbors
-            (const typename NodeType<P>::DBGNode &) const;
+            (typename NodeType<P>::DBGNode) const;
     vector<typename NodeType<P>::DBGNode> getKmerNeighbors
-            (const typename NodeType<P>::DBGNode &) const;
+            (typename NodeType<P>::DBGNode) const;
     size_t length() const
     {
         return _dbg_naive.size();
@@ -100,65 +100,124 @@ private:
         return dna_vect;
     }
 
-    void _check_path(size_t& len, vector<Kmer>& k_vec) const
+    /*
+     * k1->k2->k3 (To standard post append) -> Only length matters :P
+     */
+    void _check_forward_path(size_t& len_fw, vector<Kmer>& k_vec) const
     {
+        /*
+         * Check neighbors of the Kmer
+         */
         Kmer aux = k_vec.back();
-        std::vector<DnaSequence::NuclType> neigh = getNeighbors(aux);
-        if (neigh.size() == 1) {
-            len++;
-            if (len < MIN_PATH_LEN){
-                Kmer kmer_aux = aux;
-                kmer_aux.appendRight(neigh[0]);
-                k_vec.push_back(kmer_aux);
-                _check_path(len,k_vec);
+        std::vector<DnaSequence::NuclType> neigh_fw = getNeighbors(aux), neigh_rc;
+        if (_is_standard)
+            neigh_rc = getNeighbors(aux.rc());
+        if (neigh_fw.size() == 1) {
+            if (!_is_standard) {
+                len_fw++;
+                if (len_fw < MIN_PATH_LEN) {
+                    Kmer kmer_aux = aux;
+                    kmer_aux.appendRightReplace(neigh_fw[0]);
+                    k_vec.push_back(kmer_aux);
+                    _check_forward_path(len_fw, k_vec);
+                }
+            }else if(neigh_rc.size())
+                len_fw += MIN_PATH_LEN;
+        }
+        if (_is_standard && neigh_rc.size() == 1){
+            if (!neigh_fw.size()){
+                len_fw++;
+                if (len_fw < MIN_PATH_LEN){
+                    Kmer kmer_aux = aux.rc();
+                    kmer_aux.appendRightReplace(neigh_rc[0]);
+                    k_vec.push_back(kmer_aux);
+                    _check_forward_path(len_fw, k_vec);
+                }
             }
-        }if (neigh.size() > 1)
-            len += MIN_PATH_LEN;
+        }
+        if (neigh_fw.size() > 1)
+            len_fw += MIN_PATH_LEN;
         else
-            len += 0;
-    };
+            len_fw += 0;
+    }
 
     bool _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
     {
         if (len < MIN_PATH_LEN)
-            for (auto k:aux)
+            for (auto k:aux) {
+                if (_is_standard)
+                    k.standard();
                 erase.push_back(k);
+            }
         return len < MIN_PATH_LEN;
     }
 
     void _erase(vector<Kmer>& kmer_to_erase)
     {
-        for (auto kmer_erase:kmer_to_erase)
-            _dbg_naive.erase(kmer_erase);
+        /*cout << "NaiveSize: "<<_dbg_naive.size()<<"\n";
+        cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";
+        for (auto k: kmer_to_erase)
+            cout << "KmerToErase: "<<k.str()<<"\n";*/
+        for (auto kmer_erase:kmer_to_erase) {
+            _dbg_nodes.erase(kmer_erase);
+            for (uint i = 0; i < 8; i++) {
+                Kmer new_kmer = kmer_erase;
+                (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
+                _dbg_naive.erase(new_kmer);
+            }
+        }
+        /*cout << "NaiveSizePost: "<<_dbg_naive.size() << "\n";
+        cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
         kmer_to_erase.clear();
     }
 
+    //TODO: Revisar todo lo asociado con los Standard, pensar en hacer 2 instancias 1 para fw y otra para rc
     void _remove_isolated_nodes()
     {
         bool change = false, in_0_erase = true;
         vector<Kmer> erase;
         size_t cont_2 = 0;
-        for (auto kmer:_dbg_naive) {
+        for (auto kmer:_dbg_nodes) {
             size_t cont = 0;
-            size_t len = 1, in_nodes = in_degree(kmer);
-            if (!in_nodes) {
+            size_t in_nodes_fw = in_degree(kmer), in_nodes_rc = in_degree(kmer.rc()),out_nodes_fw = out_degree(kmer)
+            ,out_nodes_rc = out_degree(kmer.rc());
+            size_t in_nodes_total = in_nodes_fw+((_is_standard)?in_nodes_rc:0);
+            size_t len = 1;
+            /*std::cout << "Kmer: "<<kmer.str()<<"\n";
+            std::cout << "InDegree: "<<in_nodes_fw << " OutDegree: "<<out_nodes_fw<<"\n";*/
+            /*
+             * InDegree = 0
+             */
+            if (!in_nodes_total) {
                 cont ++;
                 cont_2++;
-                /*
-                 * Check isolated nodes
-                 */
-                vector<Kmer> aux;
-                aux.push_back(kmer);
-                _check_path(len,aux);
+                vector<Kmer> aux = {kmer};
+                _check_forward_path(len,aux);
                 in_0_erase = _asses(erase,aux,len);
             }
             if (!in_0_erase)
                 _in_0.push_back(kmer);
+            /*
+             * Unbalanced Nodes
+             */
+            if (!cont) {
+                if (!_is_standard) {
+                    if (out_nodes_fw > in_nodes_fw) {
+                        _in_0.push_back(kmer);
+                    }
+                }else{
+                     if ((in_nodes_fw < out_nodes_fw) || (in_nodes_rc < out_nodes_rc))
+                         _in_0.push_back(kmer);
+                }
+            }
             in_0_erase = true;
-            //Implementar algo tipo cache para evitar pasar varias veces por un kmer
+            /*
+             * Check FWNeighbors and RCNeighbors (if proceeds)
+             */
             vector<Kmer> neighbors = getKmerNeighbors(kmer);
+            size_t num_neighbors = neighbors.size();
             size_t cont_fake_branches = 0;
-            if ( neighbors.size() > 1)
+            if ( num_neighbors > 1)
             {
                 /*
                  * Check branches
@@ -166,18 +225,18 @@ private:
                 for (auto sibling:neighbors)
                 {
                     len = 1;
-                    vector<Kmer> aux;
-                    aux.push_back(sibling);
-                    _check_path(len,aux);
+                    vector<Kmer> aux = {sibling};
+                    _check_forward_path(len,aux);
                     if (_asses(erase,aux,len))
                         cont_fake_branches++;
                 }
             }
         }
-        std::cout << "Indegree 0  count: "<<cont_2<<"\n";
-        if (erase.size() > 0)
+        std::cout << "Indegree 0  count: "<<cont_2<<" "<<erase.size()<<"\n";
+        if (erase.size() > 0) {
             change = true;
-        _erase(erase);
+            _erase(erase);
+        }
         /*
          * We have to iterate until convergence
          */
@@ -185,7 +244,11 @@ private:
             _in_0.clear();
             _remove_isolated_nodes();
         }else
-            cout << "KmerSolids: "<<_dbg_naive.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
+            cout << "KmerSolids: "<<_dbg_nodes.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
+        /*for (auto k:_dbg_nodes)
+            cout << "KmerNodes: "<<k.str()<<"\n";
+        for (auto k:_dbg_naive)
+            cout << "KmerSolidos: "<<k.str()<<"\n";*/
     }
 
     /*
@@ -209,12 +272,18 @@ private:
     }
 
     unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
-    //_dbg_naive graph, set of first solid k-mers
-    unordered_set<Kmer> _dbg_naive;
+    /*
+     * DBG_naive -> stores the set of solid Kmers
+     * DBG_nodes -> stores the set of (K-1)mers
+     */
+    unordered_set<Kmer> _dbg_naive, _dbg_nodes;
     unordered_set<KmerInfo<P>> _heads,_tails;
     //Extension points
     vector<Kmer> _in_0;
 
     //Extend
     SequenceContainer& _sc;
+
+    //Standard
+    bool _is_standard = false;
 };
