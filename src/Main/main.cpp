@@ -14,8 +14,8 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
         ,std::string& path_unitigs, bool &pair_end)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:t:p";
-    std::vector<bool> mandatory(2,false);
+    char optString[] = "f:k:o:u:h:t:p";
+    std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
         {
@@ -25,8 +25,10 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
-                //Cambiar
-                Parameters::get().accumulative_h = 1;
+                mandatory[2] = true;
+                break;
+            case 'h':
+                Parameters::get().accumulative_h = atoi(optarg);
                 mandatory[1] = true;
                 break;
             case 'o':
@@ -115,7 +117,6 @@ int main(int argv, char ** argc){
         for (auto i: kmer_sizes) {
             Parameters::get().kmerSize = Parameters::get().kmerSize * i;
             std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
-            //naiveDBG.show_info();
             if (i > 1)
                 naiveDBG = NaiveDBG<true>(sc);
             ReadCorrector<true> read(sc, naiveDBG);

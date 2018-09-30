@@ -6,7 +6,7 @@
 
 
 //Constants
-#define MIN_PATH_LEN 2
+#define MIN_PATH_LEN 10
 
 template<bool P>
 class NaiveDBG: public DBG<P>
@@ -109,60 +109,38 @@ private:
          * Check neighbors of the Kmer
          */
         Kmer aux = k_vec.back();
-        std::vector<DnaSequence::NuclType> neigh_fw = getNeighbors(aux), neigh_rc;
-        if (_is_standard)
-            neigh_rc = getNeighbors(aux.rc());
+        std::vector<DnaSequence::NuclType> neigh_fw = getNeighbors(aux);
         if (neigh_fw.size() == 1) {
-            if (!_is_standard) {
-                len_fw++;
-                if (len_fw < MIN_PATH_LEN) {
-                    Kmer kmer_aux = aux;
-                    kmer_aux.appendRightReplace(neigh_fw[0]);
-                    k_vec.push_back(kmer_aux);
-                    _check_forward_path(len_fw, k_vec);
-                }
-            }else if(neigh_rc.size())
-                len_fw += MIN_PATH_LEN;
-        }
-        if (_is_standard && neigh_rc.size() == 1){
-            if (!neigh_fw.size()){
-                len_fw++;
-                if (len_fw < MIN_PATH_LEN){
-                    Kmer kmer_aux = aux.rc();
-                    kmer_aux.appendRightReplace(neigh_rc[0]);
-                    k_vec.push_back(kmer_aux);
-                    _check_forward_path(len_fw, k_vec);
-                }
+            len_fw++;
+            if (len_fw < MIN_PATH_LEN) {
+                Kmer kmer_aux = aux;
+                kmer_aux.appendRightReplace(neigh_fw[0]);
+                k_vec.push_back(kmer_aux);
+                _check_forward_path(len_fw, k_vec);
             }
         }
         if (neigh_fw.size() > 1)
             len_fw += MIN_PATH_LEN;
-        else
-            len_fw += 0;
     }
 
     bool _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
     {
         if (len < MIN_PATH_LEN)
             for (auto k:aux) {
-                if (_is_standard)
-                    k.standard();
                 erase.push_back(k);
             }
-        return len < MIN_PATH_LEN;
+        return (len < MIN_PATH_LEN);
     }
 
     void _erase(vector<Kmer>& kmer_to_erase)
     {
-        /*cout << "NaiveSize: "<<_dbg_naive.size()<<"\n";
-        cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";
-        for (auto k: kmer_to_erase)
-            cout << "KmerToErase: "<<k.str()<<"\n";*/
         for (auto kmer_erase:kmer_to_erase) {
             _dbg_nodes.erase(kmer_erase);
             for (uint i = 0; i < 8; i++) {
                 Kmer new_kmer = kmer_erase;
                 (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
+                if (_is_standard)
+                    new_kmer.standard();
                 _dbg_naive.erase(new_kmer);
             }
         }
@@ -179,12 +157,9 @@ private:
         size_t cont_2 = 0;
         for (auto kmer:_dbg_nodes) {
             size_t cont = 0;
-            size_t in_nodes_fw = in_degree(kmer), in_nodes_rc = in_degree(kmer.rc()),out_nodes_fw = out_degree(kmer)
-            ,out_nodes_rc = out_degree(kmer.rc());
-            size_t in_nodes_total = in_nodes_fw+((_is_standard)?in_nodes_rc:0);
+            size_t in_nodes_fw = in_degree(kmer),out_nodes_fw = out_degree(kmer);
+            size_t in_nodes_total = in_nodes_fw;
             size_t len = 1;
-            /*std::cout << "Kmer: "<<kmer.str()<<"\n";
-            std::cout << "InDegree: "<<in_nodes_fw << " OutDegree: "<<out_nodes_fw<<"\n";*/
             /*
              * InDegree = 0
              */
@@ -201,14 +176,8 @@ private:
              * Unbalanced Nodes
              */
             if (!cont) {
-                if (!_is_standard) {
-                    if (out_nodes_fw > in_nodes_fw) {
-                        _in_0.push_back(kmer);
-                    }
-                }else{
-                     if ((in_nodes_fw < out_nodes_fw) || (in_nodes_rc < out_nodes_rc))
-                         _in_0.push_back(kmer);
-                }
+                if (out_nodes_fw > in_nodes_fw)
+                    _in_0.push_back(kmer);
             }
             in_0_erase = true;
             /*
@@ -227,8 +196,9 @@ private:
                     len = 1;
                     vector<Kmer> aux = {sibling};
                     _check_forward_path(len,aux);
-                    if (_asses(erase,aux,len))
+                    if (_asses(erase,aux,len)) {
                         cont_fake_branches++;
+                    }
                 }
             }
         }
@@ -242,10 +212,11 @@ private:
         if (change) {
             _in_0.clear();
             _remove_isolated_nodes();
-        }else
-            cout << "KmerSolids: "<<_dbg_nodes.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
-        for (auto k:_in_0)
-            cout<<"KmerSuspicious: "<<k.str()<<"\n";
+        }else {
+            cout << "KmerSolids: " << _dbg_nodes.size() << "; Suspicious Starts: " << _in_0.size() << "\n";
+            for (auto k:_in_0)
+                cout << "KmerSuspicious: " << k.str() << "\n";
+        }
         /*for (auto k:_dbg_nodes)
             cout << "KmerNodes: "<<k.str()<<"\n";
         for (auto k:_dbg_naive)
@@ -286,5 +257,5 @@ private:
     SequenceContainer& _sc;
 
     //Standard
-    bool _is_standard = false;
+    bool _is_standard = true;
 };

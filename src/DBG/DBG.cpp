@@ -40,6 +40,7 @@ vector<typename NodeType<false>::DBGNode> NaiveDBG<false>::getKmerNeighbors
     Kmer kmer_aux;
     for (DnaSequence::NuclType i=0; i < 4; ++i) {
         kmer_aux = Kmer(kmer.str());
+
         kmer_aux.appendRight(i);
         if (is_solid(kmer_aux))
             nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
@@ -105,35 +106,49 @@ void NaiveDBG<false>::_kmerCount() {
                     _kmers_map[kmer].second = min(_kmers_map[kmer].second,kmer_r.kmer_pos);
                     if (_kmers_map[kmer].first == Parameters::get().accumulative_h)
                     {
+                        /*
+                         * First Version adding both forward and revComp
+                         */
                         if (_kmers_map[kmer].second < Parameters::get().kmerSize / 2) {
                             first = true;
                             _heads.emplace(kmer_r);
                         }
                         tail = kmer_r;
+                        Kmer rc = kmer_r.kmer.rc();
                         _dbg_naive.emplace(kmer);
                         _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
                         _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+                        _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
+                        _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
                 if (_kmers_map[kmer].first == Parameters::get().accumulative_h) {
+                    /*
+                     * First Version adding both forward and revComp
+                     */
+                    Kmer rc = kmer_r.kmer.rc();
                     _dbg_naive.emplace(kmer);
-                    _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
-                    _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+                    _dbg_nodes.emplace(kmer_r.kmer.substr(0,Parameters::get().kmerSize-1));
+                    _dbg_nodes.emplace(kmer_r.kmer.substr(1,Parameters::get().kmerSize));
+                    _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
+                    _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
                 }
             }
         }
-        std::cout << "Sizes: "<<_kmers_map.size()<<" "<<_dbg_naive.size()<<" "<<_dbg_nodes.size()<<"\n";
+        Progress::update(_sc.getIndex().size());
+        std::cout << "Size Map: "<<_kmers_map.size()<<" Size Solid Kmers(as Edges): "<<_dbg_naive.size()
+                  <<" Size Nodes Graph: "<<_dbg_nodes.size()<<"\n";
         _kmers_map.clear();
         /*for (auto &k: _dbg_naive)
-            cout << "KmerNaive: "<<k.str()<<"\n";*/
-        /*for (auto &k: _dbg_nodes) {
+            cout << "KmerNaive: "<<k.str()<<"\n";
+        for (auto &k: _dbg_nodes) {
             cout << "KmerNodes: " << k.str() << "\n";
             vector<Kmer> neigh = getKmerNeighbors(k);
             for (auto n: neigh)
                 cout << "Vecinos: "<<n.str() << "\n";
         }*/
-        Progress::update(_sc.getIndex().size());
+    //sleep(10000);
 }
 
 template<>

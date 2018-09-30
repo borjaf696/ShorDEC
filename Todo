@@ -4,4 +4,13 @@ Todo:
 		- Lo primero hacer toda la faena de la corrección de la manera regular.
 		- Construir el de bruijn graph normal, pero almacenando para cada {K1, {k2,k3...kn}} es decir sus posibles conexiones.
 		- Crear un grafo que unifique las conexiones entre los kmers definidos con anterioridad.
+	- La opción de almacenar solo uno vamos a tener que dejarla para más adelante cuando realmente aporte algo. En la actualidad las lecturas se contemplan todas como si fuesen o FW o RC. Por lo tanto, es imposible saber de donde vienen o que orientación tienen. De hecho todas las lecturas tienen ambas orientaciones, por tanto es siempre necesario siempre comprobar la version fw o rc. Por lo que usar una versión donde solo se compruebe una orientación y se construya la secuencia a partir de esto. No es realmente asequible. Lo que habría que hacer en estos momentos es coger cada k-mer sólido y comprobar fw y rc. Otra solución más asequible sería obviar la parte de las reverso complementarias pero no lo veo razonable, no en este punto. Si las lecturas vienen con la etiqueta +/- lo propio sería utilizar esta información.
+		- MEJORA FUTURA: Utilizar las etiquetas +/- como procede. (barajar en futuro próximo)
+			- Mejor opción: (más rápida al menos):
+				- Acceder igual que hasta el momento, pero incluir un nuevo atributo ¿LEER? Que diga si una lectura ha de ser comprobada o no:
+					- Caso actual: LEER siempre True. (no existe información relativa a la orientación de la lectura, es decir tanto puede ser forward como reverse)
+					- Caso etiquetas: 
+						* LEER solo true cuando realmente haya que leer. ¡Ojo! Si las lecturas vienen etiquetadas se ha de mantener el orden de + (FW) y - (RC)
+						* Incluso en este caso no sería ninguna tontería separar ambos estudios y usar de manera separada la informción forward de la reverse. Es decir trabajar en dos iteraciones distintas cuando sean los casos forward, reverse. Esto debería incrementar la precisión pues imposibilitaría la mezcla de fragmentos de la hebra complementaria en le hebra forward (típico caso de recombinación).
+	- Una vez se haya comprobado que todo funciona de la manera apropiada, saltar a la versión de uso de información tipo PAIR_END.
 
