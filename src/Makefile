@@ -49,4 +49,3 @@ clean:
 	-rm ${dbg_obj}
 	-rm ${extender_obj}
 	-rm ${m_main_obj}
-	-rm ${BIN}

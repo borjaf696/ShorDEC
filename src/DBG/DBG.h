@@ -232,7 +232,6 @@ private:
                 }
             }
         }
-        std::cout << "Indegree 0  count: "<<cont_2<<" "<<erase.size()<<"\n";
         if (erase.size() > 0) {
             change = true;
             _erase(erase);
@@ -245,6 +244,8 @@ private:
             _remove_isolated_nodes();
         }else
             cout << "KmerSolids: "<<_dbg_nodes.size() << "; Suspicious Starts: "<<_in_0.size()<< "\n";
+        for (auto k:_in_0)
+            cout<<"KmerSuspicious: "<<k.str()<<"\n";
         /*for (auto k:_dbg_nodes)
             cout << "KmerNodes: "<<k.str()<<"\n";
         for (auto k:_dbg_naive)

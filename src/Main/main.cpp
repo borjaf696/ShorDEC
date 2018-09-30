@@ -26,7 +26,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
                 //Cambiar
-                Parameters::get().accumulative_h = 8;
+                Parameters::get().accumulative_h = 1;
                 mandatory[1] = true;
                 break;
             case 'o':
@@ -132,17 +132,15 @@ int main(int argv, char ** argc){
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
         std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
-        //naiveDBG.show_info();
         if (i > 1)
             naiveDBG = NaiveDBG<false>(sc);
-        //sc.ShowInfo();
         ReadCorrector<false> read(sc, naiveDBG);
-        sc.ShowInfo();
+        //sc.ShowInfo();
     }
     std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
     std::cout << "Writing new reads in: " << path_to_write << "\n";
     sc.writeSequenceContainer(path_to_write);
     std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
-    naiveDBG = NaiveDBG<false>(sc)
+    naiveDBG = NaiveDBG<false>(sc);
     naiveDBG.ProcessTigs(path_unitigs);
 }
