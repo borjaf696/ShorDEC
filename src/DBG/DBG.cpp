@@ -187,7 +187,7 @@ void NaiveDBG<true>::_kmerCount() {
                     k.pair_kmer.standard();
                 std::cout << k.str() <<"\n";
                 pair<Kmer,Kmer> kmers = k.pair_kmer.getKmers();
-                std::cout << kmers.first.str()<<"|"<<kmers.second.str()<<"\n";
+                std::cout << nonstd_kmers.first.str()<<"|"<<nonstd_kmers.second.str()<<"\n";
                 if (_kmers_map.find(kmers.first) != _kmers_map.end()) {
                     pair<size_t,size_t> local_pair = _kmers_map[kmers.first];
                     /*

@@ -257,5 +257,5 @@ private:
     SequenceContainer& _sc;
 
     //Standard
-    bool _is_standard = false;
+    bool _is_standard = true;
 };
