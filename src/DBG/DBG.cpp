@@ -86,10 +86,6 @@ void NaiveDBG<false>::_kmerCount() {
             Progress::update(read.first.getId());
             first = false;
             for (auto kmer_r: IterKmers<false>(read.second.sequence)) {
-                /*
-                 * TODO: Para hacer la parte de almancenar solo el kmer de menor tamanho chequear cada kmer con standar.
-                 * recordar que falta testear el metodo y que por tanto antes de nada habra que asegurar esto.
-                 */
                 kmer = kmer_r.kmer;
                 /*
                  * Lets change into standard form
@@ -166,6 +162,23 @@ void NaiveDBG<false>::show_info()
  */
 template<>
 void NaiveDBG<true>::_kmerCount() {
+    std::cout << "A iterar\n";
+    Pair_Kmer p_kmer;
+    for (auto &read:_sc.getIndex())
+    {
+        Progress::update(read.first.getId());
+        if ((read.first.getId() % 4) < 2)
+        {
+            for (auto k: IterKmers<true>(_sc.getSeq(read.second.getId()),_sc.getSeq(read.second.getPairId())))
+            {
+                std::cout << k.str() <<"\n";
+                if (_is_standard)
+                    k.pair_kmer.standard();
+                std::cout << k.str() <<"\n";
+
+            }
+        }
+    }
 }
 
 template<>

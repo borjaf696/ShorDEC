@@ -34,6 +34,9 @@ struct FastaRecord
 
 		Id rc() const		//reverse complement 
 			{return Id(_id + 1 - (_id % 2) * 2);}
+        Id pr() const   //pair_read
+            {return Id(_id+2 - (_id % 4) * 2);}
+
 		bool strand() const		//true = positive(forward), false = negative
 			{return !(_id % 2);}
 		size_t hash() const 
@@ -104,6 +107,18 @@ struct FastaRecord
 	std::string getDescription(){
 		return description;
 	}
+
+    Id getComplementaryId() const {
+        return id.rc();
+    }
+
+    Id getPairId() const {
+        return id.pr();
+    }
+
+    Id getId() const {
+        return id.getId();
+    }
 	
 	Id id;
 	DnaSequence sequence;

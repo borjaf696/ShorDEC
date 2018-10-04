@@ -1,6 +1,6 @@
 #include <unordered_map>
 #include <memory>
-
+#include <assert.h>
 #include "sequence_container.h"
 
 using namespace std;
@@ -22,7 +22,7 @@ public:
 		_seq = kmer->getSeq();
 	}
 
-	Kmer(const std::string &string_own)
+	Kmer(const string &string_own)
 	{
 		_seq = DnaSequence(string_own);
 	}
@@ -90,8 +90,7 @@ public:
     bool exist = true;
     Pair_Kmer():exist(false){}
     ~Pair_Kmer(){}
-    Pair_Kmer(const DnaSequence&,size_t,size_t,
-              const DnaSequence&,size_t,size_t);
+    Pair_Kmer(const DnaSequence&,const DnaSequence&,size_t,size_t);
     Pair_Kmer(DnaSequence seq_left, DnaSequence seq_right):
             _seq_left(seq_left),_seq_right(seq_right){}
     Pair_Kmer(const Pair_Kmer & kmer){
@@ -115,6 +114,14 @@ public:
         return Pair_Kmer(_seq_left.complement(),_seq_right.complement());
     }
 
+    void standard()
+    {
+        if (_seq_left > _seq_left.complement())
+            _seq_left = _seq_left.complement();
+        if (_seq_right > _seq_right.complement())
+            _seq_right = _seq_right.complement();
+    }
+
     void appendRight(DnaSequence::NuclType, DnaSequence::NuclType);
     void appendLeft(DnaSequence::NuclType, DnaSequence::NuclType);
 
@@ -128,12 +135,14 @@ public:
 
     pair<DnaSequence::NuclType,DnaSequence::NuclType> at(size_t index) const;
 
+    bool operator>(const Pair_Kmer&) const;
+    bool operator<(const Pair_Kmer&) const;
     bool operator==(const Pair_Kmer&) const;
     bool operator!=(const Pair_Kmer&) const;
     Pair_Kmer& operator=(const Pair_Kmer&);
 
     std::size_t hash() const{
-        return std::hash<std::string>()(_seq_left.str()+_seq_right.str());
+        return std::hash<string>()(_seq_left.str()+_seq_right.str());
     }
 
     pair<string,string> str() const
@@ -151,13 +160,13 @@ private:
 namespace std{
     template <>
     struct hash<Kmer>{
-        std::size_t operator()(const Kmer& kmer) const{
+        size_t operator()(const Kmer& kmer) const{
             return kmer.hash();
         }
     };
     template<>
     struct hash<Pair_Kmer>{
-        std::size_t operator()(const Pair_Kmer& pair_kmer) const{
+        size_t operator()(const Pair_Kmer& pair_kmer) const{
             return pair_kmer.hash();
         }
     };
@@ -174,7 +183,7 @@ template<> struct KmerInfo<false>{
     {}
     size_t hash() const
     {
-        return std::hash<std::string>()(kmer.str()+std::to_string(kmer_pos));
+        return std::hash<std::string>()(kmer.str()+to_string(kmer_pos));
     }
     KmerInfo(const KmerInfo & k_info)
             :kmer(k_info.kmer),kmer_pos(k_info.kmer_pos)
@@ -194,6 +203,9 @@ template<> struct KmerInfo<false>{
     {
         return !((kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos));
     }
+    string str() const {
+        return " KmerInfo<false>: "+kmer.str()+";"+to_string(kmer_pos);
+    }
     Kmer kmer;
     size_t kmer_pos;
 };
@@ -207,7 +219,7 @@ template<> struct KmerInfo<true>{
     size_t hash() const
     {
         pair<string,string> str_p_kmer = pair_kmer.str();
-        return std::hash<std::string>()(str_p_kmer.first+to_string(kmer_pos)+str_p_kmer.second+to_string(dist));
+        return std::hash<string>()(str_p_kmer.first+to_string(kmer_pos)+str_p_kmer.second+to_string(dist));
     }
     KmerInfo(const KmerInfo & k_info)
             :pair_kmer(k_info.pair_kmer),kmer_pos(k_info.kmer_pos),dist(k_info.dist)
@@ -227,6 +239,11 @@ template<> struct KmerInfo<true>{
     bool operator!=(const KmerInfo & k_info) const
     {
         return !((pair_kmer == k_info.pair_kmer) && (kmer_pos == k_info.kmer_pos) && (dist == k_info.dist));
+    }
+    string str()
+    {
+        pair<string,string> str_pair = pair_kmer.str();
+        return "KmerInfo<true>: "+str_pair.first+"|"+str_pair.second+";"+to_string(kmer_pos);
     }
     Pair_Kmer pair_kmer;
     size_t kmer_pos, dist = 0;
@@ -250,7 +267,7 @@ template<bool P> class KmerIt;
 template<>
 class KmerIt<false>{
 public:
-	typedef std::forward_iterator_tag iterator_category;
+	typedef forward_iterator_tag iterator_category;
 	KmerIt(const DnaSequence*,size_t);
 
 	bool operator==(const KmerIt&) const;
@@ -272,8 +289,8 @@ protected:
 template<>
 class KmerIt<true>{
 public:
-    typedef std::forward_iterator_tag iterator_category;
-    KmerIt(const DnaSequence*,size_t);
+    typedef forward_iterator_tag iterator_category;
+    KmerIt(const DnaSequence*, const DnaSequence*,size_t);
 
     bool operator==(const KmerIt&) const;
     bool operator!=(const KmerIt&) const;
@@ -282,10 +299,10 @@ public:
     KmerInfo<true> operator*() const;
     KmerIt& operator++();
 protected:
-    const DnaSequence* _own_seq;
+    const DnaSequence * _seq_left, * _seq_right;
     bool _paired;
     size_t _pos;
-    Kmer _kmer;
+    Pair_Kmer _pair_kmer;
 };
 
 template<bool P> class IterKmers;
@@ -310,7 +327,10 @@ template<>
 class IterKmers<true>{
 public:
     IterKmers(const DnaSequence &seq_left, const DnaSequence &seq_right):
-            _seq_left(seq_left),_seq_right(seq_right){}
+            _seq_left(seq_left),_seq_right(seq_right)
+    {
+        assert(_seq_right.length() == _seq_left.length());
+    }
     KmerIt<true> begin();
     KmerIt<true> end();
 

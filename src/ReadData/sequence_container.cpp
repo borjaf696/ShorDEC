@@ -9,6 +9,7 @@
 #include <random>
 #include <algorithm>
 #include <zlib.h>
+#include <queue>
 
 #include "sequence_container.h"
 
@@ -49,31 +50,51 @@ void SequenceContainer::load(const std::string &path, bool is_paired)
     fs::path doc_path(path);
     if (fs::is_directory(doc_path))
     {
+        std::queue<fs::path> dir_queue;
+        dir_queue.emplace(doc_path);
+        size_t num_files_checked = 0;
         std::cout << "Is directory: ";
         (is_paired)?std::cout << " Pair_end\n":std::cout << " Single_End\n";
-        for (auto &f : fs::directory_iterator(doc_path))
+        while(!dir_queue.empty())
         {
-            std::ostringstream oss;
-            oss << f;
-            std::string converted_path = oss.str().substr(1,oss.str().size()-2);
-            std::cout << "File: "<< converted_path<<"\n";
-            if (!is_paired)
-			    loadFromFile(converted_path,is_paired);
-            else
-            {
-                std::string side_read = converted_path.substr(converted_path.rfind('.')-1,1);
-                std::cout << "Read: "<<side_read << "\n";
-                if (side_read != "1" && side_read != "2")
-                    throw ParseException("Fail in pair_end reads");
-                else if (side_read == "1")
+			doc_path = dir_queue.front();
+			dir_queue.pop();
+            for (auto &f : fs::directory_iterator(doc_path)) {
+                if (fs::is_directory(f)) {
+					dir_queue.emplace(f);
+                    continue;
+                }
+                num_files_checked++;
+                std::ostringstream oss;
+                oss << f;
+                std::string converted_path = oss.str().substr(1, oss.str().size() - 2);
+                std::cout << "File: " << converted_path << "\n";
+                if (!is_paired)
                     loadFromFile(converted_path, is_paired);
-                else
-                    loadFromFile(converted_path, is_paired, 0);
+                else {
+                    std::string side_read = converted_path.substr(converted_path.rfind('.') - 1, 1);
+                    std::cout << "Read: " << side_read << "\n";
+                    if (side_read != "1" && side_read != "2")
+                        throw ParseException("Fail in pair_end reads");
+                    else if (side_read == "1")
+                        loadFromFile(converted_path, is_paired);
+                    else
+                        loadFromFile(converted_path, is_paired, 0);
+                }
             }
+        }
+        if (num_files_checked % 2 && is_paired)
+        {
+            std::cout << "Wrong number of Pair_End files\n";
+            exit(1);
         }
     }
 	if (fs::is_regular_file(doc_path))
     {
+		if (is_paired){
+			std::cout << "-.-' It is only a file dude!\n";
+			exit(1);
+		}
         std::cout << path<<"->Sequence Container\n";
         loadFromFile(path, false);
     }
