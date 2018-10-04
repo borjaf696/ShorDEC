@@ -75,6 +75,17 @@ size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
     }
     return out;
 }
+
+template <>
+void NaiveDBG<false>::_insert(Kmer kmer, Kmer rc)
+{
+    _dbg_naive.emplace(kmer);
+    _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
+    _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+    _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
+    _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
+}
+
 template<>
 void NaiveDBG<false>::_kmerCount() {
         Kmer kmer;
@@ -92,9 +103,6 @@ void NaiveDBG<false>::_kmerCount() {
                  */
                 if (_is_standard)
                     kmer.standard();
-                /*std::cout << "Kmer: "<<kmer.str()<<" Kmer(rc): " << kmer.rc().str()<<" ¿Es Menor? "<<(kmer < kmer.rc())<<"\n";
-                if (kmer < kmer.rc())
-                    exit(1);*/
                 unordered_map<Kmer, pair<size_t,size_t>>::const_iterator place =
                                                                                  _kmers_map.find(kmer);
                 if (place != _kmers_map.end()) {
@@ -110,12 +118,7 @@ void NaiveDBG<false>::_kmerCount() {
                             _heads.emplace(kmer_r);
                         }
                         tail = kmer_r;
-                        Kmer rc = kmer_r.kmer.rc();
-                        _dbg_naive.emplace(kmer);
-                        _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
-                        _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
-                        _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
-                        _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
+                        _insert(kmer, kmer_r.kmer.rc());
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
@@ -123,12 +126,7 @@ void NaiveDBG<false>::_kmerCount() {
                     /*
                      * First Version adding both forward and revComp
                      */
-                    Kmer rc = kmer_r.kmer.rc();
-                    _dbg_naive.emplace(kmer);
-                    _dbg_nodes.emplace(kmer_r.kmer.substr(0,Parameters::get().kmerSize-1));
-                    _dbg_nodes.emplace(kmer_r.kmer.substr(1,Parameters::get().kmerSize));
-                    _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
-                    _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
+                    _insert(kmer, kmer_r.kmer.rc());
                 }
             }
         }
@@ -160,6 +158,16 @@ void NaiveDBG<false>::show_info()
 /*
  * Paired_end reads
  */
+template <>
+void NaiveDBG<true>::_insert(Kmer kmer, Kmer rc)
+{
+    _dbg_naive.emplace(kmer);
+    _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
+    _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+    _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
+    _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
+}
+
 template<>
 void NaiveDBG<true>::_kmerCount() {
     std::cout << "A iterar\n";
@@ -171,11 +179,40 @@ void NaiveDBG<true>::_kmerCount() {
         {
             for (auto k: IterKmers<true>(_sc.getSeq(read.second.getId()),_sc.getSeq(read.second.getPairId())))
             {
-                std::cout << k.str() <<"\n";
+                /*
+                 * Kmers pre_standar for dbg
+                 */
+                pair<Kmer,Kmer> nonstd_kmers = k.pair_kmer.getKmers();
                 if (_is_standard)
                     k.pair_kmer.standard();
                 std::cout << k.str() <<"\n";
-
+                pair<Kmer,Kmer> kmers = k.pair_kmer.getKmers();
+                std::cout << kmers.first.str()<<"|"<<kmers.second.str()<<"\n";
+                if (_kmers_map.find(kmers.first) != _kmers_map.end()) {
+                    pair<size_t,size_t> local_pair = _kmers_map[kmers.first];
+                    /*
+                     * Checking if we are above the threshold
+                     */
+                    if (++local_pair.first == Parameters::get().accumulative_h)
+                        _insert(nonstd_kmers.first, nonstd_kmers.first.rc());
+                    local_pair.second = min(local_pair.second,k.kmer_pos);
+                    _kmers_map[kmers.first] = local_pair;
+                }else {
+                    _kmers_map[kmers.first].first = 0;
+                    _kmers_map[kmers.first].second = k.kmer_pos;
+                }
+                if (_kmers_map.find(kmers.second) != _kmers_map.end()) {
+                    pair<size_t,size_t> local_pair = _kmers_map[kmers.second];
+                    /*
+                     * Checking if we are above the threshold
+                     */
+                    if (++local_pair.first == Parameters::get().accumulative_h)
+                        _insert(nonstd_kmers.second, nonstd_kmers.second.rc());
+                    local_pair.second = min(local_pair.second, k.kmer_pos);
+                }else {
+                    _kmers_map[kmers.second].first = 0;
+                    _kmers_map[kmers.second].second = k.kmer_pos;
+                }
             }
         }
     }

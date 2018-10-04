@@ -78,6 +78,8 @@ private:
         _remove_isolated_nodes();
     }
 
+    void _insert(Kmer, Kmer);
+
     vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
     {
         /*
@@ -99,7 +101,6 @@ private:
         }
         return dna_vect;
     }
-
     /*
      * k1->k2->k3 (To standard post append) -> Only length matters :P
      */
@@ -252,10 +253,9 @@ private:
     unordered_set<KmerInfo<P>> _heads,_tails;
     //Extension points
     vector<Kmer> _in_0;
-
     //Extend
     SequenceContainer& _sc;
 
     //Standard
-    bool _is_standard = true;
+    bool _is_standard = false;
 };

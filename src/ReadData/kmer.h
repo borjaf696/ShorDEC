@@ -125,12 +125,19 @@ public:
     void appendRight(DnaSequence::NuclType, DnaSequence::NuclType);
     void appendLeft(DnaSequence::NuclType, DnaSequence::NuclType);
 
-    pair<DnaSequence,DnaSequence> getSeq() const {
+    pair<DnaSequence,DnaSequence> getSeq() const
+    {
         return pair<DnaSequence,DnaSequence>(_seq_left,_seq_right);
     }
 
-    pair<const DnaSequence*,const DnaSequence*> getSeq_ref() const{
+    pair<const DnaSequence*,const DnaSequence*> getSeq_ref() const
+    {
         return pair<const DnaSequence*,const DnaSequence*>(&_seq_left,&_seq_right);
+    }
+
+    pair<Kmer,Kmer> getKmers()
+    {
+        return pair<Kmer,Kmer>{Kmer(_seq_left),Kmer(_seq_right)};
     }
 
     pair<DnaSequence::NuclType,DnaSequence::NuclType> at(size_t index) const;
