@@ -22,17 +22,92 @@ public:
         _kmerCount();
         _cleaning();
     }
-    bool is_solid(typename NodeType<P>::DBGNode&) const;
+    /*
+     * Check whether a kmer is solid or not
+     */
+    bool is_solid(typename NodeType<P>::DBGNode& kmer) const
+    {
+        if (_is_standard) {
+            Kmer kmer_aux = kmer;
+            kmer_aux.standard();
+            return (_dbg_naive.find(kmer_aux) != _dbg_naive.end());
+        }else
+            return (_dbg_naive.find(kmer) != _dbg_naive.end());
+    }
+    /*
+     * Get the Nt in the edges
+     */
     vector<DnaSequence::NuclType> getNeighbors
-            (typename NodeType<P>::DBGNode) const;
+            (typename NodeType<P>::DBGNode kmer) const
+    {
+        if (kmer.length() == Parameters::get().kmerSize)
+            kmer = kmer.substr(1, Parameters::get().kmerSize);
+        vector<DnaSequence::NuclType> nts;
+        Kmer kmer_aux;
+        for (DnaSequence::NuclType i = 0; i < 4; ++i) {
+            kmer_aux = Kmer(kmer.str());
+            kmer_aux.appendRight(i);
+            if (is_solid(kmer_aux))
+                nts.push_back(i);
+        }
+        return nts;
+    }
+    /*
+     * Get the neighbor k-mers
+     */
     vector<typename NodeType<P>::DBGNode> getKmerNeighbors
-            (typename NodeType<P>::DBGNode) const;
+            (typename NodeType<P>::DBGNode kmer) const
+    {
+        if (kmer.length() == Parameters::get().kmerSize)
+            kmer = kmer.substr(1, Parameters::get().kmerSize);
+        vector<Kmer> nts;
+        Kmer kmer_aux;
+        for (DnaSequence::NuclType i=0; i < 4; ++i) {
+            kmer_aux = Kmer(kmer.str());
+
+            kmer_aux.appendRight(i);
+            if (is_solid(kmer_aux))
+                nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
+        }
+        return nts;
+    }
+    /*
+     * "Length" of the DBG
+     */
     size_t length() const
     {
         return _dbg_naive.size();
     }
-    size_t in_degree(typename NodeType<P>::DBGNode);
-    size_t out_degree(typename NodeType<P>::DBGNode);
+    /*
+     * Number of in_edges
+     */
+    size_t in_degree(typename NodeType<P>::DBGNode k)
+    {
+        size_t out = 0;
+        Kmer kmer_aux;
+        for (DnaSequence::NuclType i = 0; i < 4; ++i) {
+            kmer_aux = Kmer(k.str());
+            kmer_aux.appendLeft(i);
+            if (is_solid(kmer_aux))
+                out++;
+        }
+        return out;
+    }
+    /*
+     * Number of out_neighbors
+     */
+    size_t out_degree(typename NodeType<P>::DBGNode k)
+    {
+        size_t out = 0;
+        Kmer kmer_aux;
+        for (DnaSequence::NuclType i = 0; i < 4; ++i){
+            kmer_aux = Kmer(k.str());
+            kmer_aux.appendRight(i);
+            if (is_solid(kmer_aux))
+                out++;
+        }
+        return out;
+    }
 
     typename DBG<P>::Heads get(bool behaviour) const
     {
@@ -78,7 +153,18 @@ private:
         _remove_isolated_nodes();
     }
 
-    void _insert(Kmer, Kmer);
+    /*
+     * Insertion into the graph_nodes and graph_edges
+     */
+    void _insert(Kmer k,Kmer kmer)
+    {
+        Kmer rc = kmer.rc();
+        _dbg_naive.emplace(k);
+        _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
+        _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
+        _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
+        _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
+    }
 
     vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
     {
@@ -165,6 +251,7 @@ private:
              * InDegree = 0
              */
             if (!in_nodes_total) {
+                std::cout << "Kmers con cero indegree: "<<kmer.str() << "\n";
                 cont ++;
                 cont_2++;
                 vector<Kmer> aux = {kmer};
