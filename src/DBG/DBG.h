@@ -249,13 +249,13 @@ private:
      * DBG_naive -> stores the set of solid Kmers
      * DBG_nodes -> stores the set of (K-1)mers
      */
-    unordered_set<Kmer> _dbg_naive, _dbg_nodes;
+    unordered_set<typename NodeType<P>::DBGNode> _dbg_naive, _dbg_nodes;
+    unordered_set<ExtraType<P>> _set_of_kmers;
     unordered_set<KmerInfo<P>> _heads,_tails;
     //Extension points
-    vector<Kmer> _in_0;
+    vector<typename NodeType<P>::DBGNode> _in_0;
     //Extend
     SequenceContainer& _sc;
-
     //Standard
     bool _is_standard = true;
 };

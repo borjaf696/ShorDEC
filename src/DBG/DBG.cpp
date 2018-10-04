@@ -76,10 +76,12 @@ size_t NaiveDBG<false>::out_degree(typename NodeType<false>::DBGNode k)
     return out;
 }
 
+//TODO: Do it private
 template <>
-void NaiveDBG<false>::_insert(Kmer kmer, Kmer rc)
+void NaiveDBG<false>::_insert(Kmer k,Kmer kmer)
 {
-    _dbg_naive.emplace(kmer);
+    Kmer rc = kmer.rc();
+    _dbg_naive.emplace(k);
     _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
     _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
     _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
@@ -118,7 +120,7 @@ void NaiveDBG<false>::_kmerCount() {
                             _heads.emplace(kmer_r);
                         }
                         tail = kmer_r;
-                        _insert(kmer, kmer_r.kmer.rc());
+                        _insert(kmer,kmer_r.kmer);
                     }
                 } else
                     _kmers_map[kmer] = pair<size_t,size_t>(1,kmer_r.kmer_pos);
@@ -126,7 +128,7 @@ void NaiveDBG<false>::_kmerCount() {
                     /*
                      * First Version adding both forward and revComp
                      */
-                    _insert(kmer, kmer_r.kmer.rc());
+                    _insert(kmer, kmer_r.kmer);
                 }
             }
         }
@@ -169,56 +171,6 @@ void NaiveDBG<true>::_insert(Kmer kmer, Kmer rc)
 }
 
 template<>
-void NaiveDBG<true>::_kmerCount() {
-    std::cout << "A iterar\n";
-    Pair_Kmer p_kmer;
-    for (auto &read:_sc.getIndex())
-    {
-        Progress::update(read.first.getId());
-        if ((read.first.getId() % 4) < 2)
-        {
-            for (auto k: IterKmers<true>(_sc.getSeq(read.second.getId()),_sc.getSeq(read.second.getPairId())))
-            {
-                /*
-                 * Kmers pre_standar for dbg
-                 */
-                pair<Kmer,Kmer> nonstd_kmers = k.pair_kmer.getKmers();
-                if (_is_standard)
-                    k.pair_kmer.standard();
-                std::cout << k.str() <<"\n";
-                pair<Kmer,Kmer> kmers = k.pair_kmer.getKmers();
-                std::cout << nonstd_kmers.first.str()<<"|"<<nonstd_kmers.second.str()<<"\n";
-                if (_kmers_map.find(kmers.first) != _kmers_map.end()) {
-                    pair<size_t,size_t> local_pair = _kmers_map[kmers.first];
-                    /*
-                     * Checking if we are above the threshold
-                     */
-                    if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(nonstd_kmers.first, nonstd_kmers.first.rc());
-                    local_pair.second = min(local_pair.second,k.kmer_pos);
-                    _kmers_map[kmers.first] = local_pair;
-                }else {
-                    _kmers_map[kmers.first].first = 0;
-                    _kmers_map[kmers.first].second = k.kmer_pos;
-                }
-                if (_kmers_map.find(kmers.second) != _kmers_map.end()) {
-                    pair<size_t,size_t> local_pair = _kmers_map[kmers.second];
-                    /*
-                     * Checking if we are above the threshold
-                     */
-                    if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(nonstd_kmers.second, nonstd_kmers.second.rc());
-                    local_pair.second = min(local_pair.second, k.kmer_pos);
-                }else {
-                    _kmers_map[kmers.second].first = 0;
-                    _kmers_map[kmers.second].second = k.kmer_pos;
-                }
-            }
-        }
-    }
-}
-
-template<>
 bool NaiveDBG<true>::is_solid(typename NodeType::DBGNode& kmer) const
 {
     return (_dbg_naive.find(kmer) != _dbg_naive.end());
@@ -258,4 +210,61 @@ template<>
 void NaiveDBG<true>::show_info()
 {
 
+}
+
+template<>
+void NaiveDBG<true>::_kmerCount() {
+    Pair_Kmer p_kmer;
+    for (auto &read:_sc.getIndex())
+    {
+        Progress::update(read.first.getId());
+        if ((read.first.getId() % 4) < 2)
+        {
+            for (auto k: IterKmers<true>(_sc.getSeq(read.second.getId()),_sc.getSeq(read.second.getPairId())))
+            {
+                /*
+                 * Kmers pre_standar for dbg
+                 */
+                pair<Kmer,Kmer> nonstd_kmers = k.pair_kmer.getKmers();
+                if (_is_standard)
+                    k.pair_kmer.standard();
+                pair<Kmer,Kmer> kmers = k.pair_kmer.getKmers();
+                if (_kmers_map.find(kmers.first) != _kmers_map.end()) {
+                    pair<size_t,size_t> local_pair = _kmers_map[kmers.first];
+                    /*
+                     * Checking if we are above the threshold
+                     */
+                    if (++local_pair.first == Parameters::get().accumulative_h)
+                        _insert(kmers.first, nonstd_kmers.first);
+                    local_pair.second = min(local_pair.second,k.kmer_pos);
+                    _kmers_map[kmers.first] = local_pair;
+                }else {
+                    _kmers_map[kmers.first].first = 0;
+                    _kmers_map[kmers.first].second = k.kmer_pos;
+                }
+                if (_kmers_map.find(kmers.second) != _kmers_map.end()) {
+                    pair<size_t,size_t> local_pair = _kmers_map[kmers.second];
+                    /*
+                     * Checking if we are above the threshold
+                     */
+                    if (++local_pair.first == Parameters::get().accumulative_h)
+                        _insert(kmers.second, nonstd_kmers.second);
+                    local_pair.second = min(local_pair.second, k.kmer_pos);
+                }else {
+                    _kmers_map[kmers.second].first = 0;
+                    _kmers_map[kmers.second].second = k.kmer_pos;
+                }
+            }
+        }
+    }
+    std::cout << "Size Map: "<<_kmers_map.size()<<" Size Solid Kmers(as Edges): "<<_dbg_naive.size()
+              <<" Size Nodes Graph: "<<_dbg_nodes.size()<<"\n";
+    /*for (auto &k: _dbg_naive)
+        cout << "KmerNaive: "<<k.str()<<"\n";
+    for (auto &k: _dbg_nodes) {
+        cout << "KmerNodes: " << k.str() << "\n";
+        vector <Kmer> neigh = getKmerNeighbors(k);
+        for (auto n: neigh)
+            cout << "Vecinos: " << n.str() << "\n";
+    }*/
 }

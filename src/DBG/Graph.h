@@ -9,11 +9,51 @@
 
 using namespace std;
 template <bool> struct NodeType;
-template<> struct NodeType<false>{
+template<> struct NodeType<false>
+{
     typedef Kmer DBGNode;
 };
-template<> struct NodeType<true>{
+template<> struct NodeType<true>
+{
     typedef Kmer DBGNode;
+};
+
+template <bool> struct ExtraType;
+template<> struct ExtraType<false>{};
+template<> struct ExtraType<true>
+{
+    Pair_Kmer pair;
+};
+
+namespace std
+{
+    template <>
+    struct hash<ExtraType<true>>{
+        size_t operator()(const ExtraType<true>& extraType) const {
+            return extraType.pair.hash();
+        }
+    };
+
+    template <>
+    struct hash<ExtraType<false>>{
+        size_t operator()(const ExtraType<false>& extraType) const {
+            return 0;
+        }
+    };
+
+    template <>
+    struct hash<NodeType<true>>{
+        size_t operator()(const NodeType<true>& nodeType) const {
+            return 0;
+        }
+    };
+
+    template <>
+    struct hash<NodeType<false>>{
+        size_t operator()(const NodeType<false>& nodeType) const {
+            return 0;
+        }
+    };
 };
 
 struct Node_ext
