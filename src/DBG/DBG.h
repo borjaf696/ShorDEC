@@ -12,6 +12,8 @@ template<bool P>
 class NaiveDBG: public DBG<P>
 {
 public:
+    typedef typename DBG<P>::Parent_Node Node;
+    typedef typename DBG<P>::Parent_FuncNode FuncNode;
     /*
      * Define how to check if rc or just forward
      */
@@ -25,10 +27,10 @@ public:
     /*
      * Check whether a kmer is solid or not
      */
-    bool is_solid(typename NodeType<P>::DBGNode& kmer) const
+    bool is_solid(Node& kmer) const
     {
         if (_is_standard) {
-            Kmer kmer_aux = kmer;
+            Node kmer_aux = kmer;
             kmer_aux.standard();
             return (_dbg_naive.find(kmer_aux) != _dbg_naive.end());
         }else
@@ -38,12 +40,12 @@ public:
      * Get the Nt in the edges
      */
     vector<DnaSequence::NuclType> getNeighbors
-            (typename NodeType<P>::DBGNode kmer) const
+            (Node kmer) const
     {
         if (kmer.length() == Parameters::get().kmerSize)
             kmer = kmer.substr(1, Parameters::get().kmerSize);
         vector<DnaSequence::NuclType> nts;
-        Kmer kmer_aux;
+        Node kmer_aux;
         for (DnaSequence::NuclType i = 0; i < 4; ++i) {
             kmer_aux = Kmer(kmer.str());
             kmer_aux.appendRight(i);
@@ -55,13 +57,13 @@ public:
     /*
      * Get the neighbor k-mers
      */
-    vector<typename NodeType<P>::DBGNode> getKmerNeighbors
-            (typename NodeType<P>::DBGNode kmer) const
+    vector<Node> getKmerNeighbors
+            (Node kmer) const
     {
         if (kmer.length() == Parameters::get().kmerSize)
             kmer = kmer.substr(1, Parameters::get().kmerSize);
         vector<Kmer> nts;
-        Kmer kmer_aux;
+        Node kmer_aux;
         for (DnaSequence::NuclType i=0; i < 4; ++i) {
             kmer_aux = Kmer(kmer.str());
 
@@ -81,10 +83,10 @@ public:
     /*
      * Number of in_edges
      */
-    size_t in_degree(typename NodeType<P>::DBGNode k)
+    size_t in_degree(Node k)
     {
         size_t out = 0;
-        Kmer kmer_aux;
+        Node kmer_aux;
         for (DnaSequence::NuclType i = 0; i < 4; ++i) {
             kmer_aux = Kmer(k.str());
             kmer_aux.appendLeft(i);
@@ -96,10 +98,10 @@ public:
     /*
      * Number of out_neighbors
      */
-    size_t out_degree(typename NodeType<P>::DBGNode k)
+    size_t out_degree(Node k)
     {
         size_t out = 0;
-        Kmer kmer_aux;
+        Node kmer_aux;
         for (DnaSequence::NuclType i = 0; i < 4; ++i){
             kmer_aux = Kmer(k.str());
             kmer_aux.appendRight(i);
@@ -156,17 +158,9 @@ private:
     /*
      * Insertion into the graph_nodes and graph_edges
      */
-    void _insert(Kmer k,Kmer kmer)
-    {
-        Kmer rc = kmer.rc();
-        _dbg_naive.emplace(k);
-        _dbg_nodes.emplace(kmer.substr(0,Parameters::get().kmerSize-1));
-        _dbg_nodes.emplace(kmer.substr(1,Parameters::get().kmerSize));
-        _dbg_nodes.emplace(rc.substr(0,Parameters::get().kmerSize-1));
-        _dbg_nodes.emplace(rc.substr(1,Parameters::get().kmerSize));
-    }
+    void _insert(Node, FuncNode);
 
-    vector<DnaSequence> _get_sequences(vector<vector<Kmer>> unitigs)
+    vector<DnaSequence> _get_sequences(vector<vector<Node>> unitigs)
     {
         /*
          * From the vector of unitigs get all the unitigs
@@ -190,19 +184,19 @@ private:
     /*
      * k1->k2->k3 (To standard post append) -> Only length matters :P
      */
-    void _check_forward_path(size_t& len_fw, vector<Kmer>& k_vec) const
+    void _check_forward_path(size_t& len_fw, vector<Node>& k_vec) const
     {
         /*
          * Check neighbors of the Kmer
          */
-        Kmer aux = k_vec.back();
+        Node aux = k_vec.back();
         std::vector<DnaSequence::NuclType> neigh_fw = getNeighbors(aux);
         if (neigh_fw.size() == 1) {
             len_fw++;
             if (len_fw < MIN_PATH_LEN) {
-                Kmer kmer_aux = aux;
-                kmer_aux.appendRightReplace(neigh_fw[0]);
-                k_vec.push_back(kmer_aux);
+                Node node_aux = aux;
+                node_aux.appendRightReplace(neigh_fw[0]);
+                k_vec.push_back(node_aux);
                 _check_forward_path(len_fw, k_vec);
             }
         }
@@ -210,7 +204,7 @@ private:
             len_fw += MIN_PATH_LEN;
     }
 
-    bool _asses(vector<Kmer> &erase,vector<Kmer> aux, size_t len)
+    bool _asses(vector<Node> &erase,vector<Node> aux, size_t len)
     {
         if (len < MIN_PATH_LEN)
             for (auto k:aux) {
@@ -219,12 +213,12 @@ private:
         return (len < MIN_PATH_LEN);
     }
 
-    void _erase(vector<Kmer>& kmer_to_erase)
+    void _erase(vector<Node>& kmer_to_erase)
     {
         for (auto kmer_erase:kmer_to_erase) {
             _dbg_nodes.erase(kmer_erase);
             for (uint i = 0; i < 8; i++) {
-                Kmer new_kmer = kmer_erase;
+                Node new_kmer = kmer_erase;
                 (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
                 if (_is_standard)
                     new_kmer.standard();
@@ -240,7 +234,7 @@ private:
     void _remove_isolated_nodes()
     {
         bool change = false, in_0_erase = true;
-        vector<Kmer> erase;
+        vector<Node> erase;
         size_t cont_2 = 0;
         for (auto kmer:_dbg_nodes) {
             size_t cont = 0;
@@ -254,7 +248,7 @@ private:
                 std::cout << "Kmers con cero indegree: "<<kmer.str() << "\n";
                 cont ++;
                 cont_2++;
-                vector<Kmer> aux = {kmer};
+                vector<Node> aux = {kmer};
                 _check_forward_path(len,aux);
                 in_0_erase = _asses(erase,aux,len);
             }
@@ -271,7 +265,7 @@ private:
             /*
              * Check FWNeighbors and RCNeighbors (if proceeds)
              */
-            vector<Kmer> neighbors = getKmerNeighbors(kmer);
+            vector<Node> neighbors = getKmerNeighbors(kmer);
             size_t num_neighbors = neighbors.size();
             size_t cont_fake_branches = 0;
             if ( num_neighbors > 1)
@@ -282,7 +276,7 @@ private:
                 for (auto sibling:neighbors)
                 {
                     len = 1;
-                    vector<Kmer> aux = {sibling};
+                    vector<Node> aux = {sibling};
                     _check_forward_path(len,aux);
                     if (_asses(erase,aux,len)) {
                         cont_fake_branches++;
@@ -330,17 +324,22 @@ private:
                    seq_.size(), fout);
         }
     }
-
-    unordered_map<Kmer, pair<size_t,size_t>> _kmers_map;
+    /*
+     * First Counter
+     */
+    unordered_map<Node, pair<size_t,size_t>> _kmers_map;
+    /*
+     * PairedInfo
+     */
+    Extra<P> _extra_info;
     /*
      * DBG_naive -> stores the set of solid Kmers
      * DBG_nodes -> stores the set of (K-1)mers
      */
-    unordered_set<typename NodeType<P>::DBGNode> _dbg_naive, _dbg_nodes;
-    unordered_set<ExtraType<P>> _set_of_kmers;
+    unordered_set<Node> _dbg_naive, _dbg_nodes;
     unordered_set<KmerInfo<P>> _heads,_tails;
     //Extension points
-    vector<typename NodeType<P>::DBGNode> _in_0;
+    vector<Node> _in_0;
     //Extend
     SequenceContainer& _sc;
     //Standard

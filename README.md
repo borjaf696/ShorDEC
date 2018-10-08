@@ -17,4 +17,4 @@ Given a set of reads (only single_end right now. In a close future pair_end, and
 
 ### Use:
 	1 make
-	2 ./src/test -f [dir or file to read] -o [output] -u [unitigs file output] -k [kmer first size] -h [kmer threshold]
+	2 ./src/test -f [dir or file to read] -o [output] -u [unitigs file output] -k [kmer first size] -h [kmer threshold] -p [if PairEnd]

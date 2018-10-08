@@ -2,9 +2,24 @@
 /*
  * Single_end reads
  */
+template <>
+void NaiveDBG<false>::_insert(Node k, FuncNode kmer)
+{
+    Node rc = kmer.rc();
+    Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
+            target = kmer.substr(1, Parameters::get().kmerSize);
+    Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
+            target_rc = rc.substr(1, Parameters::get().kmerSize);
+    _dbg_naive.emplace(k);
+    _dbg_nodes.emplace(origin);
+    _dbg_nodes.emplace(target);
+    _dbg_nodes.emplace(origin_rc);
+    _dbg_nodes.emplace(target_rc);
+}
+
 template<>
 void NaiveDBG<false>::_kmerCount() {
-        Kmer kmer;
+        Node kmer;
         KmerInfo<false> tail;
         bool first = false;
         for (auto &read:_sc.getIndex()){
@@ -74,8 +89,33 @@ void NaiveDBG<false>::show_info()
 /*
  * Paired_end reads
  */
+template <>
+void NaiveDBG<true>::_insert(Node k, FuncNode pair_kmer)
+{
+    pair<Kmer,Kmer> k_pair = pair_kmer.getKmers();
+    Kmer kmer = k_pair.first, k_right = k_pair.first;
+    Node rc = kmer.rc(), k_right_rc = k_pair.second.rc();
+    Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
+            target = kmer.substr(1, Parameters::get().kmerSize);
+    Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
+            target_rc = rc.substr(1, Parameters::get().kmerSize);
+    _dbg_naive.emplace(k);
+    _dbg_nodes.emplace(origin);
+    _dbg_nodes.emplace(target);
+    _dbg_nodes.emplace(origin_rc);
+    _dbg_nodes.emplace(target_rc);
+    /*
+     * Add Pairs
+     */
+    _extra_info.insert(origin, k_right.substr(0,Parameters::get().kmerSize-1));
+    _extra_info.insert(target, k_right.substr(1,Parameters::get().kmerSize));
+    _extra_info.insert(origin_rc,k_right_rc.substr(0, Parameters::get().kmerSize-1));
+    _extra_info.insert(origin_rc,k_right_rc.substr(1, Parameters::get().kmerSize));
+}
+
 template<>
-void NaiveDBG<true>::_kmerCount() {
+void NaiveDBG<true>::_kmerCount()
+{
     Pair_Kmer p_kmer;
     for (auto &read:_sc.getIndex())
     {
@@ -87,17 +127,16 @@ void NaiveDBG<true>::_kmerCount() {
                 /*
                  * Kmers pre_standar for dbg
                  */
-                pair<Kmer,Kmer> nonstd_kmers = k.pair_kmer.getKmers();
                 if (_is_standard)
                     k.pair_kmer.standard();
-                pair<Kmer,Kmer> kmers = k.pair_kmer.getKmers();
+                pair<Node,Node> kmers = k.pair_kmer.getKmers();
                 if (_kmers_map.find(kmers.first) != _kmers_map.end()) {
                     pair<size_t,size_t> local_pair = _kmers_map[kmers.first];
                     /*
                      * Checking if we are above the threshold
                      */
                     if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(kmers.first, nonstd_kmers.first);
+                        _insert(kmers.first, k.pair_kmer);
                     local_pair.second = min(local_pair.second,k.kmer_pos);
                     _kmers_map[kmers.first] = local_pair;
                 }else {
@@ -110,8 +149,9 @@ void NaiveDBG<true>::_kmerCount() {
                      * Checking if we are above the threshold
                      */
                     if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(kmers.second, nonstd_kmers.second);
+                        _insert(kmers.second, k.pair_kmer);
                     local_pair.second = min(local_pair.second, k.kmer_pos);
+                    _kmers_map[kmers.second] = local_pair;
                 }else {
                     _kmers_map[kmers.second].first = 0;
                     _kmers_map[kmers.second].second = k.kmer_pos;
@@ -121,6 +161,7 @@ void NaiveDBG<true>::_kmerCount() {
     }
     std::cout << "Size Map: "<<_kmers_map.size()<<" Size Solid Kmers(as Edges): "<<_dbg_naive.size()
               <<" Size Nodes Graph: "<<_dbg_nodes.size()<<"\n";
+    _kmers_map.clear();
     /*for (auto &k: _dbg_naive)
         cout << "KmerNaive: "<<k.str()<<"\n";
     for (auto &k: _dbg_nodes) {

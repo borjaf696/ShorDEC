@@ -12,35 +12,30 @@ template <bool> struct NodeType;
 template<> struct NodeType<false>
 {
     typedef Kmer DBGNode;
+    typedef Kmer DBGFuncInp;
 };
 template<> struct NodeType<true>
 {
     typedef Kmer DBGNode;
+    typedef Pair_Kmer DBGFuncInp;
 };
 
-template <bool> struct ExtraType;
-template<> struct ExtraType<false>{};
-template<> struct ExtraType<true>
+template <bool P> struct Extra{
+    virtual void insert(typename NodeType<P>::DBGNode, typename NodeType<P>::DBGNode);
+};
+template <> struct Extra<false>
+{};
+template <> struct Extra<true>
 {
-    Pair_Kmer pair;
+    unordered_map<typename NodeType<true>::DBGNode, vector<typename NodeType<true>::DBGNode>> mapPair;
+    void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
+    {
+        mapPair[key].push_back(val);
+    }
 };
 
 namespace std
 {
-    template <>
-    struct hash<ExtraType<true>>{
-        size_t operator()(const ExtraType<true>& extraType) const {
-            return extraType.pair.hash();
-        }
-    };
-
-    template <>
-    struct hash<ExtraType<false>>{
-        size_t operator()(const ExtraType<false>& extraType) const {
-            return 0;
-        }
-    };
-
     template <>
     struct hash<NodeType<true>>{
         size_t operator()(const NodeType<true>& nodeType) const {
@@ -66,6 +61,8 @@ class DBG:public NodeType<P>
 {
 public:
     typedef unordered_set<KmerInfo<P>> Heads;
+    typedef typename NodeType<P>::DBGNode Parent_Node;
+    typedef typename NodeType<P>::DBGFuncInp Parent_FuncNode;
     DBG(){}
     virtual bool is_solid(typename NodeType<P>::DBGNode&) const = 0;
     virtual size_t length() const = 0;

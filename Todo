@@ -4,6 +4,11 @@ Todo:
 		- Lo primero hacer toda la faena de la corrección de la manera regular.
 		- Construir el de bruijn graph normal, pero almacenando para cada {K1, {k2,k3...kn}} es decir sus posibles conexiones.
 		- Crear un grafo que unifique las conexiones entre los kmers definidos con anterioridad.
+			- Bueno esto realmente es algo más trickie de lo que parece:
+				- Primero para cada entrada k1:k2,k3,k4,kn se ha de calcular si existe camino desde cada uno de estos al resto, es decir: k2-k3,k2-k4... Todos con todos.
+				- Una vez se ha hecho para una entrada se ha de calcular en el nuevo grafo definido los máximos cliques. Es decir, aquellos nodos k que son adyacentes todos con todos y que por lo tanto pertencen, presumiblemente, al mismo haplotipo.
+				- Ahora viene la duda del millón de dolares ¿Que hacemos ahora?
+			- SAVAGE -> esta gente crea un overlapgraph directed y calcula ahí los cliques maximales y elimina las aristas una vez los ha encontrado. 
 	- La opción de almacenar solo uno vamos a tener que dejarla para más adelante cuando realmente aporte algo. En la actualidad las lecturas se contemplan todas como si fuesen o FW o RC. Por lo tanto, es imposible saber de donde vienen o que orientación tienen. De hecho todas las lecturas tienen ambas orientaciones, por tanto es siempre necesario siempre comprobar la version fw o rc. Por lo que usar una versión donde solo se compruebe una orientación y se construya la secuencia a partir de esto. No es realmente asequible. Lo que habría que hacer en estos momentos es coger cada k-mer sólido y comprobar fw y rc. Otra solución más asequible sería obviar la parte de las reverso complementarias pero no lo veo razonable, no en este punto. Si las lecturas vienen con la etiqueta +/- lo propio sería utilizar esta información.
 		- MEJORA FUTURA: Utilizar las etiquetas +/- como procede. (barajar en futuro próximo)
 			- Mejor opción: (más rápida al menos):
