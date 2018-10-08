@@ -22,15 +22,34 @@ template<> struct NodeType<true>
 
 template <bool P> struct Extra{
     virtual void insert(typename NodeType<P>::DBGNode, typename NodeType<P>::DBGNode);
+    virtual void show_info();
+    virtual void clear();
 };
 template <> struct Extra<false>
-{};
+{
+    void show_info() {}
+    void clear() {}
+};
 template <> struct Extra<true>
 {
-    unordered_map<typename NodeType<true>::DBGNode, vector<typename NodeType<true>::DBGNode>> mapPair;
+    unordered_map<typename NodeType<true>::DBGNode, unordered_set<typename NodeType<true>::DBGNode>> mapPair;
+    void clear()
+    {
+        mapPair.clear();
+    }
     void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
     {
-        mapPair[key].push_back(val);
+        mapPair[key].emplace(val);
+    }
+    void show_info()
+    {
+        for (auto k:mapPair)
+        {
+            cout << k.first.str()<<":";
+            for (auto k_:k.second)
+                cout << k_.str() << ", ";
+            cout << "\n";
+        }
     }
 };
 

@@ -3,7 +3,7 @@
  * Single_end reads
  */
 template <>
-void NaiveDBG<false>::_insert(Node k, FuncNode kmer)
+void NaiveDBG<false>::_insert(Node k, FuncNode kmer, bool)
 {
     Node rc = kmer.rc();
     Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
@@ -90,27 +90,42 @@ void NaiveDBG<false>::show_info()
  * Paired_end reads
  */
 template <>
-void NaiveDBG<true>::_insert(Node k, FuncNode pair_kmer)
+void NaiveDBG<true>::_insert(Node k, FuncNode pair_kmer, bool left)
 {
     pair<Kmer,Kmer> k_pair = pair_kmer.getKmers();
-    Kmer kmer = k_pair.first, k_right = k_pair.first;
-    Node rc = kmer.rc(), k_right_rc = k_pair.second.rc();
+    Node kmer = k_pair.first, k_right = k_pair.second;
+    Node rc = kmer.rc(), k_right_rc = k_right.rc();
     Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
-            target = kmer.substr(1, Parameters::get().kmerSize);
+            target = kmer.substr(1, Parameters::get().kmerSize),
+            origin_right=k_right.substr(0, Parameters::get().kmerSize-1),
+            target_right=k_right.substr(1, Parameters::get().kmerSize);
     Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
-            target_rc = rc.substr(1, Parameters::get().kmerSize);
+            target_rc = rc.substr(1, Parameters::get().kmerSize),
+            origin_right_rc=k_right_rc.substr(0, Parameters::get().kmerSize-1),
+            target_right_rc=k_right_rc.substr(1, Parameters::get().kmerSize);
     _dbg_naive.emplace(k);
-    _dbg_nodes.emplace(origin);
-    _dbg_nodes.emplace(target);
-    _dbg_nodes.emplace(origin_rc);
-    _dbg_nodes.emplace(target_rc);
     /*
-     * Add Pairs
+     * Add Pairs -> left kmer
      */
-    _extra_info.insert(origin, k_right.substr(0,Parameters::get().kmerSize-1));
-    _extra_info.insert(target, k_right.substr(1,Parameters::get().kmerSize));
-    _extra_info.insert(origin_rc,k_right_rc.substr(0, Parameters::get().kmerSize-1));
-    _extra_info.insert(origin_rc,k_right_rc.substr(1, Parameters::get().kmerSize));
+    if (left)
+    {
+        _dbg_nodes.emplace(origin);
+        _dbg_nodes.emplace(target);
+        _dbg_nodes.emplace(origin_rc);
+        _dbg_nodes.emplace(target_rc);
+        _extra_info.insert(origin, origin_right);
+        _extra_info.insert(target, target_right);
+        /*
+         * Swap the order
+         */
+        _extra_info.insert(origin_right_rc,origin_rc);
+        _extra_info.insert(target_right_rc,target_rc);
+    }else{
+        _dbg_nodes.emplace(origin_right);
+        _dbg_nodes.emplace(target_right);
+        _dbg_nodes.emplace(origin_right_rc);
+        _dbg_nodes.emplace(target_right_rc);
+    }
 }
 
 template<>
@@ -124,6 +139,7 @@ void NaiveDBG<true>::_kmerCount()
         {
             for (auto k: IterKmers<true>(_sc.getSeq(read.second.getId()),_sc.getSeq(read.second.getPairId())))
             {
+                Pair_Kmer nonstd_pk = k.pair_kmer;
                 /*
                  * Kmers pre_standar for dbg
                  */
@@ -136,26 +152,22 @@ void NaiveDBG<true>::_kmerCount()
                      * Checking if we are above the threshold
                      */
                     if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(kmers.first, k.pair_kmer);
+                        _insert(kmers.first, nonstd_pk, true);
                     local_pair.second = min(local_pair.second,k.kmer_pos);
                     _kmers_map[kmers.first] = local_pair;
-                }else {
-                    _kmers_map[kmers.first].first = 0;
-                    _kmers_map[kmers.first].second = k.kmer_pos;
-                }
+                }else
+                    _kmers_map[kmers.first]= pair<size_t,size_t>(0,k.kmer_pos);
                 if (_kmers_map.find(kmers.second) != _kmers_map.end()) {
                     pair<size_t,size_t> local_pair = _kmers_map[kmers.second];
                     /*
                      * Checking if we are above the threshold
                      */
                     if (++local_pair.first == Parameters::get().accumulative_h)
-                        _insert(kmers.second, k.pair_kmer);
+                        _insert(kmers.second, nonstd_pk);
                     local_pair.second = min(local_pair.second, k.kmer_pos);
                     _kmers_map[kmers.second] = local_pair;
-                }else {
-                    _kmers_map[kmers.second].first = 0;
-                    _kmers_map[kmers.second].second = k.kmer_pos;
-                }
+                }else
+                    _kmers_map[kmers.second] = pair<size_t,size_t>(0, k.kmer_pos);
             }
         }
     }

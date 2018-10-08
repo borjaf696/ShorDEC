@@ -166,6 +166,9 @@ public:
 	//Sino fuese por la definicion de arriba esto no podria hacerse -> extendiendo std namespace
 	typedef std::map<FastaRecord::Id, FastaRecord> SequenceIndex;
 	SequenceContainer() {}
+    ~SequenceContainer(){
+        _seqIndex.clear();
+    }
 
     void load(const std::string& path, bool);
 

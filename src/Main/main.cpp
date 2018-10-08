@@ -110,24 +110,6 @@ int main(int argv, char ** argc){
     /*
      * Iteratively we are going to correct the reads
      */
-    //TODO: Correct with Parameter packs templates
-    if (pair_end) {
-        NaiveDBG<true> naiveDBG(sc);
-        std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
-        for (auto i: kmer_sizes) {
-            Parameters::get().kmerSize = Parameters::get().kmerSize * i;
-            std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
-            if (i > 1)
-                naiveDBG = NaiveDBG<true>(sc);
-            ReadCorrector<true> read(sc, naiveDBG);
-        }
-        std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
-        std::cout << "Writing new reads in: " << path_to_write << "\n";
-        sc.writeSequenceContainer(path_to_write);
-        std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
-        naiveDBG.ProcessTigs(path_unitigs);
-        exit(1);
-    }
     NaiveDBG<false> naiveDBG(sc);
     std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
@@ -139,9 +121,21 @@ int main(int argv, char ** argc){
         //sc.ShowInfo();
     }
     std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
+    /*
+     * Writing corrected sequences
+     */
     std::cout << "Writing new reads in: " << path_to_write << "\n";
     sc.writeSequenceContainer(path_to_write);
+    /*
+     * Depending on pair_end info one approach or another
+     */
     std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
-    naiveDBG = NaiveDBG<false>(sc);
-    naiveDBG.ProcessTigs(path_unitigs);
+    if (pair_end)
+    {
+        NaiveDBG<true> dbg = NaiveDBG<true>(sc);
+        dbg.ProcessTigs(path_unitigs);
+        exit(1);
+    }
+    NaiveDBG<false> dbg = NaiveDBG<false>(sc);
+    dbg.ProcessTigs(path_unitigs);
 }

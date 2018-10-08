@@ -126,9 +126,6 @@ public:
     void show_info();
 
     //Operators
-    /*
-     * Check if this is working properly
-     */
     NaiveDBG& operator=(const NaiveDBG& other)
     {
         if (this->length()!= other.length())
@@ -158,7 +155,7 @@ private:
     /*
      * Insertion into the graph_nodes and graph_edges
      */
-    void _insert(Node, FuncNode);
+    void _insert(Node, FuncNode, bool = false);
 
     vector<DnaSequence> _get_sequences(vector<vector<Node>> unitigs)
     {
@@ -296,6 +293,8 @@ private:
             _remove_isolated_nodes();
         }else {
             cout << "KmerSolids: " << _dbg_nodes.size() << "; Suspicious Starts: " << _in_0.size() << "\n";
+            cout << "Extra info:\n";
+            _extra_info.show_info();
             for (auto k:_in_0)
                 cout << "KmerSuspicious: " << k.str() << "\n";
         }
