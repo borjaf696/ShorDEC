@@ -86,6 +86,7 @@ private:
     void _kmerCount();
     void _remove_isolated_nodes();
     void _insert_extra_info();
+    void _to_pair_end();
 
     void _cleaning()
     {
@@ -136,15 +137,11 @@ private:
         vector<Node> real_neighbors;
         if (!_extra_info.find(node))
             return real_neighbors;
-        std::cout << "Kmer: "<<node.str()<<"\n";
         unordered_set<Node> node_pairs = _extra_info[node], set_full;
-        for (auto s:node_pairs) {
-            std::cout << s.str() << "\n";
+        for (auto s:node_pairs)
             _build_pair_neighs(s, set_full);
-        }
         for (auto k: neighbors)
         {
-            std::cout << "Neighbor: "<<k.str()<< "\n";
             unordered_set<Node> result = _intersect(set_full, _extra_info[k]);
             if (!result.empty())
                 real_neighbors.push_back(k);

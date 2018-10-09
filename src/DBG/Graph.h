@@ -35,10 +35,29 @@ template <> struct Extra<false>
         return true;
     }
 };
+/*
+ * TODO: Optimize
+ */
 template <> struct Extra<true>
 {
     unordered_map<typename NodeType<true>::DBGNode, unordered_set<typename NodeType<true>::DBGNode>> mapPair;
-    virtual unordered_set<typename NodeType<true>::DBGNode> operator[] (typename NodeType<true>::DBGNode node) const
+    unordered_set<typename NodeType<true>::DBGNode> key_and_value;
+    void erase(typename NodeType<true>::DBGNode node)
+    {
+        mapPair.erase(mapPair.find(node));
+        /*
+         * How to know places where a key is stored as value? -> This is painful
+         */
+        if (key_and_value.find(node) != key_and_value.end())
+        {
+            for (auto & pk: mapPair)
+            {
+                if (pk.second.find(node) != pk.second.end())
+                    pk.second.erase(node);
+            }
+        }
+    }
+    unordered_set<typename NodeType<true>::DBGNode> operator[] (typename NodeType<true>::DBGNode node) const
     {
         return mapPair.at(node);
     }
@@ -53,14 +72,16 @@ template <> struct Extra<true>
     void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
     {
         mapPair[key].emplace(val);
+        if (mapPair.find(val) != mapPair.end())
+            key_and_value.emplace(val);
     }
     void show_info()
     {
         for (auto k:mapPair)
         {
-            cout << k.first.str()<<":";
+            cout <<"\t" <<k.first.str()<<":";
             for (auto k_:k.second)
-                cout << k_.str() << ", ";
+                cout << k_.str() << " ";
             cout << "\n";
         }
     }

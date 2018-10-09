@@ -336,7 +336,6 @@ vector<NaiveDBG<true>::Node> NaiveDBG<true>::getKmerNeighbors
         if (is_solid(kmer_aux))
             nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
     }
-    _check_valid(nts, kmer);
     return nts;
 }
 
@@ -390,7 +389,7 @@ void NaiveDBG<true>::_kmerCount()
      * Insert pair_end info from reads
      */
     _insert_extra_info();
-    _extra_info.show_info();
+    //_extra_info.show_info();
     /*for (auto &k: _dbg_naive)
         cout << "KmerNaive: "<<k.str()<<"\n";
     for (auto &k: _dbg_nodes) {
@@ -402,9 +401,36 @@ void NaiveDBG<true>::_kmerCount()
 }
 
 /*
- * Soft pruning:
- *      - Nodes indegree+outdegree = 0
+ * Nodes updating:
+ *      * Pruning the graph
+ *      * Updating using pair_end information
  */
+template<>
+void NaiveDBG<true>::_to_pair_end()
+{
+    std::cout << "Not supported yet\n";
+}
+/*
+ * Pruning methods
+ */
+template<>
+void NaiveDBG<true>::_erase(vector<Node>& kmer_to_erase)
+{
+    for (auto kmer_erase:kmer_to_erase) {
+        _dbg_nodes.erase(kmer_erase);
+        for (uint i = 0; i < 8; i++) {
+            Node new_kmer = kmer_erase;
+            (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
+            if (_is_standard)
+                new_kmer.standard();
+            _dbg_naive.erase(new_kmer);
+        }
+        _extra_info.erase(kmer_erase);
+    }
+    /*cout << "NaiveSizePost: "<<_dbg_naive.size() << "\n";
+    cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
+    kmer_to_erase.clear();
+}
 template<>
 void NaiveDBG<true>::_remove_isolated_nodes()
 {
@@ -470,11 +496,13 @@ void NaiveDBG<true>::_remove_isolated_nodes()
         _in_0.clear();
         _remove_isolated_nodes();
     }else {
-        cout << "KmerSolids: " << _dbg_nodes.size() << "; Suspicious Starts: " << _in_0.size() << "\n";
+        cout << "Size Solid kmers: "<<_dbg_naive.size()<< " Num nodes: "
+             << _dbg_nodes.size() << " Suspicious Starts: " << _in_0.size() << "\n";
         cout << "Extra info:\n";
         _extra_info.show_info();
         for (auto k:_in_0)
             cout << "KmerSuspicious: " << k.str() << "\n";
+        _to_pair_end();
     }
     /*for (auto k:_dbg_nodes)
         cout << "KmerNodes: "<<k.str()<<"\n";
