@@ -24,18 +24,31 @@ template <bool P> struct Extra{
     virtual void insert(typename NodeType<P>::DBGNode, typename NodeType<P>::DBGNode);
     virtual void show_info();
     virtual void clear();
+    virtual bool find(typename NodeType<true>::DBGNode);
+    virtual unordered_set<typename NodeType<P>::DBGNode> operator[] (typename NodeType<P>::DBGNode) const;
 };
 template <> struct Extra<false>
 {
     void show_info() {}
     void clear() {}
+    bool find(typename NodeType<true>::DBGNode){
+        return true;
+    }
 };
 template <> struct Extra<true>
 {
     unordered_map<typename NodeType<true>::DBGNode, unordered_set<typename NodeType<true>::DBGNode>> mapPair;
+    virtual unordered_set<typename NodeType<true>::DBGNode> operator[] (typename NodeType<true>::DBGNode node) const
+    {
+        return mapPair.at(node);
+    }
     void clear()
     {
         mapPair.clear();
+    }
+    bool find(typename NodeType<true>::DBGNode node) const
+    {
+        return mapPair.find(node)!=mapPair.end();
     }
     void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
     {

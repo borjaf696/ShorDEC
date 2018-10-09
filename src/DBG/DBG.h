@@ -14,6 +14,11 @@ class NaiveDBG: public DBG<P>
 public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
+
+    size_t in_degree(Node);
+    size_t out_degree(Node);
+    vector<DnaSequence::NuclType> getNeighbors (Node) const;
+    vector<Node> getKmerNeighbors (Node) const;
     /*
      * Define how to check if rc or just forward
      */
@@ -37,78 +42,11 @@ public:
             return (_dbg_naive.find(kmer) != _dbg_naive.end());
     }
     /*
-     * Get the Nt in the edges
-     */
-    vector<DnaSequence::NuclType> getNeighbors
-            (Node kmer) const
-    {
-        if (kmer.length() == Parameters::get().kmerSize)
-            kmer = kmer.substr(1, Parameters::get().kmerSize);
-        vector<DnaSequence::NuclType> nts;
-        Node kmer_aux;
-        for (DnaSequence::NuclType i = 0; i < 4; ++i) {
-            kmer_aux = Kmer(kmer.str());
-            kmer_aux.appendRight(i);
-            if (is_solid(kmer_aux))
-                nts.push_back(i);
-        }
-        return nts;
-    }
-    /*
-     * Get the neighbor k-mers
-     */
-    vector<Node> getKmerNeighbors
-            (Node kmer) const
-    {
-        if (kmer.length() == Parameters::get().kmerSize)
-            kmer = kmer.substr(1, Parameters::get().kmerSize);
-        vector<Kmer> nts;
-        Node kmer_aux;
-        for (DnaSequence::NuclType i=0; i < 4; ++i) {
-            kmer_aux = Kmer(kmer.str());
-
-            kmer_aux.appendRight(i);
-            if (is_solid(kmer_aux))
-                nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
-        }
-        return nts;
-    }
-    /*
      * "Length" of the DBG
      */
     size_t length() const
     {
         return _dbg_naive.size();
-    }
-    /*
-     * Number of in_edges
-     */
-    size_t in_degree(Node k)
-    {
-        size_t out = 0;
-        Node kmer_aux;
-        for (DnaSequence::NuclType i = 0; i < 4; ++i) {
-            kmer_aux = Kmer(k.str());
-            kmer_aux.appendLeft(i);
-            if (is_solid(kmer_aux))
-                out++;
-        }
-        return out;
-    }
-    /*
-     * Number of out_neighbors
-     */
-    size_t out_degree(Node k)
-    {
-        size_t out = 0;
-        Node kmer_aux;
-        for (DnaSequence::NuclType i = 0; i < 4; ++i){
-            kmer_aux = Kmer(k.str());
-            kmer_aux.appendRight(i);
-            if (is_solid(kmer_aux))
-                out++;
-        }
-        return out;
     }
 
     typename DBG<P>::Heads get(bool behaviour) const
@@ -146,6 +84,8 @@ private:
      * Naive DBG construction + heads + tails
      */
     void _kmerCount();
+    void _remove_isolated_nodes();
+    void _insert_extra_info();
 
     void _cleaning()
     {
@@ -155,7 +95,62 @@ private:
     /*
      * Insertion into the graph_nodes and graph_edges
      */
-    void _insert(Node, FuncNode, bool = false);
+    void _insert(Node k, Node kmer)
+    {
+        Node rc = kmer.rc();
+        Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
+                target = kmer.substr(1, Parameters::get().kmerSize);
+        Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
+                target_rc = rc.substr(1, Parameters::get().kmerSize);
+        _dbg_naive.emplace(k);
+        _dbg_nodes.emplace(origin);
+        _dbg_nodes.emplace(target);
+        _dbg_nodes.emplace(origin_rc);
+        _dbg_nodes.emplace(target_rc);
+    }
+    /*
+     * Check real neighbors:
+     */
+    unordered_set<Node> _intersect(unordered_set<Node> set_full, unordered_set<Node> nn_pair) const
+    {
+        unordered_set<Node> intersection;
+        for (auto i = nn_pair.begin(); i != nn_pair.end(); i++) {
+            if (set_full.find(*i) != set_full.end())
+                intersection.insert(*i);
+        }
+        return intersection;
+    }
+
+    void _build_pair_neighs(Node node, unordered_set<Node>& set_full) const
+    {
+        for (uint i = 0; i < 4; i++)
+        {
+            Node new_node = node;
+            new_node.appendRightReplace(i);
+            set_full.emplace(new_node);
+        }
+    }
+
+    vector<Node> _check_valid(vector<Node> neighbors,Node node) const
+    {
+        vector<Node> real_neighbors;
+        if (!_extra_info.find(node))
+            return real_neighbors;
+        std::cout << "Kmer: "<<node.str()<<"\n";
+        unordered_set<Node> node_pairs = _extra_info[node], set_full;
+        for (auto s:node_pairs) {
+            std::cout << s.str() << "\n";
+            _build_pair_neighs(s, set_full);
+        }
+        for (auto k: neighbors)
+        {
+            std::cout << "Neighbor: "<<k.str()<< "\n";
+            unordered_set<Node> result = _intersect(set_full, _extra_info[k]);
+            if (!result.empty())
+                real_neighbors.push_back(k);
+        }
+        return real_neighbors;
+    }
 
     vector<DnaSequence> _get_sequences(vector<vector<Node>> unitigs)
     {
@@ -227,83 +222,6 @@ private:
         kmer_to_erase.clear();
     }
 
-    //TODO: Revisar todo lo asociado con los Standard, pensar en hacer 2 instancias 1 para fw y otra para rc
-    void _remove_isolated_nodes()
-    {
-        bool change = false, in_0_erase = true;
-        vector<Node> erase;
-        size_t cont_2 = 0;
-        for (auto kmer:_dbg_nodes) {
-            size_t cont = 0;
-            size_t in_nodes_fw = in_degree(kmer),out_nodes_fw = out_degree(kmer);
-            size_t in_nodes_total = in_nodes_fw;
-            size_t len = 1;
-            /*
-             * InDegree = 0
-             */
-            if (!in_nodes_total) {
-                std::cout << "Kmers con cero indegree: "<<kmer.str() << "\n";
-                cont ++;
-                cont_2++;
-                vector<Node> aux = {kmer};
-                _check_forward_path(len,aux);
-                in_0_erase = _asses(erase,aux,len);
-            }
-            if (!in_0_erase)
-                _in_0.push_back(kmer);
-            /*
-             * Unbalanced Nodes
-             */
-            if (!cont) {
-                if (out_nodes_fw > in_nodes_fw)
-                    _in_0.push_back(kmer);
-            }
-            in_0_erase = true;
-            /*
-             * Check FWNeighbors and RCNeighbors (if proceeds)
-             */
-            vector<Node> neighbors = getKmerNeighbors(kmer);
-            size_t num_neighbors = neighbors.size();
-            size_t cont_fake_branches = 0;
-            if ( num_neighbors > 1)
-            {
-                /*
-                 * Check branches
-                 */
-                for (auto sibling:neighbors)
-                {
-                    len = 1;
-                    vector<Node> aux = {sibling};
-                    _check_forward_path(len,aux);
-                    if (_asses(erase,aux,len)) {
-                        cont_fake_branches++;
-                    }
-                }
-            }
-        }
-        if (erase.size() > 0) {
-            change = true;
-            _erase(erase);
-        }
-        /*
-         * We have to iterate until convergence
-         */
-        if (change) {
-            _in_0.clear();
-            _remove_isolated_nodes();
-        }else {
-            cout << "KmerSolids: " << _dbg_nodes.size() << "; Suspicious Starts: " << _in_0.size() << "\n";
-            cout << "Extra info:\n";
-            _extra_info.show_info();
-            for (auto k:_in_0)
-                cout << "KmerSuspicious: " << k.str() << "\n";
-        }
-        /*for (auto k:_dbg_nodes)
-            cout << "KmerNodes: "<<k.str()<<"\n";
-        for (auto k:_dbg_naive)
-            cout << "KmerSolidos: "<<k.str()<<"\n";*/
-    }
-
     /*
      * I/O
      */
@@ -334,6 +252,7 @@ private:
     /*
      * DBG_naive -> stores the set of solid Kmers
      * DBG_nodes -> stores the set of (K-1)mers
+     * TODO: Is it feasible to use a map and store the pair info inside?
      */
     unordered_set<Node> _dbg_naive, _dbg_nodes;
     unordered_set<KmerInfo<P>> _heads,_tails;
