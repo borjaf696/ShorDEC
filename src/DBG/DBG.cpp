@@ -405,10 +405,21 @@ void NaiveDBG<true>::_kmerCount()
  *      * Pruning the graph
  *      * Updating using pair_end information
  */
+
 template<>
 void NaiveDBG<true>::_to_pair_end()
 {
     std::cout << "Not supported yet\n";
+    /*for (auto node_kmer: _dbg_nodes)
+    {
+        vector<Node> neighbors = getKmerNeighbors(node_kmer);
+        vector<unordered_set<Node>> neighbors_couples = getNeighborsCouples(node_kmer);
+        if (_extra_info.find(node))
+        {
+            unordered_set<Node> couples = _extra_info[node];
+
+        }
+    }*/
 }
 /*
  * Pruning methods
@@ -514,4 +525,85 @@ template<>
 void NaiveDBG<true>::show_info()
 {
 
+}
+
+/*
+ * Boost graphs -> Single-end Reads
+ */
+template<>
+boostDBG<false>::boostDBG(DBG<false> * dbg)
+{
+    std::cout << "Trying to fill the graph\n";
+    pair<unordered_set<Node>, unordered_set<Node>> graph_struct = dbg->getNodes();
+    for (auto k: graph_struct.second)
+    {
+        /*
+        * Add nodes type k->Neigh(k)
+        */
+        std::cout << "KmerStudy: "<<k.str() << "\n";
+        vector<Node> neigh = dbg->getKmerNeighbors(k);
+        for (auto k2: neigh)
+            std::cout << " "<<k2.str();
+        std::cout << "\n";
+    }
+}
+
+/*
+ * Boost graphs -> Paire-end Reads
+ */
+template<>
+void boostDBG<true>::show_info()
+{
+    Graph::vertex_iterator v, vend;
+    for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v) {
+        std::cout << " Kmer:"     << _g[*v].node.str()
+                  << " id:"  << _g[*v].id
+                  << "\n";
+        vector<Node> neighbors = getKmerNeighbors(_g[*v].node);
+        std::cout << "Neighbors: ";
+        for (auto n:neighbors)
+            std::cout  << n.str()<<" ";
+        std::cout << "\n Couples: ";
+        for (auto n:_g[*v].node_set)
+            std::cout << n.str()<<" ";
+        std::cout<<"\n";
+    }
+}
+template<>
+boostDBG<true>::boostDBG(DBG<true> * dbg)
+{
+    std::cout << "Trying to fill the graph\n";
+    map<Node, vertex_t > local_map;
+    pair<unordered_set<Node>, unordered_set<Node>> graph_struct = dbg->getNodes();
+    for (auto k: graph_struct.second)
+    {
+        vector <Node> neigh = dbg->getKmerNeighbors(k);
+        vertex_t origin, target;
+        if (local_map.find(k) == local_map.end())
+        {
+            pair<bool, ExtraInfoNode> extraInfo = dbg->getExtra(k);
+            if (extraInfo.first)
+                origin = boost::add_vertex(NodeInfo(k, _node_id++, extraInfo.second),_g);
+            else
+                origin = boost::add_vertex(NodeInfo(k, _node_id++),_g);
+            local_map[k] = origin;
+        }else
+            origin = local_map[k];
+        for (auto k2: neigh) {
+            if (local_map.find(k2) == local_map.end())
+            {
+                pair<bool, ExtraInfoNode> extraInfo = dbg->getExtra(k2);
+                if (extraInfo.first)
+                    target = boost::add_vertex(NodeInfo(k2,_node_id++, extraInfo.second),_g);
+                else
+                    target = boost::add_vertex(NodeInfo(k2, _node_id++),_g);
+                local_map[k2] = target;
+            }else
+                target = local_map[k2];
+            edge_t e = boost::add_edge(origin, target, _g).first;
+            _g[e] = EdgeInfo(k2.at(Parameters::get().kmerSize-2));
+        }
+    }
+    show_info();
+    sleep(1000);
 }

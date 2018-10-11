@@ -21,6 +21,7 @@
  * De todos los caminos extendidos se selecciona aquel con distancia de edicion minima con
  * la secuencia que se esta corrigiendo. Como algunos k-mers solidos pueden ser erroneos
  * se busca mas alla de dicho k-mer atendiendo a mas k-mer sources posibles.
+ * TODO: Change name because path is not exactly what is this.
  * */
 
 struct stack_el{

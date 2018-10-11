@@ -1,12 +1,17 @@
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
 #include <vector>
 #include <stack>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/labeled_graph.hpp>
 #include "../Extender/Extender.h"
-
 
 //Constants
 #define MIN_PATH_LEN 10
+#define DELTA_PATH_LEN 4
+
+using namespace std;
 
 template<bool P>
 class NaiveDBG: public DBG<P>
@@ -14,6 +19,7 @@ class NaiveDBG: public DBG<P>
 public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
+    typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
 
     size_t in_degree(Node);
     size_t out_degree(Node);
@@ -63,6 +69,17 @@ public:
 
     void show_info();
 
+    //Get
+    pair<unordered_set<Node>, unordered_set<Node>> getNodes()
+    {
+        return pair<unordered_set<Node>, unordered_set<Node>>(_dbg_naive, _dbg_nodes);
+    };
+
+    pair<bool,ExtraInfoNode> getExtra(Node node)
+    {
+        return _extra_info.getInfoNode(node);
+    }
+
     //Operators
     NaiveDBG& operator=(const NaiveDBG& other)
     {
@@ -77,7 +94,6 @@ public:
         return *this;
     }
 
-
 private:
     /*
      * Kmer Counting
@@ -85,6 +101,9 @@ private:
      */
     void _kmerCount();
     void _remove_isolated_nodes();
+    /*
+     * Only paired_version gives impl
+     */
     void _insert_extra_info();
     void _to_pair_end();
 
@@ -92,7 +111,6 @@ private:
     {
         _remove_isolated_nodes();
     }
-
     /*
      * Insertion into the graph_nodes and graph_edges
      */
@@ -218,7 +236,6 @@ private:
         cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
         kmer_to_erase.clear();
     }
-
     /*
      * I/O
      */
@@ -249,7 +266,7 @@ private:
     /*
      * DBG_naive -> stores the set of solid Kmers
      * DBG_nodes -> stores the set of (K-1)mers
-     * TODO: Is it feasible to use a map and store the pair info inside?
+     * TODO: Pack (Extra, _dbg_naive, _dbg_nodes) under the same struct and define template
      */
     unordered_set<Node> _dbg_naive, _dbg_nodes;
     unordered_set<KmerInfo<P>> _heads,_tails;
@@ -259,4 +276,173 @@ private:
     SequenceContainer& _sc;
     //Standard
     bool _is_standard = true;
+};
+/*
+ * Boost implementation
+ */
+template <bool P> class boostDBG;
+template<bool P>
+class boostDBG:public DBG<P>
+{
+public:
+    typedef typename DBG<P>::Parent_Node Node;
+    typedef typename DBG<P>::Parent_FuncNode FuncNode;
+    typedef typename NodeType<P>::set_couples ExtraInfoNode;
+    /*
+     * Boost structure
+     */
+    /*
+     * SingleEnd
+     */
+    //TODO: Check how to manage this thing
+    /*
+     * PairEnd
+     */
+    struct NodeInfo {
+        NodeInfo():id(-1){}
+        NodeInfo(Node node, int32_t id):node(node), id(id){}
+        NodeInfo(Node node, int32_t id, ExtraInfoNode extra):node(node), id(id),node_set(extra){}
+        NodeInfo& operator=(const NodeInfo& other)
+        {
+            node = other.node;
+            return *this;
+        }
+        bool equal(Node node) const
+        {
+            return node == this->node;
+        }
+        Node node;
+        int32_t id;
+        ExtraInfoNode node_set;
+    };
+
+    struct EdgeInfo {
+        EdgeInfo(){}
+        EdgeInfo(int8_t nt_received):nt(nt_received){}
+        EdgeInfo& operator=(const EdgeInfo& other)
+        {
+            nt = other.nt;
+            return *this;
+        }
+        int8_t nt;
+    };
+    struct GraphInfo{};
+    typedef typename boost::adjacency_list<boost::listS, boost::listS, boost::directedS, NodeInfo,
+            EdgeInfo> Graph;
+    /*
+     * Bundles for properties
+     */
+    /*typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+    typedef typename boost::graph_traits<Graph>::edge_descriptor edge_t;*/
+    typedef typename Graph::vertex_descriptor vertex_t;
+    typedef typename Graph::edge_descriptor edge_t;
+    typedef typename Graph::adjacency_iterator adjacency_iterator;
+    typedef typename Graph::vertex_iterator vertex_iterator;
+    /*
+     * TODO: Needs implementation
+     */
+    boostDBG(DBG<P> *);
+    bool is_solid(Node&) const
+    {
+        return true;
+    }
+    size_t length() const
+    {
+        return 0;
+    }
+    vector<typename DnaSequence::NuclType> getNeighbors
+            (Node) const
+    {
+        vector<DnaSequence::NuclType> neigh;
+        return vector<typename DnaSequence::NuclType>();
+    }
+    vector<Node> getKmerNeighbors
+            (Node node) const
+    {
+        vector<Node> neigh;
+        vertex_t  * vertex = _getNode(node);
+        if (vertex == nullptr)
+            return neigh;
+        pair<adjacency_iterator, adjacency_iterator> neighbors =
+                boost::adjacent_vertices((*vertex), _g);
+        for(; neighbors.first != neighbors.second; ++neighbors.first)
+        {
+            neigh.push_back(_g[*neighbors.first].node);
+        }
+        return neigh;
+    }
+    size_t in_degree(Node)
+    {
+        return 0;
+    }
+    size_t out_degree(Node)
+    {
+        return 0;
+    }
+
+    //Getter
+    typename DBG<P>::Heads get(bool behaviour) const
+    {
+        return (behaviour)?_heads:_tails;
+    }
+
+    pair<unordered_set<Node>, unordered_set<Node>> getNodes()
+    {
+        return pair<unordered_set<Node>, unordered_set<Node>>(unordered_set<Node>(), unordered_set<Node>());
+    }
+
+    pair<bool,ExtraInfoNode> getExtra(Node node)
+    {
+        /*
+         * Iterate over all nodes and return the paired info for the Node = node
+         */
+        return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
+    }
+
+    void ProcessTigs(string)
+    {
+    }
+    //Show methods
+    void show_info()
+    {
+        typename Graph::vertex_iterator v, vend;
+        for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v) {
+            std::cout << " Kmer:"     << _g[*v].node.str()
+                      << " id:"  << _g[*v].id
+                      << "\n";
+            vector<Node> neighbors = getKmerNeighbors(_g[*v].node);
+            std::cout << "Neighbors: ";
+            for (auto n:neighbors)
+                std::cout  << n.str()<<" ";
+            std::cout << "\n";
+        }
+    }
+private:
+    vertex_t * _getNode(Node node) const
+    {
+        vertex_iterator v, vend;
+        for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
+            if (_g[*v].equal(node))
+                return &(*v);
+        return nullptr;
+    }
+    void _insertExtraInfo(Node node)
+    {
+        std::cout << "Not Supported yet\n";
+
+    }
+    /*auto _add_vertex(int32_t id, Node node);
+    auto _add_edge(int32_t, int8_t);*/
+    void _kmerCount()
+    {}
+    void _cleaning()
+    {}
+    //Graph
+    Graph _g;
+    //Properties
+    map<int32_t,vertex_t> _map_id_descriptor;
+    //Node_id
+    int32_t _node_id = 0;
+    //Need fix
+    unordered_set<KmerInfo<P>> _heads,_tails;
 };

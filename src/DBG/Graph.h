@@ -13,11 +13,14 @@ template<> struct NodeType<false>
 {
     typedef Kmer DBGNode;
     typedef Kmer DBGFuncInp;
+    //TODO: Corregir
+    typedef int set_couples;
 };
 template<> struct NodeType<true>
 {
     typedef Kmer DBGNode;
     typedef Pair_Kmer DBGFuncInp;
+    typedef unordered_set<DBGNode> set_couples;
 };
 
 template <bool P> struct Extra{
@@ -26,13 +29,18 @@ template <bool P> struct Extra{
     virtual void clear();
     virtual bool find(typename NodeType<true>::DBGNode);
     virtual unordered_set<typename NodeType<P>::DBGNode> operator[] (typename NodeType<P>::DBGNode) const;
+    virtual pair<bool,typename NodeType<false>::set_couples> getInfoNode(typename NodeType<P>::DBGNode);
 };
 template <> struct Extra<false>
 {
     void show_info() {}
     void clear() {}
-    bool find(typename NodeType<true>::DBGNode){
+    bool find(typename NodeType<false>::DBGNode){
         return true;
+    }
+    pair<bool,typename NodeType<false>::set_couples> getInfoNode(typename NodeType<false>::DBGNode)
+    {
+        return pair<bool, typename NodeType<false>::set_couples >(false,0);
     }
 };
 /*
@@ -40,8 +48,15 @@ template <> struct Extra<false>
  */
 template <> struct Extra<true>
 {
-    unordered_map<typename NodeType<true>::DBGNode, unordered_set<typename NodeType<true>::DBGNode>> mapPair;
+    unordered_map<typename NodeType<true>::DBGNode, NodeType<true>::set_couples> mapPair;
     unordered_set<typename NodeType<true>::DBGNode> key_and_value;
+    pair<bool,typename NodeType<true>::set_couples> getInfoNode(typename NodeType<true>::DBGNode node)
+    {
+        if (find(node))
+            return pair<bool,typename NodeType<true>::set_couples>(true,mapPair[node]);
+        else
+            return pair<bool,typename NodeType<true>::set_couples>(false,NodeType<true>::set_couples());
+    }
     void erase(typename NodeType<true>::DBGNode node)
     {
         mapPair.erase(mapPair.find(node));
@@ -116,6 +131,7 @@ public:
     typedef unordered_set<KmerInfo<P>> Heads;
     typedef typename NodeType<P>::DBGNode Parent_Node;
     typedef typename NodeType<P>::DBGFuncInp Parent_FuncNode;
+    typedef typename NodeType<P>::set_couples Parent_Extra;
     DBG(){}
     virtual bool is_solid(typename NodeType<P>::DBGNode&) const = 0;
     virtual size_t length() const = 0;
@@ -125,7 +141,12 @@ public:
             (typename NodeType<P>::DBGNode) const = 0;
     virtual size_t in_degree(typename NodeType<P>::DBGNode) = 0;
     virtual size_t out_degree(typename NodeType<P>::DBGNode) = 0;
+    //Getter
     virtual Heads  get(bool) const = 0;
+    virtual pair<unordered_set<typename NodeType<P>::DBGNode>,
+            unordered_set<typename NodeType<P>::DBGNode>> getNodes() = 0;
+    //Todo: think better (or not)
+    virtual pair<bool,typename NodeType<P>::set_couples> getExtra(typename NodeType<P>::DBGNode) = 0;
     virtual void ProcessTigs(string) = 0;
     //Show methods
     virtual void show_info() = 0;

@@ -67,6 +67,8 @@ int main(int argv, char ** argc){
 	SequenceContainer sc;
     sc.load(path_to_file, pair_end);
     //NaiveDBG<false> graph(sc);
-    NaiveDBG<true> graph(sc);
+    DBG<true> * graph = new NaiveDBG<true>(sc);
+    //Lets try boost
+    boostDBG<true> boostDBG1(graph);
     std::cout << "END!\n";
 }
