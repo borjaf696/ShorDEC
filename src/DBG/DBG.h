@@ -3,6 +3,9 @@
 #include <unordered_set>
 #include <vector>
 #include <stack>
+#include <boost/version.hpp>
+#include <boost/graph/undirected_graph.hpp>
+#include <boost/graph/bron_kerbosch_all_cliques.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/labeled_graph.hpp>
 #include "../Extender/Extender.h"
@@ -130,16 +133,6 @@ private:
     /*
      * Check real neighbors:
      */
-    unordered_set<Node> _intersect(unordered_set<Node> set_full, unordered_set<Node> nn_pair) const
-    {
-        unordered_set<Node> intersection;
-        for (auto i = nn_pair.begin(); i != nn_pair.end(); i++) {
-            if (set_full.find(*i) != set_full.end())
-                intersection.insert(*i);
-        }
-        return intersection;
-    }
-
     void _build_pair_neighs(Node node, unordered_set<Node>& set_full) const
     {
         for (uint i = 0; i < 4; i++)
@@ -160,7 +153,7 @@ private:
             _build_pair_neighs(s, set_full);
         for (auto k: neighbors)
         {
-            unordered_set<Node> result = _intersect(set_full, _extra_info[k]);
+            unordered_set<Node> result = getIntersection(set_full, _extra_info[k]);
             if (!result.empty())
                 real_neighbors.push_back(k);
         }
@@ -422,15 +415,32 @@ private:
     {
         vertex_iterator v, vend;
         for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
+        {
             if (_g[*v].equal(node))
                 return &(*v);
+        }
         return nullptr;
     }
-    void _insertExtraInfo(Node node)
+    void _insertExtraInfo()
     {
-        std::cout << "Not Supported yet\n";
-
+        std::cout << "Import extrainfo as vertex_t\n";
+        vertex_iterator v, vend;
+        for (boost::tie(v,vend) = boost::vertices(_g); v != vend; ++v)
+        {
+            unordered_set<vertex_t*> local;
+            for (auto s:_g[*v].node_set)
+            {
+                local.emplace(_getNode(s));
+            }
+            _map_extra_info.push_back(local);
+        }
     }
+    /*
+     * Completing info
+     */
+    int* _floyds_warshall();
+    bool _reachable(int*, size_t, size_t);
+    void _modify_info();
     /*auto _add_vertex(int32_t id, Node node);
     auto _add_edge(int32_t, int8_t);*/
     void _kmerCount()
@@ -439,8 +449,9 @@ private:
     {}
     //Graph
     Graph _g;
-    //Properties
+    //Properties + nodes (this should be fixed with vecS)
     map<int32_t,vertex_t> _map_id_descriptor;
+    vector<unordered_set<vertex_t*>> _map_extra_info;
     //Node_id
     int32_t _node_id = 0;
     //Need fix

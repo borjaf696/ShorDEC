@@ -552,10 +552,149 @@ boostDBG<false>::boostDBG(DBG<false> * dbg)
  * Boost graphs -> Paire-end Reads
  */
 template<>
+int* boostDBG<true>::_floyds_warshall()
+{
+    std::cout << "Lets compute floyds warshall\n";
+    size_t num_vertex = boost::num_vertices(_g);
+    /*
+     * Free!!!
+     */
+    int *dist = (int*) malloc(num_vertex*num_vertex*sizeof(int));
+    /*
+     * Initialize the dist_matrix
+     */
+    vertex_iterator v, vend;
+    for (boost::tie(v,vend) = boost::vertices(_g); v != vend; ++v)
+    {
+        for (size_t i = 0; i < num_vertex; ++i)
+        {
+            dist[_g[*v].id*num_vertex+i] = INF;
+        }
+        vector<size_t> neigh;
+        pair<adjacency_iterator, adjacency_iterator> neighbors =
+                boost::adjacent_vertices((*v), _g);
+        for(; neighbors.first != neighbors.second; ++neighbors.first)
+        {
+            dist[_g[*v].id*num_vertex+_g[*neighbors.first].id] = 1;
+        }
+    }
+    /*
+     * Floyd Warshall
+     */
+    for (size_t k = 0; k < num_vertex; ++k) {
+        for (size_t i = 0; i < num_vertex; ++i) {
+            for (size_t j = 0; j < num_vertex; ++j) {
+                if (dist[i * num_vertex + k] + dist[k * num_vertex + j] < dist[i * num_vertex + j])
+                    dist[i * num_vertex + j] = dist[i * num_vertex + k] + dist[k * num_vertex + j];
+            }
+        }
+    }
+    /*
+     * Little print
+     */
+    for (size_t k = 0; k < num_vertex; ++k)
+    {
+        for (size_t i = 0; i < num_vertex; ++i)
+            std::cout << dist[k * num_vertex + i] << " ";
+        std::cout << "\n";
+    }
+
+    return dist;
+}
+template<>
+bool boostDBG<true>::_reachable(int * dm, size_t row, size_t col)
+{
+    return (dm[row*boost::num_vertices(_g)+col] < (2*DELTA_PATH_LEN));
+}
+template<>
+void boostDBG<true>::_modify_info()
+{
+    /*
+     * We are going to use pair_info (ExtraInfoNodes) to "modify" the graph including this new information
+     */
+    vertex_iterator v, vend;
+    size_t num_vertex = boost::num_vertices(_g);
+    int * distance_matrix = _floyds_warshall();
+    for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
+    {
+        pair<adjacency_iterator, adjacency_iterator> neighbors =
+                boost::adjacent_vertices((*v), _g);
+        std::cout << "Kmer: "<<_g[*v].node.str()<<" ";
+        for (; neighbors.first != neighbors.second; ++neighbors.first)
+        {
+            /*
+             * New graph definition:
+             *      - BidirectionalS/UndirectedS
+             */
+            typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, NodeInfo> Graph_l;
+            typedef Graph_l::vertex_descriptor vertex_graph;
+            typedef Graph_l::vertex_iterator vertex_it;
+            /*
+             * Local Graph which joins evey single reachable node (from the others)
+             */
+            unordered_set<vertex_t *> local_vect;
+            vector<bool> visited(num_vertex, false);
+            Graph_l local_graph;
+            size_t curr_node = 0;
+            map<Node, vertex_graph> local_node_map;
+            std::cout << "Neighbor: "<<_g[*neighbors.first].node.str()<<"\n";
+            if (_map_extra_info[_g[*v].id].empty())
+                break;
+            if (_map_extra_info[_g[*neighbors.first].id].empty())
+                continue;
+            local_vect = getUnion(_map_extra_info[_g[*v].id], _map_extra_info[_g[*neighbors.first].id]);
+            for (auto s:local_vect)
+            {
+                vertex_graph source;
+                if (local_node_map.find(_g[*s].node) == local_node_map.end())
+                {
+                    source = boost::add_vertex(NodeInfo(_g[*s].node,curr_node++), local_graph);
+                    local_node_map[_g[*s].node] = source;
+                }else
+                    source = local_node_map[_g[*s].node];
+                for (auto t:local_vect) {
+                    if (visited[_g[*t].id] || _g[*t].id == _g[*s].id)
+                        continue;
+                    std::cout << " " << _g[*s].node.str() << " "<<_g[*t].node.str();
+                    std::cout << " " << _reachable(distance_matrix, _g[*s].id, _g[*t].id)<<"\n";
+                    if (_reachable(distance_matrix, _g[*s].id, _g[*t].id))
+                    {
+                        vertex_graph target;
+                        if (local_node_map.find(_g[*t].node) == local_node_map.end())
+                        {
+                            target = boost::add_vertex(NodeInfo(_g[*t].node, curr_node++), local_graph);
+                            local_node_map[_g[*t].node] = target;
+                        }else
+                            target = local_node_map[_g[*t].node];
+                        boost::add_edge(source, target, local_graph);
+                    }
+                }
+                visited[_g[*s].id] = 1;
+            }
+            std::cout << "\n";
+            /*
+            * Calculate Maximal cliques for the local graph
+            */
+            vector<vertex_graph> output = findMaxClique<Graph_l, vertex_graph,vertex_it>(local_graph);
+            while (boost::num_edges(local_graph)) {
+                for (size_t i = 0; i < output.size(); ++i)
+                    for (size_t j = i + 1; j < output.size(); ++j) {
+                        cout << local_graph[output[i]].id << " " << local_graph[output[j]].id << "\n";
+                        boost::remove_edge(output[i], output[j], local_graph);
+                    }
+                output = findMaxClique<Graph_l, vertex_graph, vertex_it>(local_graph);
+                for (auto i:output)
+                    cout << local_graph[i].id << "\n";
+            }
+        }
+    }
+}
+template<>
 void boostDBG<true>::show_info()
 {
-    Graph::vertex_iterator v, vend;
-    for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v) {
+    vertex_iterator v, vend;
+    for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
+    {
         std::cout << " Kmer:"     << _g[*v].node.str()
                   << " id:"  << _g[*v].id
                   << "\n";
@@ -572,7 +711,7 @@ void boostDBG<true>::show_info()
 template<>
 boostDBG<true>::boostDBG(DBG<true> * dbg)
 {
-    std::cout << "Trying to fill the graph\n";
+    std::cout << "Trying to fill the graph: \n";
     map<Node, vertex_t > local_map;
     pair<unordered_set<Node>, unordered_set<Node>> graph_struct = dbg->getNodes();
     for (auto k: graph_struct.second)
@@ -604,6 +743,7 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
             _g[e] = EdgeInfo(k2.at(Parameters::get().kmerSize-2));
         }
     }
-    show_info();
-    sleep(1000);
+    _insertExtraInfo();
+    _modify_info();
+    //show_info();
 }
