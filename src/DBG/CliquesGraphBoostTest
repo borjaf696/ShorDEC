@@ -1,25 +1,24 @@
- /*
-             * Graph for cliques -> bron kerbosch (esto voy a tener que revisarlo pero bien)
-             */
-            map<vertex_t, size_t> map_nodes;
-            typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, NodeInfo> Graph_l;
-            typedef Graph_l::vertex_descriptor vertex_graph;
-            typedef Graph_l::vertex_iterator vertex_it;
-            Graph_l g_l;
-            vertex_graph v1 = boost::add_vertex(NodeInfo(_g[*v].node, 0),g_l);
-            vertex_graph v2 = boost::add_vertex(NodeInfo(_g[*v].node, 1),g_l);
-            vertex_graph v3 = boost::add_vertex(NodeInfo(_g[*v].node, 2),g_l);
-            vertex_graph v4 = boost::add_vertex(NodeInfo(_g[*v].node, 3),g_l);
-            boost::add_edge(v1,v2,g_l);boost::add_edge(v1,v3,g_l);boost::add_edge(v1,v4,g_l);boost::add_edge(v2,v3,g_l);
-            boost::add_edge(v3,v4,g_l);
-            vector<vertex_graph> output = findMaxClique<Graph_l, vertex_graph,vertex_it>(g_l);
-            while (boost::num_edges(g_l)) {
-                for (size_t i = 0; i < output.size(); ++i)
-                    for (size_t j = i + 1; j < output.size(); ++j) {
-                        cout << g_l[output[i]].id << " " << g_l[output[j]].id << "\n";
-                        boost::remove_edge(output[i], output[j], g_l);
+           Graph_l local_graph;
+            vertex_graph v1 = boost::add_vertex(NodeInfo(_g[*v].node, 0),local_graph);
+            vertex_graph v2 = boost::add_vertex(NodeInfo(_g[*v].node, 1),local_graph);
+            vertex_graph v3 = boost::add_vertex(NodeInfo(_g[*v].node, 2),local_graph);
+            vertex_graph v4 = boost::add_vertex(NodeInfo(_g[*v].node, 3),local_graph);
+            boost::add_edge(v1,v2,local_graph);boost::add_edge(v1,v3,local_graph);boost::add_edge(v1,v4,local_graph);
+            boost::add_edge(v2,v4,local_graph);boost::add_edge(v3,v4,local_graph);
+            vector<vector<vertex_graph>> output = findMaxClique<Graph_l, vertex_graph,vertex_it>(local_graph);
+            while (boost::num_edges(local_graph)) {
+                for (auto clique: output)
+                {
+                    for (size_t i = 0; i < clique.size(); ++i)
+                    {
+                        for (size_t j = i + 1; j < clique.size(); ++j) {
+                            cout << local_graph[clique[i]].id << " " << local_graph[clique[j]].id << " ";
+                            boost::remove_edge(clique[i], clique[j], local_graph);
+                        }
                     }
-                output = findMaxClique<Graph_l, vertex_graph, vertex_it>(g_l);
-                for (auto i:output)
-                    cout << g_l[i].id << "\n";
+                    cout << "\n";
+                }
+                output = findMaxClique<Graph_l, vertex_graph, vertex_it>(local_graph);
             }
+            std::cout << "\n";
+            sleep(10000);

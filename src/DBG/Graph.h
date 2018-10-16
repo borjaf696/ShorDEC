@@ -28,6 +28,7 @@ template <bool P> struct Extra{
     virtual void show_info();
     virtual void clear();
     virtual bool find(typename NodeType<true>::DBGNode);
+    virtual void erase(typename NodeType<true>::DBGNode);
     virtual unordered_set<typename NodeType<P>::DBGNode> operator[] (typename NodeType<P>::DBGNode) const;
     virtual pair<bool,typename NodeType<false>::set_couples> getInfoNode(typename NodeType<P>::DBGNode);
 };
@@ -59,7 +60,10 @@ template <> struct Extra<true>
     }
     void erase(typename NodeType<true>::DBGNode node)
     {
-        mapPair.erase(mapPair.find(node));
+        unordered_map<typename NodeType<true>::DBGNode, NodeType<true>::set_couples>::iterator map_iterator =
+                mapPair.find(node);
+        if (map_iterator != mapPair.end())
+            mapPair.erase(node);
         /*
          * How to know places where a key is stored as value? -> This is painful
          */

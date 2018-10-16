@@ -11,7 +11,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 10
+#define MIN_PATH_LEN 1
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -119,16 +119,19 @@ private:
      */
     void _insert(Node k, Node kmer)
     {
-        Node rc = kmer.rc();
         Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
                 target = kmer.substr(1, Parameters::get().kmerSize);
-        Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
-                target_rc = rc.substr(1, Parameters::get().kmerSize);
         _dbg_naive.emplace(k);
         _dbg_nodes.emplace(origin);
         _dbg_nodes.emplace(target);
-        _dbg_nodes.emplace(origin_rc);
-        _dbg_nodes.emplace(target_rc);
+        if (_is_standard)
+        {
+            Node rc = kmer.rc();
+            Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
+                    target_rc = rc.substr(1, Parameters::get().kmerSize);
+            _dbg_nodes.emplace(origin_rc);
+            _dbg_nodes.emplace(target_rc);
+        }
     }
     /*
      * Check real neighbors:
@@ -268,7 +271,7 @@ private:
     //Extend
     SequenceContainer& _sc;
     //Standard
-    bool _is_standard = true;
+    bool _is_standard = false;
 };
 /*
  * Boost implementation
@@ -295,6 +298,7 @@ public:
         NodeInfo():id(-1){}
         NodeInfo(Node node, int32_t id):node(node), id(id){}
         NodeInfo(Node node, int32_t id, ExtraInfoNode extra):node(node), id(id),node_set(extra){}
+        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set){}
         NodeInfo& operator=(const NodeInfo& other)
         {
             node = other.node;
@@ -304,9 +308,14 @@ public:
         {
             return node == this->node;
         }
+        bool operator ==(const NodeInfo &other) const
+        {
+            return equal(other.node) && (this->id == other.id);
+        }
         Node node;
         int32_t id;
         ExtraInfoNode node_set;
+        map<Node,vector<ExtraInfoNode>> parent_cliques;
     };
 
     struct EdgeInfo {
@@ -320,7 +329,7 @@ public:
         int8_t nt;
     };
     struct GraphInfo{};
-    typedef typename boost::adjacency_list<boost::listS, boost::listS, boost::directedS, NodeInfo,
+    typedef typename boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, NodeInfo,
             EdgeInfo> Graph;
     /*
      * Bundles for properties
@@ -330,6 +339,8 @@ public:
     typedef typename Graph::vertex_descriptor vertex_t;
     typedef typename Graph::edge_descriptor edge_t;
     typedef typename Graph::adjacency_iterator adjacency_iterator;
+    typedef typename Graph::out_edge_iterator out_iterator;
+    typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
     /*
      * TODO: Needs implementation
@@ -353,14 +364,14 @@ public:
             (Node node) const
     {
         vector<Node> neigh;
-        vertex_t  * vertex = _getNode(node);
+        vertex_t vertex = _getNode(node);
         if (vertex == nullptr)
             return neigh;
-        pair<adjacency_iterator, adjacency_iterator> neighbors =
-                boost::adjacent_vertices((*vertex), _g);
+        pair<out_iterator, out_iterator> neighbors =
+                boost::out_edges(vertex, _g);
         for(; neighbors.first != neighbors.second; ++neighbors.first)
         {
-            neigh.push_back(_g[*neighbors.first].node);
+            neigh.push_back(_g[boost::target(*neighbors.first,_g)].node);
         }
         return neigh;
     }
@@ -411,29 +422,44 @@ public:
         }
     }
 private:
-    vertex_t * _getNode(Node node) const
+    vertex_t _getNode(Node node) const
     {
         vertex_iterator v, vend;
         for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
         {
             if (_g[*v].equal(node))
-                return &(*v);
+            {
+                return (*v);
+            }
         }
         return nullptr;
     }
-    void _insertExtraInfo()
+    template<typename T>
+    void _insertExtraInfo(const T &g)
     {
-        std::cout << "Import extrainfo as vertex_t\n";
+        std::cout << "Import extrainfo as vertex_t: "<<_node_id<<"\n";
         vertex_iterator v, vend;
-        for (boost::tie(v,vend) = boost::vertices(_g); v != vend; ++v)
+        _map_extra_info.resize(_node_id);
+        for (boost::tie(v,vend) = boost::vertices(g); v != vend; ++v)
         {
-            unordered_set<vertex_t*> local;
-            for (auto s:_g[*v].node_set)
+            std::cout << g[*v].node.str()<<"\n";
+            NodeInfo node_info = g[*v];
+            if (!node_info.node_set.empty())
             {
-                local.emplace(_getNode(s));
+                unordered_set<vertex_t> local;
+                for (auto s:g[*v].node_set)
+                {
+                    std::cout << s.str()<<"\n";
+                    vertex_t pointerToExtraInfo = _getNode(s);
+                    std::cout << g[pointerToExtraInfo].node.str()<<"\n";
+                    local.emplace(pointerToExtraInfo);
+                }
+                std::cout <<"Cualquier cosa: "<<g[*v].id<<" InfoSize: "<<_map_extra_info.size()
+                          <<"\n";
+                _map_extra_info[g[*v].id] = local;
             }
-            _map_extra_info.push_back(local);
         }
+        std::cout << "ExtraInfo imported as vertex_t\n";
     }
     /*
      * Completing info
@@ -450,8 +476,7 @@ private:
     //Graph
     Graph _g;
     //Properties + nodes (this should be fixed with vecS)
-    map<int32_t,vertex_t> _map_id_descriptor;
-    vector<unordered_set<vertex_t*>> _map_extra_info;
+    vector<unordered_set<vertex_t>> _map_extra_info;
     //Node_id
     int32_t _node_id = 0;
     //Need fix

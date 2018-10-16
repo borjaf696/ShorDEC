@@ -81,6 +81,15 @@ unordered_set<T> getUnion(const unordered_set<T>& set1, const unordered_set<T>& 
     return result;
 }
 
+template<typename T>
+bool isSubset(const unordered_set<T> & set1, const unordered_set<T> & set2)
+{
+    for (auto el: set1)
+        if (set2.find(el) == set2.end())
+            return false;
+    return true;
+}
+
 /*
  * Common graph operations
  */
@@ -88,16 +97,26 @@ unordered_set<T> getUnion(const unordered_set<T>& set1, const unordered_set<T>& 
  * Check -> maximal_clique (using heuristic approach)
  */
 template<typename G, typename Vt, typename Vi>
-std::vector<Vt> findMaxClique(const G & graph) {
+std::vector<vector<Vt>> findMaxClique(const G & graph) {
     if (!boost::num_edges(graph))
-        return std::vector<Vt>();
+        return std::vector<vector<Vt>>();
+    std::vector<vector<Vt>> endCliques;
     std::vector<Vt> maxClique;
     std::vector<Vt> tmpClique;
+    std::set<size_t> idCliques;
+    /*
+     * Sum -> shift id to the left. Example:
+     *      - 0 1 4 -> 1 0 0 1 1 -> 19
+     *      - 0 3 2 -> 1 1 0 0 -> 10
+     * Both cases sum = 5 but id_different. Problem with cliques larger than 64 Nodes.
+     */
+    int64_t sum;
 
-    auto findMaxCliqueWithVertex = [](const Vt vertex, const int maxCliqueSize, const G &graph)
+    auto findMaxCliqueWithVertex = [&sum](const Vt vertex, const int maxCliqueSize, const G &graph)
     {
         std::vector<Vt> clique;
         clique.emplace_back(vertex);
+        sum |= 1 << graph[vertex].id;
 
         std::unordered_set<Vt> candidateNeighbors;
 
@@ -118,6 +137,10 @@ std::vector<Vt> findMaxClique(const G & graph) {
 
             const auto highestDegVert = *highestDegNeighborIt;
             clique.emplace_back(highestDegVert);
+            /*
+             * Questionable
+             */
+            sum |= 1 << graph[highestDegVert].id;
             visited.emplace(highestDegVert);
 
             for (tie(adjVertex, adjVertEnd) = boost::adjacent_vertices(highestDegVert, graph); adjVertex != adjVertEnd; ++adjVertex) {
@@ -131,13 +154,19 @@ std::vector<Vt> findMaxClique(const G & graph) {
     };
     Vi vertex, v_end;
     for (tie(vertex, v_end) = boost::vertices(graph); vertex != v_end; ++vertex) {
-        if (boost::degree(*vertex, graph) >= maxClique.size()) {
-            tmpClique = findMaxCliqueWithVertex(*vertex, maxClique.size(), graph);
-
-            if (tmpClique.size() >= 2 && tmpClique.size() > maxClique.size()) {
-                maxClique = std::move(tmpClique);
-            }
+        sum = 0;
+        tmpClique = findMaxCliqueWithVertex(*vertex, maxClique.size(), graph);
+        if (tmpClique.size() >= 2 && tmpClique.size() > maxClique.size()) {
+            endCliques.clear();
+            idCliques.clear();
+            maxClique = std::move(tmpClique);
+            endCliques.push_back(maxClique);
+            idCliques.emplace(sum);
+        }else if (tmpClique.size() == maxClique.size() && idCliques.find(sum) == idCliques.end())
+        {
+            idCliques.emplace(sum);
+            endCliques.push_back(tmpClique);
         }
     }
-    return maxClique;
+    return endCliques;
 }
