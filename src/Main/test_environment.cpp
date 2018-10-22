@@ -70,5 +70,6 @@ int main(int argv, char ** argc){
     DBG<true> * graph = new NaiveDBG<true>(sc);
     //Lets try boost
     boostDBG<true> boostDBG1(graph);
+    boostDBG1.ProcessTigs(path_unitigs);
     std::cout << "END!\n";
 }

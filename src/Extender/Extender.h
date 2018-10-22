@@ -9,15 +9,15 @@ template<bool P>
 class UnitigExtender
 {
 public:
-    //TODO: Esto hay que mirarlo
-    static vector<vector<Kmer>> Extend(Kmer,DBG<P>&,stack<Kmer>&,stack<Kmer>&,unordered_set<Kmer>);
-    static void full_extension(DBG<P>&, vector<Kmer>, string);
-
-private:
     /*
-    * Info unitigs
-    */
-    static void _construct_sequences(vector<vector<Kmer>> unitigs)
+     * Typedefs
+     */
+    typedef typename NodeType<P>::DBGNode Node;
+    /*
+     * Info unitigs -> Build at the same time we transverse the graph
+     */
+    static void _construct_sequences(vector<vector<Node>> unitigs,unordered_map<Node, vector<size_t>> _fin_segs
+            , vector<DnaSequence> & _seqs)
     {
         for (auto & vect:unitigs) {
             size_t cont = 0;
@@ -35,7 +35,7 @@ private:
         /*for (auto seq : _seqs)
             cout << "Seqs: "<<seq.str() << "\n";*/
     }
-    static void _write_gfa(string filename)
+    static void _write_gfa(string filename, vector<DnaSequence> _seqs, vector<pair<size_t,size_t>> _links)
     {
         FILE* fout = fopen(filename.c_str(), "w");
         if (!fout)
@@ -66,9 +66,6 @@ private:
         }
     }
 
-    static size_t _curr_segment;
-    static unordered_map<Kmer, vector<size_t>> _fin_segs;
-    static vector<pair<size_t,size_t>> _links;
-    //Sequences
-    static vector<DnaSequence> _seqs;
+    //TODO: remove nodes to kmer -> this is a kmer extender
+
 };

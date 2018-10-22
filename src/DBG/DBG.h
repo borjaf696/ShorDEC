@@ -15,6 +15,14 @@
 #define DELTA_PATH_LEN 4
 
 using namespace std;
+template<typename T>
+class Internal
+{
+    Internal(T n):_n(n){}
+    T getNode(){return _n;}
+private:
+    T _n;
+};
 
 template<bool P>
 class NaiveDBG: public DBG<P>
@@ -23,11 +31,29 @@ public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
     typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
+    typedef typename BUgraph<Node>::graphBU graphBU;
+    typedef typename BUgraph<FuncNode>::graphBU graphBU_Func;
 
     size_t in_degree(Node);
     size_t out_degree(Node);
     vector<DnaSequence::NuclType> getNeighbors (Node) const;
-    vector<Node> getKmerNeighbors (Node) const;
+    vector<Node> getKmerNeighbors
+            (Node kmer) const
+    {
+        if (kmer.length() == Parameters::get().kmerSize)
+            kmer = kmer.substr(1, Parameters::get().kmerSize);
+        vector<Kmer> nts;
+        Node kmer_aux;
+        for (DnaSequence::NuclType i=0; i < 4; ++i) {
+            kmer_aux = Kmer(kmer.str());
+
+            kmer_aux.appendRight(i);
+            if (is_solid(kmer_aux))
+                nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
+        }
+        return nts;
+    }
+
     /*
      * Define how to check if rc or just forward
      */
@@ -65,14 +91,89 @@ public:
 
     void ProcessTigs(string path_to_write)
     {
-        std::cout << "Lets start\n";
-        UnitigExtender<P>::full_extension(*this,_in_0,path_to_write);
-        std::cout << "End Unitigs\n";
+        std::cout << "Lets start: Naive\n";
+        extension(_in_0,path_to_write);
+        std::cout << "End Unitigs: Naive\n";
     }
 
     void show_info();
 
+    //Extension
+    void extension(vector<Node> in_0, string path_to_write)
+    {
+        size_t _curr_segment = 0;
+        unordered_map<Node, vector<size_t>> _fin_segs;
+        vector<pair<size_t,size_t>> _links;
+        //Sequences
+        vector<DnaSequence> _seqs;
+        std::cout << "Voy a extender como un pro!\n";
+        /*
+         * Set of already assesed heads
+         */
+        unordered_set<Node> added;
+        /*
+         * New heads with out and in > 1
+         */
+        stack<graphBU> in, out;
+        /*
+         * Unitigs: entran por orden de curr_segment, ¡Nos ahorramos indexar las secuencias!
+         */
+        vector<vector<Node>> unitigs;
+        for (auto k: in_0)
+        {
+            for (auto &p: this->extend(k,out,in,added,_curr_segment,_fin_segs))
+                unitigs.push_back(p);
+        }
+        //Remove the kmers from in_0
+        in_0.clear();
+        while (!in.empty() && !out.empty())
+        {
+            /*
+             * Lets check kmers with out_degree > 1
+             */
+            while (!out.empty())
+            {
+                Node k = out.top();
+                out.pop();
+                Node n_k = getNode(k);
+                if (_fin_segs.find(n_k) != _fin_segs.end())
+                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
+                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
+                    }
+                for (auto &p: this->extend(k,out,in,added, _curr_segment, _fin_segs))
+                    unitigs.push_back(p);
+            }
+            /*
+             * Lets check kmers with in_degree > 1
+             */
+            while(!in.empty())
+            {
+                Node k = in.top();
+                in.pop();
+                Node n_k = getNode(k);
+                if (_fin_segs.find(n_k) != _fin_segs.end())
+                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
+                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
+                    }
+                for (auto &p: this->extend(k,out,in,added,_curr_segment,_fin_segs))
+                    unitigs.push_back(p);
+            }
+        }
+        /*
+         * Construct the DnaSequences
+         */
+        UnitigExtender<P>::_construct_sequences(unitigs,_fin_segs,_seqs);
+        /*
+         * Lets write them
+         */
+        UnitigExtender<P>::_write_gfa(path_to_write,_seqs,_links);
+    }
+
     //Get
+    vector<Node> getEngagers()
+    {
+        return _in_0;
+    }
     pair<unordered_set<Node>, unordered_set<Node>> getNodes()
     {
         return pair<unordered_set<Node>, unordered_set<Node>>(_dbg_naive, _dbg_nodes);
@@ -81,6 +182,11 @@ public:
     pair<bool,ExtraInfoNode> getExtra(Node node)
     {
         return _extra_info.getInfoNode(node);
+    }
+
+    Node getNode(Node t)
+    {
+        return t;
     }
 
     //Operators
@@ -232,6 +338,7 @@ private:
         cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
         kmer_to_erase.clear();
     }
+
     /*
      * I/O
      */
@@ -276,9 +383,7 @@ private:
 /*
  * Boost implementation
  */
-template <bool P> class boostDBG;
-template<bool P>
-class boostDBG:public DBG<P>
+template <bool P> class boostDBG:public DBG<P>
 {
 public:
     typedef typename DBG<P>::Parent_Node Node;
@@ -320,13 +425,14 @@ public:
 
     struct EdgeInfo {
         EdgeInfo(){}
-        EdgeInfo(int8_t nt_received):nt(nt_received){}
+        EdgeInfo(int8_t nt_received, size_t id):nt(nt_received),id(id){}
         EdgeInfo& operator=(const EdgeInfo& other)
         {
             nt = other.nt;
             return *this;
         }
         int8_t nt;
+        size_t id;
     };
     struct GraphInfo{};
     typedef typename boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, NodeInfo,
@@ -334,14 +440,13 @@ public:
     /*
      * Bundles for properties
      */
-    /*typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
-    typedef typename boost::graph_traits<Graph>::edge_descriptor edge_t;*/
     typedef typename Graph::vertex_descriptor vertex_t;
     typedef typename Graph::edge_descriptor edge_t;
     typedef typename Graph::adjacency_iterator adjacency_iterator;
     typedef typename Graph::out_edge_iterator out_iterator;
     typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
+    typedef typename BUgraph<vertex_t>::graphBU graphBU;
     /*
      * TODO: Needs implementation
      */
@@ -360,8 +465,8 @@ public:
         vector<DnaSequence::NuclType> neigh;
         return vector<typename DnaSequence::NuclType>();
     }
-    vector<Node> getKmerNeighbors
-            (Node node) const
+
+    vector<Node> getKmerNeighbors(Node node) const
     {
         vector<Node> neigh;
         vertex_t vertex = _getNode(node);
@@ -375,16 +480,146 @@ public:
         }
         return neigh;
     }
-    size_t in_degree(Node)
+
+    vector<graphBU> getKmerNeighbors(graphBU node) const
     {
-        return 0;
+        vector<graphBU> neigh;
+        pair<out_iterator, out_iterator> neighbors =
+                boost::out_edges(node, _g);
+        for (; neighbors.first != neighbors.second; ++neighbors.first)
+        {
+            neigh.push_back(boost::target(*neighbors.first,_g));
+        }
+        return neigh;
     }
-    size_t out_degree(Node)
+
+    size_t in_degree(Node node)
     {
-        return 0;
+        graphBU v_node = this->_getNode(node);
+        return boost::in_degree(v_node, _g);
+    }
+
+    size_t in_degree(graphBU node)
+    {
+        return boost::in_degree(node, _g);
+    }
+
+    size_t out_degree(Node node)
+    {
+        graphBU v_node = this->_getNode(node);
+        return boost::degree(v_node, _g);
+    }
+
+    size_t out_degree(graphBU node)
+    {
+        return boost::degree(node, _g);
+    }
+
+    //Extesion ->TODO: move
+    vector<vector<Node>> extend(graphBU kmer,
+                                       stack<graphBU > &out,
+                                       stack<graphBU > &in,
+                                       unordered_set<graphBU > added,
+                                       size_t &curr_segment,
+                                       unordered_map<Node, vector<size_t>> &fin_segs)
+    {
+        vector<vector<Node>> unitigs;
+        Node k_node = getNode(kmer);
+        vector<graphBU> neighbors = getKmerNeighbors(kmer);
+        for (auto &k: neighbors)
+        {
+            vector<Node> unitig;
+            unitig.push_back(k_node);
+            pair<size_t,Node> result =  _Extension(k,unitig,out, in, added);
+            if (result.first == 1 || result.first == 2)
+            {
+                fin_segs[result.second].push_back(curr_segment);
+            }
+            curr_segment++;
+            unitigs.push_back(unitig);
+        }
+        return unitigs;
+    }
+
+    void extension(vector<Node> in_0, string path_to_write)
+    {
+        //Extension info:
+        size_t _curr_segment = 0;
+        unordered_map<Node, vector<size_t>> _fin_segs;
+        vector<pair<size_t,size_t>> _links;
+        vector<DnaSequence> _seqs;
+
+        std::cout << "Pair_End extension!\n";
+        /*
+         * Set of already assesed heads
+         */
+        unordered_set<graphBU> added;
+        /*
+         * New heads with out and in > 1
+         */
+        stack<graphBU> in, out;
+        /*
+         * Unitigs: entran por orden de curr_segment, ¡Nos ahorramos indexar las secuencias!
+         */
+        vector<vector<Node>> unitigs;
+        for (auto k: in_0)
+        {
+            //Searching the node -> TODO: ¿Change?
+            graphBU k_node = _getNode(k);
+            for (auto &p: extend(k_node,out,in,added,_curr_segment,_fin_segs))
+                unitigs.push_back(p);
+        }
+        //Remove the kmers from in_0
+        in_0.clear();
+        while (!in.empty() && !out.empty())
+        {
+            /*
+             * Lets check kmers with out_degree > 1
+             */
+            while (!out.empty())
+            {
+                graphBU k = out.top();
+                out.pop();
+                Node n_k = getNode(k);
+                if (_fin_segs.find(n_k) != _fin_segs.end())
+                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
+                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
+                    }
+                for (auto &p: extend(k,out,in,added, _curr_segment, _fin_segs))
+                    unitigs.push_back(p);
+            }
+            /*
+             * Lets check kmers with in_degree > 1
+             */
+            while(!in.empty())
+            {
+                graphBU k = in.top();
+                in.pop();
+                Node n_k = getNode(k);
+                if (_fin_segs.find(n_k) != _fin_segs.end())
+                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
+                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
+                    }
+                for (auto &p: extend(k,out,in,added,_curr_segment,_fin_segs))
+                    unitigs.push_back(p);
+            }
+        }
+        /*
+         * Construct the DnaSequences
+         */
+        UnitigExtender<P>::_construct_sequences(unitigs,_fin_segs,_seqs);
+        /*
+         * Lets write them
+         */
+        UnitigExtender<P>::_write_gfa(path_to_write,_seqs,_links);
     }
 
     //Getter
+    vector<Node> getEngagers()
+    {
+        return _in_0;
+    }
+
     typename DBG<P>::Heads get(bool behaviour) const
     {
         return (behaviour)?_heads:_tails;
@@ -403,8 +638,21 @@ public:
         return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
     }
 
-    void ProcessTigs(string)
+    Node getNode(Node t)
     {
+        return t;
+    }
+
+    Node getNode(graphBU k)
+    {
+        return _g[k].node;
+    }
+
+    void ProcessTigs(string path_to_write)
+    {
+        cout << "Lets try Unitigs Pair_End graph\n";
+        //UnitigExtender<P, graphBU>::full_extension(this, vector<graphBU>(), path_to_write);
+        cout << "Unitigs donette\n";
     }
     //Show methods
     void show_info()
@@ -422,7 +670,40 @@ public:
         }
     }
 private:
-    vertex_t _getNode(Node node) const
+    //Extension:
+    pair<size_t, Node> _Extension(graphBU kmer,vector<Node> & unitig,
+                                         stack<graphBU> & out, stack<graphBU> & in,
+                                         unordered_set<graphBU> added)
+    {
+        vector<graphBU> neighbors = getKmerNeighbors(kmer);
+        size_t in_ = in_degree(kmer);
+        Node kmer_node = getNode(kmer);
+        if (in_ == 1 && neighbors.size() == 1) {
+            unitig.push_back(kmer_node);
+            return _Extension(neighbors[0],unitig,out,in,added);
+        }else if (neighbors.size () == 0) {
+            unitig.push_back(kmer_node);
+            return pair<size_t, Node>(0, kmer_node);
+        }else if (added.find(kmer) == added.end())
+        {
+            added.emplace(kmer);
+            if (neighbors.size() > 1) {
+                out.push(kmer);
+                unitig.push_back(kmer_node);
+                return pair<size_t,Node>(1,kmer_node);
+            }
+            in.push(kmer);
+            unitig.push_back(kmer_node);
+            return pair<size_t, Node>(2,kmer_node);
+        }
+        return pair<size_t, Node>(0,kmer_node);
+    }
+    //Boost Get Node:
+    vector<graphBU> _getRealNeighbors(graphBU node){
+
+        return vector<graphBU>();
+    }
+    graphBU _getNode(Node node) const
     {
         vertex_iterator v, vend;
         for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
@@ -434,6 +715,7 @@ private:
         }
         return nullptr;
     }
+
     template<typename T>
     void _insertExtraInfo(const T &g)
     {
@@ -477,8 +759,9 @@ private:
     Graph _g;
     //Properties + nodes (this should be fixed with vecS)
     vector<unordered_set<vertex_t>> _map_extra_info;
+    vector<Node> _in_0;
     //Node_id
-    int32_t _node_id = 0;
+    int32_t _node_id = 0, edge_id = 0;
     //Need fix
     unordered_set<KmerInfo<P>> _heads,_tails;
 };

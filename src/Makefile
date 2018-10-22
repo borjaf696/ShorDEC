@@ -1,7 +1,7 @@
 #Primero irian las librerias
 
 #Si quiero extender el Makefile poner el +=
-CXXFLAGS = -Wall -std=c++11 -g 
+CXXFLAGS = -Wall -std=c++17 -g 
 
 #Poner luego un bin
 BIN_release = test

@@ -53,26 +53,6 @@ vector<DnaSequence::NuclType> NaiveDBG<false>::getNeighbors
     }
     return nts;
 }
-/*
- * Get the neighbor k-mers
- */
-template<>
-vector<NaiveDBG<false>::Node> NaiveDBG<false>::getKmerNeighbors
-        (Node kmer) const
-{
-    if (kmer.length() == Parameters::get().kmerSize)
-        kmer = kmer.substr(1, Parameters::get().kmerSize);
-    vector<Kmer> nts;
-    Node kmer_aux;
-    for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        kmer_aux = Kmer(kmer.str());
-
-        kmer_aux.appendRight(i);
-        if (is_solid(kmer_aux))
-            nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
-    }
-    return nts;
-}
 
 template<>
 void NaiveDBG<false>::_kmerCount() {
@@ -319,25 +299,6 @@ vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
         if (is_solid(kmer_aux))
             nts.push_back(i);
 
-    }
-    return nts;
-}
-/*
- * Get the neighbor k-mers: using pair_end constrains
- */
-template<>
-vector<NaiveDBG<true>::Node> NaiveDBG<true>::getKmerNeighbors
-        (Node kmer) const
-{
-    if (kmer.length() == Parameters::get().kmerSize)
-        kmer = kmer.substr(1, Parameters::get().kmerSize);
-    vector<Node> nts;
-    Node kmer_aux;
-    for (DnaSequence::NuclType i=0; i < 4; ++i) {
-        kmer_aux = Kmer(kmer.str());
-        kmer_aux.appendRight(i);
-        if (is_solid(kmer_aux))
-            nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
     }
     return nts;
 }
@@ -803,9 +764,10 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
                 _g[target].parent_cliques[k] = vector<ExtraInfoNode>();
             }
             edge_t e = boost::add_edge(origin, target, _g).first;
-            _g[e] = EdgeInfo(k2.at(Parameters::get().kmerSize-2));
+            _g[e] = EdgeInfo(k2.at(Parameters::get().kmerSize-2), edge_id++);
         }
     }
+    _in_0 = dbg->getEngagers();
     show_info();
     _insertExtraInfo(_g);
     _modify_info();

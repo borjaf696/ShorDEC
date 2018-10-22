@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <vector>
 #include <stack>
+#include <boost/graph/adjacency_list.hpp>
 #include "../ReadData/kmer.h"
 #include "../Utils/utils.h"
 
@@ -21,6 +22,11 @@ template<> struct NodeType<true>
     typedef Kmer DBGNode;
     typedef Pair_Kmer DBGFuncInp;
     typedef unordered_set<DBGNode> set_couples;
+};
+
+template<typename T>
+struct BUgraph{
+    typedef T graphBU;
 };
 
 template <bool P> struct Extra{
@@ -136,27 +142,91 @@ public:
     typedef typename NodeType<P>::DBGNode Parent_Node;
     typedef typename NodeType<P>::DBGFuncInp Parent_FuncNode;
     typedef typename NodeType<P>::set_couples Parent_Extra;
+
     DBG(){}
-    virtual bool is_solid(typename NodeType<P>::DBGNode&) const = 0;
+    virtual bool is_solid(Parent_Node&) const = 0;
     virtual size_t length() const = 0;
     virtual vector<typename DnaSequence::NuclType> getNeighbors
-            (typename NodeType<P>::DBGNode) const = 0;
-    virtual vector<typename NodeType<P>::DBGNode> getKmerNeighbors
-            (typename NodeType<P>::DBGNode) const = 0;
-    virtual size_t in_degree(typename NodeType<P>::DBGNode) = 0;
-    virtual size_t out_degree(typename NodeType<P>::DBGNode) = 0;
+            (Parent_Node) const = 0;
+    virtual size_t out_degree(Parent_Node) = 0;
     //Getter
     virtual Heads  get(bool) const = 0;
-    virtual pair<unordered_set<typename NodeType<P>::DBGNode>,
-            unordered_set<typename NodeType<P>::DBGNode>> getNodes() = 0;
+    virtual pair<unordered_set<Parent_Node>,
+            unordered_set<Parent_Node>> getNodes() = 0;
     //Todo: think better (or not)
-    virtual pair<bool,typename NodeType<P>::set_couples> getExtra(typename NodeType<P>::DBGNode) = 0;
-    virtual void ProcessTigs(string) = 0;
+    virtual pair<bool,typename NodeType<P>::set_couples> getExtra(Parent_Node) = 0;
+    virtual vector<Parent_Node> getEngagers() = 0;
+    /*
+     * This is like a hot fix but however->polymorphism :(
+     */
+    virtual Parent_Node getNode(Parent_Node k)
+    {return k;}
+
+    virtual size_t in_degree(Parent_Node) = 0;
+
+    virtual vector<Parent_Node> getKmerNeighbors
+            (Parent_Node) const = 0;
     //Show methods
     virtual void show_info() = 0;
+    //Extension -> Todo: Move
+    virtual void ProcessTigs(string) = 0;
+    vector<vector<Parent_Node>> extend(Parent_Node kmer,
+                                   stack<Parent_Node> &out,
+                                   stack<Parent_Node> &in,
+                                   unordered_set<Parent_Node> added,
+                                   size_t &curr_segment,
+                                   unordered_map<Parent_Node, vector<size_t>> &fin_segs)
+    {
+        vector<vector<Parent_Node>> unitigs;
+        Parent_Node k_node = getNode(kmer);
+        vector<Parent_Node> neighbors = getKmerNeighbors(kmer);
+        for (auto &k: neighbors)
+        {
+            vector<Parent_Node> unitig;
+            unitig.push_back(k_node);
+            pair<size_t,Parent_Node> result =  _Extension(k,unitig,out, in, added);
+            if (result.first == 1 || result.first == 2)
+            {
+                fin_segs[getNode(result.second)].push_back(curr_segment);
+            }
+            curr_segment++;
+            unitigs.push_back(unitig);
+        }
+        return unitigs;
+    }
+    virtual void extension(vector<Parent_Node> in_0, string path_to_write) = 0;
 private:
+    //Basics
     virtual void _kmerCount() = 0;
     virtual void _cleaning() = 0;
+
+    //Extension -> TODO: MOVE
+    pair<size_t, Parent_Node> _Extension(Parent_Node kmer,vector<Parent_Node> & unitig,
+                                  stack<Parent_Node> & out, stack<Parent_Node> & in,
+                                  unordered_set<Parent_Node> added)
+    {
+        vector<Parent_Node> neighbors = getKmerNeighbors(kmer);
+        size_t in_ = in_degree(kmer);
+        if (in_ == 1 && neighbors.size() == 1) {
+            unitig.push_back(kmer);
+            return _Extension(neighbors[0],unitig,out,in,added);
+        }else if (neighbors.size () == 0) {
+            unitig.push_back(kmer);
+            return pair<size_t, Parent_Node>(0, kmer);
+        }else if (added.find(kmer) == added.end())
+        {
+            added.emplace(kmer);
+            if (neighbors.size() > 1) {
+                out.push(kmer);
+                unitig.push_back(kmer);
+                return pair<size_t,Parent_Node>(1,kmer);
+            }
+            in.push(kmer);
+            unitig.push_back(kmer);
+            return pair<size_t, Parent_Node>(2,kmer);
+        }
+        return pair<size_t, Parent_Node>(0,kmer);
+    }
 
     //All DBG can handle uni/omnitigs
     vector<DnaSequence> _tigs;
