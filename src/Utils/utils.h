@@ -1,5 +1,6 @@
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include <string>
 #include <boost/version.hpp>
 #include <boost/graph/undirected_graph.hpp>
@@ -20,8 +21,31 @@ struct Parameters
             Parameters::get().kmerSize = param;
         if (param_read == "Accumulative")
             Parameters::get().accumulative_h = param;
+        if (param_read == "missmatches")
+            Parameters::get().missmatches = param;
     }
-    size_t accumulative_h;
+    /*
+    * Calculate H.
+    */
+    static size_t calculateAccumulativeParam(vector<size_t> histogram, size_t totalBases)
+    {
+        size_t kmersAccumulated = 0, h = 0;
+        size_t threshold = totalBases*Parameters::get().missmatches*(Parameters::get().kmerSize-1)+1;
+        std::cout << "Fail Expected Kmers: "<<threshold<<"\n";
+        for (auto k:histogram)
+        {
+            if (!h)
+                kmersAccumulated+=k;
+            else
+                kmersAccumulated+=(k*h);
+            if ((float)kmersAccumulated >= threshold)
+                break;
+            h++;
+        }
+        return h;
+    }
+    double missmatches;
+    size_t accumulative_h = 0;
     size_t kmerSize;
     size_t numThreads;
 };
@@ -60,6 +84,27 @@ private:
 };
 
 /*
+ * Map -> histogram<K,Y>, histogram<K,container>
+ */
+template<typename T, typename Y>
+vector<size_t> getHistogram(const unordered_map<T,Y> map, size_t max)
+{
+    vector<size_t> histogram(max,0);
+    for (auto key:map)
+        histogram[key.second]++;
+    return histogram;
+};
+
+template<typename T, typename Y>
+vector<size_t> getHistogram(const unordered_map<T,pair<Y,Y>> map, size_t max)
+{
+    vector<size_t> histogram(max+1,0);
+    for (auto key:map)
+        histogram[key.second.first]++;
+    return histogram;
+};
+
+/*
  * Set operations
  */
 template<typename T>
@@ -89,6 +134,10 @@ bool isSubset(const unordered_set<T> & set1, const unordered_set<T> & set2)
             return false;
     return true;
 }
+
+/*
+ * Translate
+ */
 
 /*
  * Common graph operations

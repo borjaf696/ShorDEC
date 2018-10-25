@@ -203,6 +203,21 @@ public:
 
 	void writeSequenceContainer(const std::string&) const;
 
+	size_t getAvLength()
+	{
+		return _totalBases/_totalReads;
+	}
+
+	size_t getTotalBases()
+	{
+		return _totalBases;
+	}
+
+    size_t size()
+    {
+        return _seqIndex.size();
+    }
+
     //Operators
 	const SequenceContainer& operator=(const SequenceContainer & sc) 
 	{
@@ -228,7 +243,7 @@ private:
 	bool isFasta(const std::string& fileName);
 	void 	validateSequence(std::string& sequence);
 	void 	validateHeader(std::string& header);
-
+	size_t _totalBases = 0, _totalReads = 0;
 	SequenceIndex _seqIndex;
 	static size_t g_nextSeqId, g_nextRightSeqId;
 };

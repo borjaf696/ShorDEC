@@ -1,6 +1,0 @@
-make release -C src
-make[1]: se entra en el directorio '/home/borja/Escritorio/Helsinki/ShorDEC/src'
-g++ -c -Wall -std=c++11 -g  -O3 -DNDEBUG  DBG/PathGraph.cpp -o DBG/PathGraph.o
-Makefile:30: fallo en las instrucciones para el objetivo 'DBG/PathGraph.o'
-make[1]: se sale del directorio '/home/borja/Escritorio/Helsinki/ShorDEC/src'
-Makefile:6: fallo en las instrucciones para el objetivo 'all'

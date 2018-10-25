@@ -8,7 +8,7 @@ BIN_release = test
 BIN_test = test_test
 
 #El resto de la ejecucion
-release: CXXFLAGS += -O3 -DNDEBUG 
+release: CXXFLAGS += -O3 -DNDEBUG
 release: test
 
 tests: CXXFLGS += -O3 -DNDEBUG
@@ -27,7 +27,7 @@ Extender/%.o: Extender/%.cpp Extender/*.h Utils/*h
 #Dbg
 dbg_obj := ${patsubst %.cpp,%.o,${wildcard DBG/*.cpp}}
 DBG/%.o: DBG/%.cpp DBG/*.h Utils/*.h
-	${CXX} -c ${CXXFLAGS} $< -o $@
+	${CXX} -c ${CXXFLAGS} $< -o $@ ${OPENMPFLAG}
 
 #Main_code
 m_main_obj := ${patsubst %.cpp,%.o,${wildcard Main/*.cpp}}

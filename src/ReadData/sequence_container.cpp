@@ -120,6 +120,8 @@ void SequenceContainer::loadFromFile(const std::string& fileName, bool is_paired
 		record.description = "+" + record.description;
 		//OJO: esto la pone a true nada mas
 		DnaSequence revComplement = record.sequence.complement();
+		_totalBases += 2*record.sequence.length();
+		_totalReads += 2;
 		complements.emplace_back(revComplement, header, record.id.rc());
 	}
 	for (auto& rec : complements)

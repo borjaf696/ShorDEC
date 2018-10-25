@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stack>
 #include "../DBG/PathGraph.h"
+#include <omp.h>
 
 //Constants for the path extension
 #define MAX_PATH_LEN 300
@@ -23,6 +24,8 @@
  * se busca mas alla de dicho k-mer atendiendo a mas k-mer sources posibles.
  * TODO: Change name because path is not exactly what is this.
  * */
+
+using namespace std;
 
 struct stack_el{
     stack_el(Kmer kmer1, size_t pos1, DnaSequence::NuclType nuc1)

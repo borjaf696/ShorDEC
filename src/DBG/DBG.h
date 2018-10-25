@@ -192,14 +192,12 @@ public:
     //Operators
     NaiveDBG& operator=(const NaiveDBG& other)
     {
-        if (this->length()!= other.length())
-        {
-            this->_sc = other._sc;
-            _dbg_naive = other._dbg_naive;
-            _heads = other._heads;
-            _tails = other._tails;
-            _in_0 = other._in_0;
-        }
+        this->_sc = other._sc;
+        _dbg_naive = other._dbg_naive;
+        _dbg_nodes = other._dbg_nodes;
+        _heads = other._heads;
+        _tails = other._tails;
+        _in_0 = other._in_0;
         return *this;
     }
 
@@ -225,18 +223,22 @@ private:
      */
     void _insert(Node k, Node kmer)
     {
-        Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
-                target = kmer.substr(1, Parameters::get().kmerSize);
-        _dbg_naive.emplace(k);
-        _dbg_nodes.emplace(origin);
-        _dbg_nodes.emplace(target);
-        if (_is_standard)
+        //TODO: Test Standard
+        if (_dbg_naive.find(k)==_dbg_naive.end())
         {
-            Node rc = kmer.rc();
-            Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
-                    target_rc = rc.substr(1, Parameters::get().kmerSize);
-            _dbg_nodes.emplace(origin_rc);
-            _dbg_nodes.emplace(target_rc);
+            Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
+                    target = kmer.substr(1, Parameters::get().kmerSize);
+            _dbg_naive.emplace(k);
+            _dbg_nodes.emplace(origin);
+            _dbg_nodes.emplace(target);
+            if (_is_standard)
+            {
+                Node rc = kmer.rc();
+                Node origin_rc = rc.substr(0, Parameters::get().kmerSize-1),
+                        target_rc = rc.substr(1, Parameters::get().kmerSize);
+                _dbg_nodes.emplace(origin_rc);
+                _dbg_nodes.emplace(target_rc);
+            }
         }
     }
     /*
@@ -340,23 +342,11 @@ private:
     }
 
     /*
-     * I/O
+     * AdHoc Methods
      */
-    void _write_unitigs(vector<DnaSequence> dnaSequences, string filename)
+    size_t _getScSize()
     {
-        FILE* fout = fopen(filename.c_str(), "w");
-        if (!fout)
-            throw std::runtime_error("Can't open " + filename);
-        //size_t num_unitig = 0;
-        for (auto& seq : dnaSequences)
-        {
-            std::string seq_ =seq.str()+"\n";
-            std::string header = ">NumUnitig\n";
-            fwrite(header.data(), sizeof(header.data()[0]),
-                   header.size(), fout);
-            fwrite(seq_.data(), sizeof(seq_.data()[0]),
-                   seq_.size(), fout);
-        }
+        return (_is_standard)?_sc.size():_sc.size()/2;
     }
     /*
      * First Counter
@@ -749,12 +739,6 @@ private:
     int* _floyds_warshall();
     bool _reachable(int*, size_t, size_t);
     void _modify_info();
-    /*auto _add_vertex(int32_t id, Node node);
-    auto _add_edge(int32_t, int8_t);*/
-    void _kmerCount()
-    {}
-    void _cleaning()
-    {}
     //Graph
     Graph _g;
     //Properties + nodes (this should be fixed with vecS)
@@ -764,4 +748,105 @@ private:
     int32_t _node_id = 0, edge_id = 0;
     //Need fix
     unordered_set<KmerInfo<P>> _heads,_tails;
+};
+
+
+//Adjacency list
+template <bool P> class listDBG:public DBG<P>
+{
+public:
+    typedef typename DBG<P>::Parent_Node Node;
+    typedef typename DBG<P>::Parent_FuncNode FuncNode;
+    typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
+    typedef typename BUgraph<Node>::graphBU graphBU;
+    typedef DnaSequence Unitig;
+    typedef map<Node,pair<vector<Node>,vector<Node>>> Graph;
+    listDBG(DBG<P> *);
+
+    size_t in_degree(Node node)
+    {
+        return _g[node].first.size();
+    }
+
+    size_t out_degree(Node node)
+    {
+        return _g[node].second.size();
+    }
+    vector<DnaSequence::NuclType> getNeighbors (Node node) const
+    {
+        return vector<DnaSequence::NuclType>();
+    }
+
+    vector<Node> getKmerNeighbors
+            (Node node) const
+    {
+        return _g.at(node).second;
+    }
+    bool is_solid(Node& node) const
+    {
+        return (_g.find(node) != _g.end());
+    }
+
+    size_t length() const
+    {
+        return _g.size();
+    }
+
+    void extension(vector<Node> in_0, string path_to_write);
+
+    pair<unordered_set<Node>,unordered_set<Node>> getNodes()
+    {
+        return pair<unordered_set<Node>, unordered_set<Node>>(unordered_set<Node>(), unordered_set<Node>());
+    }
+
+    pair<bool,ExtraInfoNode> getExtra(Node node)
+    {
+        return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
+    }
+    vector<Node> getEngagers()
+    {
+        return _in_0;
+    }
+
+    void show_info()
+    {
+        for (auto n:_g)
+        {
+            cout << "Kmer: "<< n.first.str()<<"\n";
+            for (auto in_:n.second.first)
+                cout << "InNode: "<<in_.str()<<"\n";
+            cout << "InDegree: "<<in_degree(n.first)<<"\n";
+            for (auto out_:getKmerNeighbors(n.first))
+                cout << "OutNode2: "<<out_.str()<<"\n";
+            cout << "OutDegree: "<<out_degree(n.first)<<"\n";
+        }
+    }
+
+    void ProcessTigs(string path_to_write)
+    {
+        cout << "Go for Unitigs\n";
+        extension(_in_0, path_to_write);
+        cout << "End Unitigs\n";
+    }
+
+    typename DBG<P>::Heads  get(bool behaviour) const
+    {
+        return (behaviour)?_heads:_tails;
+    }
+private:
+    void _transverse(Node,
+                     map <Node, vector<size_t>> &,
+                     map <size_t, Node> &,
+                     map <size_t, DnaSequence> &,
+                     DnaSequence &);
+    void _writeUnitigs(map <Node, vector<size_t>> ,
+                       map <size_t, Node> ,
+                       map <size_t, DnaSequence>,
+                       string);
+    void _buildNewGraph(DBG<P> *);
+    Graph _g;
+    vector<Node> _in_0;
+    size_t seg = 0;
+    //InfoHeads
+    typename DBG<P>::Heads _heads,_tails;
 };

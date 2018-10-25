@@ -26,23 +26,18 @@ struct Edge{
 template<bool P>
 class PathGrap{
 public:
-
     typedef KmerInfo<P> Node;
     PathGrap(){};
 
     //Constructor methods
     virtual void add_edge(const Node&,const Node &,size_t,DnaSequence) = 0;
-
     //Transverse methods
     virtual DnaSequence shortest_path(const Node&, const Node&) = 0;
     virtual bool covered(const Node&) = 0;
-
     //Show Methods
     virtual void show() = 0;
-
     //Re-build method
     virtual DnaSequence build_optimal_read(std::vector<Node>) = 0;
-
     //Check methods
     virtual size_t num_vertex() = 0;
     virtual size_t num_edges() = 0;
@@ -119,6 +114,8 @@ private:
         //std::cout << last_path_kmer.str()<<"\n";
         for (uint i = 0; i < _adj_list[last_path_node].first.size(); ++i)
         {
+            /*std::cout << "Kmer Vecino: "<<_adj_list[last_path_node].first[i].str()<<"\n";
+            std::cout << "PathTo: "<<_adj_list[last_path_node].second[i].ed<<"\n";*/
             //Use the same instance I think is crazy
             std::vector<typename PathGrap<P>::Node> k_list = q_el.second;
             //If the edge has been already visited just skip it
@@ -137,6 +134,76 @@ private:
         return output;
     }
     std::unordered_map<typename PathGrap<P>::Node,AdjList> _adj_list;
+};
+
+template <bool P>
+class PathGraphBoost: public PathGrap<P>
+{
+    typedef KmerInfo<P> Node;
+    struct Edge {
+        Edge(float weight, DnaSequence seq) : _weight(weight),_seq(seq) {}
+        float _weight;
+        DnaSequence _seq;
+    };
+    struct NodeGraph {
+        NodeGraph():_id(-1){}
+        NodeGraph (size_t id, Node node):_id(id),_node(node){}
+        size_t _id;
+        Node _node;
+    };
+    typedef typename boost::adjacency_list < boost::vecS, boost::vecS, boost::bidirectionalS, NodeGraph, Edge> Graph;
+    typedef typename boost::graph_traits <Graph>::vertex_descriptor vertex_t;
+
+    PathGraphBoost(){};
+    //Constructor methods
+    void add_edge(const Node& source,const Node & target,size_t ed,DnaSequence seq)
+    {
+        vertex_t s, t;
+        if (_map_node_vertex.find(source) != _map_node_vertex.end()){
+            s = _map_node_vertex[source];
+        }else{
+            s = boost::add_vertex(NodeGraph(_curr_id++, source),_path_graph);
+            _map_node_vertex[source] = s;
+        }
+        if (_map_node_vertex.find(target) != _map_node_vertex.end())
+            t = _map_node_vertex[target];
+        else{
+            t = boost::add_vertex(NodeGraph(_curr_id++, target),_path_graph);
+            _map_node_vertex[target] = t;
+        }
+        boost::add_edge(s,t,Edge(ed, seq),_path_graph);
+    }
+    //Transverse methods
+    DnaSequence shortest_path(const Node&, const Node&)
+    {
+        return DnaSequence();
+    }
+    bool covered(const Node&)
+    {
+        return false;
+    }
+    //Show Methods
+    void show()
+    {
+
+    }
+    //Re-build method
+    DnaSequence build_optimal_read(std::vector<Node>)
+    {
+        return DnaSequence();
+    }
+    //Check methods
+    size_t num_vertex()
+    {
+        return 0;
+    }
+    size_t num_edges()
+    {
+        return 0;
+    }
+    std::unordered_map<Node, vertex_t> _map_node_vertex;
+    size_t _curr_id = 0;
+    Graph _path_graph;
 };
 
 template <bool P>

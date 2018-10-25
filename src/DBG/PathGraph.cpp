@@ -7,6 +7,7 @@ void PathGraphAdj<false>::add_edge(const typename PathGrap<false>::Node &source,
                                   const typename PathGrap<false>::Node &target,
                                   size_t edit, DnaSequence path)
 {
+    //std::cout << "Edge->From: "<<source.str()<<" to "<<target.str()<<"\n";
     unordered_map<Node,AdjList>::const_iterator it = _adj_list.find(source);
     if (it == _adj_list.end()) {
         _adj_list[source] = AdjList({target}, {Edge(path,edit)});
@@ -44,6 +45,7 @@ DnaSequence PathGraphAdj<false>::build_optimal_read(vector<typename PathGrap<fal
     for (i = 0; i < nodes.size()-1; ++i)
     {
         adj = _adj_list[nodes[i]];
+        //std::cout << nodes[i].str()<<"\n";
         vector<typename PathGrap<false>::Node>::iterator pos = find(adj.first.begin(),adj.first.end(),nodes[i+1]);
         pos_int = distance(adj.first.begin(),pos);
         if (adj.second[pos_int].ed == 0) {
@@ -52,6 +54,9 @@ DnaSequence PathGraphAdj<false>::build_optimal_read(vector<typename PathGrap<fal
             }
         }else
         {
+            /*std::cout << "No es cero\n";
+            std::cout << "Chain in the edge: "<<adj.second[pos_int].seq.str()<<"\n";
+            std::cout << "ED chain: "<<adj.second[pos_int].ed<<"\n";*/
             for (uint j = 0; j < Parameters::get().kmerSize; ++j) {
                 optimal_read.append_nuc_right(nodes[i].kmer.at(j));
             }

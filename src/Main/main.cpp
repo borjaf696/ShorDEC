@@ -5,6 +5,11 @@
 #include "../ReadData/sequence_container.h"
 #include "../DBG/path.h"
 
+auto print_blanks = [](size_t num_blanks)
+{
+    for (size_t i = 0; i < num_blanks; ++i)
+        std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n";
+};
 auto print_use = [](char ** argc)
 {printf("Usage: %s "
                 "-f [path_to_file][path_to_dir] -k [kmer_size] -u [path_to_unitigs.gfa] -p [pair_end] -t [num_threads]"
@@ -14,7 +19,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
         ,std::string& path_unitigs, bool &pair_end)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:h:t:p";
+    char optString[] = "f:k:o:u:h:t:r:p";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -25,11 +30,10 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
-                mandatory[2] = true;
+                mandatory[1] = true;
                 break;
             case 'h':
                 Parameters::get().accumulative_h = atoi(optarg);
-                mandatory[1] = true;
                 break;
             case 'o':
                 path_to_write = optarg;
@@ -39,6 +43,10 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'p':
                 pair_end = true;
+                break;
+            case 'r':
+                Parameters::get().missmatches = atof(optarg);
+                mandatory[2] = true;
                 break;
             case 't':
                 break;
@@ -50,10 +58,6 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             print_use(argc);
             return false;
         }
-    if (argv < 8) {
-        print_use(argc);
-        return false;
-    }
     return true;
 
 }
@@ -111,19 +115,17 @@ int main(int argv, char ** argc){
      * Iteratively we are going to correct the reads
      */
     NaiveDBG<false> naiveDBG(sc);
-    std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
+    std::cout << "Number of Reads: " << sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
-        std::cout << "Building DBG, Kmer Size: " << Parameters::get().kmerSize << "\n";
+        std::cout << "Building DBG\n Kmer Size: " << Parameters::get().kmerSize << "\n";
         if (i > 1)
             naiveDBG = NaiveDBG<false>(sc);
-        ReadCorrector<false> read(sc, naiveDBG);
+        listDBG<false> listDBG(&naiveDBG);
+        ReadCorrector<false> read(sc, listDBG);
+        print_blanks(5);
         //sc.ShowInfo();
     }
-    std::cout << "Size sequence container: " << sc.getIndex().size() << "\n";
-    /*
-     * Writing corrected sequences
-     */
     std::cout << "Writing new reads in: " << path_to_write << "\n";
     sc.writeSequenceContainer(path_to_write);
     /*
@@ -137,5 +139,7 @@ int main(int argv, char ** argc){
         exit(1);
     }
     NaiveDBG<false> dbg = NaiveDBG<false>(sc);
+    listDBG<false> listDBG(&dbg);
+    listDBG.ProcessTigs(path_unitigs);
     dbg.ProcessTigs(path_unitigs);
 }

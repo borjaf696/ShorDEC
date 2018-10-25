@@ -196,11 +196,7 @@ public:
     }
     virtual void extension(vector<Parent_Node> in_0, string path_to_write) = 0;
 private:
-    //Basics
-    virtual void _kmerCount() = 0;
-    virtual void _cleaning() = 0;
 
-    //Extension -> TODO: MOVE
     pair<size_t, Parent_Node> _Extension(Parent_Node kmer,vector<Parent_Node> & unitig,
                                   stack<Parent_Node> & out, stack<Parent_Node> & in,
                                   unordered_set<Parent_Node> added)
