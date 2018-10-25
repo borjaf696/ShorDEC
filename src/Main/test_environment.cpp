@@ -13,7 +13,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
         ,std::string& path_unitigs, bool &pair_end)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:h:t:p";
+    char optString[] = "f:k:o:u:h:t:r:p";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -24,11 +24,10 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
-                mandatory[2] = true;
+                mandatory[1] = true;
                 break;
             case 'h':
                 Parameters::get().accumulative_h = atoi(optarg);
-                mandatory[1] = true;
                 break;
             case 'o':
                 path_to_write = optarg;
@@ -38,6 +37,10 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'p':
                 pair_end = true;
+                break;
+            case 'r':
+                Parameters::get().missmatches = atof(optarg);
+                mandatory[2] = true;
                 break;
             case 't':
                 break;
@@ -49,10 +52,6 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
             print_use(argc);
             return false;
         }
-    if (argv < 8) {
-        print_use(argc);
-        return false;
-    }
     return true;
 
 }

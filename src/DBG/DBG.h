@@ -11,7 +11,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 1
+#define MIN_PATH_LEN 20
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -399,6 +399,10 @@ public:
             node = other.node;
             return *this;
         }
+        bool empty()
+        {
+            return (id == -1);
+        }
         bool equal(Node node) const
         {
             return node == this->node;
@@ -437,6 +441,7 @@ public:
     typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
     typedef typename BUgraph<vertex_t>::graphBU graphBU;
+    typedef pair<vertex_t, ExtraInfoNode> it_node;
     /*
      * TODO: Needs implementation
      */
@@ -483,6 +488,41 @@ public:
         return neigh;
     }
 
+    vector<it_node> getKmerNeighbors(it_node node) const
+    {
+        vector<it_node> neigh;
+        NodeInfo nodeInfo = _g[node.first], neighInfo;
+        for (auto n:getKmerNeighbors(node.first))
+        {
+            neighInfo = _g[n];
+            for (auto s:neighInfo.parent_cliques[nodeInfo.node])
+            {
+                if (isSubset(node.second, s))
+                    neigh.push_back(pair<vertex_t,ExtraInfoNode>(n,getIntersection(s,neighInfo.node_set)));
+            }
+        }
+        return neigh;
+    }
+
+    vector<it_node> getRealInKmerNeighbors(it_node node) const
+    {
+        vector<it_node> neigh;
+        NodeInfo nodeInfo = _g[node.first], neighInfo;
+        for (auto m:nodeInfo.parent_cliques)
+        {
+            for (auto n: m.second)
+            {
+                if (isSubset(node.second, n))
+                {
+                    vertex_t neighNode = _getNode(m.first);
+                    NodeInfo neighInfo = _g[neighNode];
+                    neigh.push_back(pair<vertex_t, ExtraInfoNode>(neighNode,getIntersection(neighInfo.node_set, n)));
+                }
+            }
+        }
+        return neigh;
+    }
+
     size_t in_degree(Node node)
     {
         graphBU v_node = this->_getNode(node);
@@ -492,6 +532,11 @@ public:
     size_t in_degree(graphBU node)
     {
         return boost::in_degree(node, _g);
+    }
+
+    size_t in_degree(it_node node)
+    {
+        return getKmerNeighbors(node).size();
     }
 
     size_t out_degree(Node node)
@@ -505,109 +550,20 @@ public:
         return boost::degree(node, _g);
     }
 
-    //Extesion ->TODO: move
-    vector<vector<Node>> extend(graphBU kmer,
-                                       stack<graphBU > &out,
-                                       stack<graphBU > &in,
-                                       unordered_set<graphBU > added,
-                                       size_t &curr_segment,
-                                       unordered_map<Node, vector<size_t>> &fin_segs)
+    size_t out_degree(it_node node)
     {
-        vector<vector<Node>> unitigs;
-        Node k_node = getNode(kmer);
-        vector<graphBU> neighbors = getKmerNeighbors(kmer);
-        for (auto &k: neighbors)
-        {
-            vector<Node> unitig;
-            unitig.push_back(k_node);
-            pair<size_t,Node> result =  _Extension(k,unitig,out, in, added);
-            if (result.first == 1 || result.first == 2)
-            {
-                fin_segs[result.second].push_back(curr_segment);
-            }
-            curr_segment++;
-            unitigs.push_back(unitig);
-        }
-        return unitigs;
+        return getKmerNeighbors(node).size();
     }
 
-    void extension(vector<Node> in_0, string path_to_write)
-    {
-        //Extension info:
-        size_t _curr_segment = 0;
-        unordered_map<Node, vector<size_t>> _fin_segs;
-        vector<pair<size_t,size_t>> _links;
-        vector<DnaSequence> _seqs;
-
-        std::cout << "Pair_End extension!\n";
-        /*
-         * Set of already assesed heads
-         */
-        unordered_set<graphBU> added;
-        /*
-         * New heads with out and in > 1
-         */
-        stack<graphBU> in, out;
-        /*
-         * Unitigs: entran por orden de curr_segment, ¡Nos ahorramos indexar las secuencias!
-         */
-        vector<vector<Node>> unitigs;
-        for (auto k: in_0)
-        {
-            //Searching the node -> TODO: ¿Change?
-            graphBU k_node = _getNode(k);
-            for (auto &p: extend(k_node,out,in,added,_curr_segment,_fin_segs))
-                unitigs.push_back(p);
-        }
-        //Remove the kmers from in_0
-        in_0.clear();
-        while (!in.empty() && !out.empty())
-        {
-            /*
-             * Lets check kmers with out_degree > 1
-             */
-            while (!out.empty())
-            {
-                graphBU k = out.top();
-                out.pop();
-                Node n_k = getNode(k);
-                if (_fin_segs.find(n_k) != _fin_segs.end())
-                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
-                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
-                    }
-                for (auto &p: extend(k,out,in,added, _curr_segment, _fin_segs))
-                    unitigs.push_back(p);
-            }
-            /*
-             * Lets check kmers with in_degree > 1
-             */
-            while(!in.empty())
-            {
-                graphBU k = in.top();
-                in.pop();
-                Node n_k = getNode(k);
-                if (_fin_segs.find(n_k) != _fin_segs.end())
-                    for (uint i = 0; i < _fin_segs[n_k].size(); i++) {
-                        _links.push_back(pair<size_t, size_t>(_curr_segment, _fin_segs[n_k][i]));
-                    }
-                for (auto &p: extend(k,out,in,added,_curr_segment,_fin_segs))
-                    unitigs.push_back(p);
-            }
-        }
-        /*
-         * Construct the DnaSequences
-         */
-        UnitigExtender<P>::_construct_sequences(unitigs,_fin_segs,_seqs);
-        /*
-         * Lets write them
-         */
-        UnitigExtender<P>::_write_gfa(path_to_write,_seqs,_links);
-    }
+    void extension(vector<Node> in_0, string path_to_write);
 
     //Getter
     vector<Node> getEngagers()
     {
-        return _in_0;
+        vector<Node> in_0;
+        for (auto n: _in_0)
+            in_0.push_back(_g[n].node);
+        return in_0;
     }
 
     typename DBG<P>::Heads get(bool behaviour) const
@@ -660,39 +616,46 @@ public:
         }
     }
 private:
-    //Extension:
-    pair<size_t, Node> _Extension(graphBU kmer,vector<Node> & unitig,
-                                         stack<graphBU> & out, stack<graphBU> & in,
-                                         unordered_set<graphBU> added)
+    /*
+     * actives_haplotypes contains haplotypes in source actives (but only pairs of source)
+     */
+    vector<ExtraInfoNode> _getSharedHaplotypes(Node source, Node target, vector<ExtraInfoNode> active_haplotypes)
     {
-        vector<graphBU> neighbors = getKmerNeighbors(kmer);
-        size_t in_ = in_degree(kmer);
-        Node kmer_node = getNode(kmer);
-        if (in_ == 1 && neighbors.size() == 1) {
-            unitig.push_back(kmer_node);
-            return _Extension(neighbors[0],unitig,out,in,added);
-        }else if (neighbors.size () == 0) {
-            unitig.push_back(kmer_node);
-            return pair<size_t, Node>(0, kmer_node);
-        }else if (added.find(kmer) == added.end())
+        vector<ExtraInfoNode> newHaplotypes;
+        for (auto k: active_haplotypes)
         {
-            added.emplace(kmer);
-            if (neighbors.size() > 1) {
-                out.push(kmer);
-                unitig.push_back(kmer_node);
-                return pair<size_t,Node>(1,kmer_node);
+            NodeInfo target_info = _g[*target];
+            for (auto k2: target_info.parent_cliques[source])
+            {
+                if (isSubset(k,k2))
+                {
+                    newHaplotypes.push_back(getIntersection(k2,target_info.node_set));
+                }
             }
-            in.push(kmer);
-            unitig.push_back(kmer_node);
-            return pair<size_t, Node>(2,kmer_node);
         }
-        return pair<size_t, Node>(0,kmer_node);
+        return newHaplotypes;
     }
-    //Boost Get Node:
-    vector<graphBU> _getRealNeighbors(graphBU node){
-
-        return vector<graphBU>();
+    vector<ExtraInfoNode> _getSharedHaplotypes(NodeInfo source, NodeInfo target, vector<ExtraInfoNode> active_haplotypes)
+    {
+        vector<ExtraInfoNode> newHaplotypes;
+        for (auto k: active_haplotypes)
+        {
+            for (auto k2: target.parent_cliques[source.node])
+            {
+                if (isSubset(k,k2))
+                {
+                    newHaplotypes.push_back(getIntersection(k2,target.node_set));
+                }
+            }
+        }
+        return newHaplotypes;
     }
+    void _transverse(graphBU,
+                     map<Node, vector<size_t>> &,
+                     map<size_t, Node> &,
+                     map<size_t, DnaSequence> &,
+                     vector<ExtraInfoNode> &,
+                     edge_t *);
     graphBU _getNode(Node node) const
     {
         vertex_iterator v, vend;
@@ -743,9 +706,10 @@ private:
     Graph _g;
     //Properties + nodes (this should be fixed with vecS)
     vector<unordered_set<vertex_t>> _map_extra_info;
-    vector<Node> _in_0;
+    vector<vertex_t> _in_0;
     //Node_id
-    int32_t _node_id = 0, edge_id = 0;
+    int32_t _node_id = 0, _edge_id = 0;
+    size_t seg = 0;
     //Need fix
     unordered_set<KmerInfo<P>> _heads,_tails;
 };
