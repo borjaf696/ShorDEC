@@ -11,7 +11,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 20
+#define MIN_PATH_LEN 1
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -170,10 +170,16 @@ public:
     }
 
     //Get
+    unordered_set<Node> getSolidKmers()
+    {
+        return _dbg_naive;
+    }
+
     vector<Node> getEngagers()
     {
         return _in_0;
     }
+
     pair<unordered_set<Node>, unordered_set<Node>> getNodes()
     {
         return pair<unordered_set<Node>, unordered_set<Node>>(_dbg_naive, _dbg_nodes);
@@ -441,7 +447,7 @@ public:
     typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
     typedef typename BUgraph<vertex_t>::graphBU graphBU;
-    typedef pair<vertex_t, ExtraInfoNode> it_node;
+    typedef pair<graphBU, ExtraInfoNode> it_node;
     /*
      * TODO: Needs implementation
      */
@@ -504,7 +510,7 @@ public:
         return neigh;
     }
 
-    vector<it_node> getRealInKmerNeighbors(it_node node) const
+    vector<it_node> getInNeighbors(it_node node) const
     {
         vector<it_node> neigh;
         NodeInfo nodeInfo = _g[node.first], neighInfo;
@@ -536,7 +542,7 @@ public:
 
     size_t in_degree(it_node node)
     {
-        return getKmerNeighbors(node).size();
+        return getInNeighbors(node).size();
     }
 
     size_t out_degree(Node node)
@@ -582,6 +588,11 @@ public:
          * Iterate over all nodes and return the paired info for the Node = node
          */
         return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
+    }
+
+    unordered_set<Node> getSolidKmers()
+    {
+        return unordered_set<Node>();
     }
 
     Node getNode(Node t)
@@ -650,12 +661,11 @@ private:
         }
         return newHaplotypes;
     }
-    void _transverse(graphBU,
-                     map<Node, vector<size_t>> &,
-                     map<size_t, Node> &,
+    void _transverse(it_node,
+                     map<graphBU, vector<size_t>> &,
+                     map<size_t, graphBU> &,
                      map<size_t, DnaSequence> &,
-                     vector<ExtraInfoNode> &,
-                     edge_t *);
+                     DnaSequence &);
     graphBU _getNode(Node node) const
     {
         vertex_iterator v, vend;
@@ -705,8 +715,8 @@ private:
     //Graph
     Graph _g;
     //Properties + nodes (this should be fixed with vecS)
-    vector<unordered_set<vertex_t>> _map_extra_info;
-    vector<vertex_t> _in_0;
+    vector<unordered_set<graphBU>> _map_extra_info;
+    vector<graphBU> _in_0;
     //Node_id
     int32_t _node_id = 0, _edge_id = 0;
     size_t seg = 0;
@@ -724,7 +734,7 @@ public:
     typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
     typedef typename BUgraph<Node>::graphBU graphBU;
     typedef DnaSequence Unitig;
-    typedef map<Node,pair<vector<Node>,vector<Node>>> Graph;
+    typedef unordered_map<Node,pair<vector<Node>,vector<Node>>> Graph;
     listDBG(DBG<P> *);
 
     size_t in_degree(Node node)
@@ -744,11 +754,13 @@ public:
     vector<Node> getKmerNeighbors
             (Node node) const
     {
+        if (node.length() == Parameters::get().kmerSize)
+            node = node.substr(1, Parameters::get().kmerSize);
         return _g.at(node).second;
     }
     bool is_solid(Node& node) const
     {
-        return (_g.find(node) != _g.end());
+        return (_solid_kmers.find(node) != _solid_kmers.end());
     }
 
     size_t length() const
@@ -763,6 +775,10 @@ public:
         return pair<unordered_set<Node>, unordered_set<Node>>(unordered_set<Node>(), unordered_set<Node>());
     }
 
+    unordered_set<Node> getSolidKmers()
+    {
+        return _solid_kmers;
+    }
     pair<bool,ExtraInfoNode> getExtra(Node node)
     {
         return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
@@ -809,6 +825,7 @@ private:
                        string);
     void _buildNewGraph(DBG<P> *);
     Graph _g;
+    unordered_set<Node> _solid_kmers;
     vector<Node> _in_0;
     size_t seg = 0;
     //InfoHeads

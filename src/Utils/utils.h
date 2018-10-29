@@ -30,7 +30,7 @@ struct Parameters
     static size_t calculateAccumulativeParam(vector<size_t> histogram, size_t totalBases, size_t avgLength)
     {
         size_t kmersAccumulated = 0, h = 0;
-        float kmer_size = (float)Parameters::get().kmerSize-1, avgLeng = (float)avgLength, tBases = (float)totalBases;
+        float kmer_size = (float)Parameters::get().kmerSize-1, avgLeng = (float)avgLength+1, tBases = (float)totalBases;
         float threshold = tBases*Parameters::get().missmatches*((avgLeng-2*kmer_size)*kmer_size/avgLeng+(kmer_size*(kmer_size-1))/avgLeng)+1;
         std::cout << "Fail Expected Kmers: "<<threshold<<"\n";
         for (auto k:histogram)

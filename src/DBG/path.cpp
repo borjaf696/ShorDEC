@@ -147,6 +147,8 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
         ,size_t & branches)
 {
     size_t best_len = MAX_PATH_LEN, kmerSize = Parameters::get().kmerSize;
+    Kmer kmer_objective = Kmer(t.kmer.substr(0,kmerSize-1));
+    unordered_set<Kmer> processed;
     char path[MAX_PATH_LEN+1];
     stack<stack_el*> neighbors;
     /*
@@ -157,7 +159,9 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
     //Continuacion del kmer actual
     for (auto k: nts)
     {
-        neighbors.push(new stack_el(k,1,k.at(kmerSize-1)));
+        neighbors.push(new stack_el(k,1,k.at(kmerSize-2)));
+        //Avoid repeat Kmers
+        processed.emplace(k);
     }
     //Expected fail length (maximum fail length)
     size_t fail_len = t.kmer_pos - h.kmer_pos;
@@ -201,7 +205,7 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
         //Comparative between current path and alternative paths already visited
         if (min < (*score_ed)) {
             //Reach the expected node
-            if (cur_kmer.str() == t.kmer.str()) {
+            if (cur_kmer == kmer_objective) {
                 branches--;
                 size_t edit_distance = _DP[pos * (MAX_PATH_LEN + 1) + fail_len];
                 if (edit_distance < (*score_ed)) {
@@ -209,14 +213,17 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
                     path[pos] = '\0';
                     memcpy(expected_path, path, pos+1);
                     best_len = pos;
-                    //std::cout << "Path discovered "<<expected_path <<" "<<best_len<<"\n";
                 }
             } else {
                 //We havent reached our objective we extend the path again
                 nts = dbg.getKmerNeighbors(cur_kmer);
                 for (auto k: nts)
                 {
-                    neighbors.push(new stack_el(k,pos+1,k.at(kmerSize-1)));
+                    if (processed.find(k) == processed.end())
+                    {
+                        processed.emplace(k);
+                        neighbors.push(new stack_el(k,pos+1,k.at(kmerSize-2)));
+                    }
                 }
                 if (!nts.size())
                     branches--;
@@ -240,7 +247,6 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
 template<>
 size_t PathContainer<false>::check_read()
 {
-
     for (auto cur_kmer: IterKmers<false>(_seq)){
         //Optimizar esto
         /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
@@ -279,7 +285,7 @@ int PathContainer<false>::check_solids(size_t pos_i, size_t pos_j, size_t i,size
         return 2;
     }
     //Both Kmers are overlapped.
-    if ((pos_j - pos_i) < (1-ERROR_RATE)*Parameters::get().kmerSize) {
+    if ((pos_j - pos_i) < ((1-ERROR_RATE)*Parameters::get().kmerSize)) {
         return 1;
     }
     //They are neither too far nor too close -> True
@@ -299,13 +305,15 @@ DnaSequence PathContainer<false>::correct_read() {
     size_t kmer_size = Parameters::get().kmerSize;
     //Empty solids
     bool no_solids = false;
-    //std::cout << "Number of solid kmers: "<< _solid.size()<<"\n";
-    if (!_solid.size())
+    if (!_solid.size()){
         no_solids = true;
+    }
     else {
-        //When first k-mer is not solid
         if (_solid.size() == _seq.length()-kmer_size+1)
+        {
             return _seq;
+        }
+        //When first k-mer is not solid
         if (_solid[0].kmer_pos > 0)
         {
             size_t selected_pos = _solid[0].kmer_pos;
@@ -340,7 +348,7 @@ DnaSequence PathContainer<false>::correct_read() {
                     //Add minimum edit path to optimal paths.
                     if (len < MAX_PATH_LEN) {
                         std::string way_string(way);
-                        way_string = way_string.substr(0,len-kmer_size);
+                        way_string = way_string.substr(0,len-kmer_size+1);
                         /*std::cout << "KmerBegin: "<<_solid[i].kmer.str()<<" "<<_solid[j].kmer.str()<<"\n";
                         std::cout << "Path buscado: "<<_seq.substr(start_path,distance).str()<<"\n";
                         std::cout << "Original seq: "<<_seq.str()<<" "<<start_path<<"\n";

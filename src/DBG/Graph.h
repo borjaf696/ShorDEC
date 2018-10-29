@@ -159,6 +159,7 @@ public:
     /*
      * This is like a hot fix but however->polymorphism :(
      */
+    virtual unordered_set<Parent_Node> getSolidKmers() = 0;
     virtual Parent_Node getNode(Parent_Node k)
     {return k;}
 

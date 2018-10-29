@@ -221,6 +221,8 @@ public:
 		{
 			index = _data->length - index - 1;
 		}
+		if (index >= length())
+			index = length()-1;
 		size_t id = (_data->chunks[index / NUCL_IN_CHUNK] >>
 					 (index % NUCL_IN_CHUNK) * offset ) & operator_and;
         if (id > 3)
