@@ -1,3 +1,5 @@
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -136,6 +138,22 @@ bool isSubset(const unordered_set<T> & set1, const unordered_set<T> & set2)
     return true;
 }
 
+template<typename T>
+bool isSame(const unordered_set<T> & set1, const unordered_set<T> & set2)
+{
+    for (auto el: set1)
+    {
+       if (set2.find(el)==set2.end())
+            return false;
+    }
+    for (auto el:set2)
+    {
+        if (set1.find(el) == set1.end())
+            return false;
+    }
+    return true;
+}
+
 /*
  * Translate
  */
@@ -220,3 +238,34 @@ std::vector<vector<Vt>> findMaxClique(const G & graph) {
     }
     return endCliques;
 }
+
+//Process Counts
+template<typename T, typename Y>
+size_t createCountMap(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
+{
+    int lineNo = 1;
+    size_t max_freq = 0;
+    Y count;
+    std::string node;
+    std::ifstream infile(path_to_file);
+    for( std::string line; getline( infile, line ); )
+    {
+        if (line[0] == '>')
+        {
+            count = stoi(line.substr(1,line.size()-1));
+            max_freq = (count > max_freq)?count:max_freq;
+        }
+        else
+        {
+            if (line.back() == '\n' or line.back() == '\r')
+            {
+                line.pop_back();
+            }
+            node = line;
+            T t(node);
+            map[t] = pair<Y,Y>(count,count);
+        }
+        lineNo++;
+    }
+    return max_freq;
+};

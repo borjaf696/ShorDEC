@@ -49,7 +49,7 @@ bool Kmer::operator==(const Kmer& other) const {
 }
 
 bool Kmer::operator!=(const Kmer& other) const{
-    return _seq != other._seq;
+    return (_seq != other._seq);
 }
 
 //Kmer iterator -> Single_end (false)

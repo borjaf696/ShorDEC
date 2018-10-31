@@ -257,6 +257,7 @@ size_t PathContainer<false>::check_read()
             _solid.push_back(KmerInfo<false>(kmer, cur_kmer.kmer_pos));
         }
     }
+    cout << "NUMSOLID KMERS: "<<_solid.size() << "\n";
     /*for (uint i = 0; i < _solid.size(); ++i)
         std::cout << _solid[i].kmer.str()<<" "<<_solid[i].kmer_pos<<"\n";*/
     return 1;
@@ -471,9 +472,12 @@ void ReadCorrector<false>::correct_reads() {
                 /*if (read.first.getId() != 416)
                     continue;*/
                 Progress::update(read.first.getId());
-                PathContainer<false> pc(read.first,_dbg,read.second.sequence);
-                DnaSequence seq = pc.correct_read();
-                _sc.setRead(read.first.getId(),seq);
+                if (read.first.getId() % 2 == 1)
+                {
+                    PathContainer<false> pc(read.first,_dbg,read.second.sequence);
+                    DnaSequence seq = pc.correct_read();
+                    _sc.setRead(read.first.getId(),seq);
+                }
                 //std::cout << "Chain: "<<_sc.getSeq(read.first.getId()).str()<<"\n";
                 //std::cout << read.first.getId() << " "<<pc.getSolidLength()<<"\n"
             };

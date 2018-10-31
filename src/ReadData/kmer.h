@@ -58,7 +58,9 @@ public:
 	Kmer& operator=(const Kmer&);
 
 	std::size_t hash() const{
-		return std::hash<std::string>()(_seq.str());
+        size_t seed = 0;
+        boost::hash_combine(seed, _seq.hash());
+		return seed;
 	}
 
 	std::string str() const
@@ -148,8 +150,12 @@ public:
     bool operator!=(const Pair_Kmer&) const;
     Pair_Kmer& operator=(const Pair_Kmer&);
 
-    std::size_t hash() const{
-        return std::hash<string>()(_seq_left.str()+_seq_right.str());
+    std::size_t hash() const
+    {
+        size_t seed = 0;
+        boost::hash_combine(seed,_seq_left.hash());
+        boost::hash_combine(seed,_seq_right.hash());
+        return seed;
     }
 
     pair<string,string> str() const
@@ -190,7 +196,10 @@ template<> struct KmerInfo<false>{
     {}
     size_t hash() const
     {
-        return std::hash<std::string>()(kmer.str()+to_string(kmer_pos));
+        size_t seed = 0;
+        boost::hash_combine(seed,kmer.hash());
+        boost::hash_combine(seed, kmer_pos);
+        return seed;
     }
     KmerInfo(const KmerInfo & k_info)
             :kmer(k_info.kmer),kmer_pos(k_info.kmer_pos)
@@ -225,8 +234,10 @@ template<> struct KmerInfo<true>{
     {}
     size_t hash() const
     {
-        pair<string,string> str_p_kmer = pair_kmer.str();
-        return std::hash<string>()(str_p_kmer.first+to_string(kmer_pos)+str_p_kmer.second+to_string(dist));
+        size_t seed = 0;
+        boost::hash_combine(seed, pair_kmer.hash());
+        boost::hash_combine(seed, dist);
+        return seed;
     }
     KmerInfo(const KmerInfo & k_info)
             :pair_kmer(k_info.pair_kmer),kmer_pos(k_info.kmer_pos),dist(k_info.dist)

@@ -1,4 +1,6 @@
 #include <unordered_map>
+#include <stdio.h>
+#include <stdlib.h>
 #include <map>
 #include <unordered_set>
 #include <vector>
@@ -11,7 +13,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 1
+#define MIN_PATH_LEN 2
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -46,10 +48,10 @@ public:
         Node kmer_aux;
         for (DnaSequence::NuclType i=0; i < 4; ++i) {
             kmer_aux = Kmer(kmer.str());
-
             kmer_aux.appendRight(i);
-            if (is_solid(kmer_aux))
+            if (is_solid(kmer_aux)){
                 nts.push_back(kmer_aux.substr(1,Parameters::get().kmerSize));
+            }
         }
         return nts;
     }
@@ -57,11 +59,14 @@ public:
     /*
      * Define how to check if rc or just forward
      */
-    NaiveDBG(SequenceContainer& sc):_sc(sc)
+    NaiveDBG(SequenceContainer& sc, bool thirdPartyCount, string path_to_file):_sc(sc)
     {
         Progress::get().size_total = _sc.getIndex().size();
         Progress::get().show = true;
-        _kmerCount();
+        if (!thirdPartyCount)
+            _kmerCount();
+        else
+            _thirdPartyKmerCounting(path_to_file);
         _cleaning();
     }
     /*
@@ -213,7 +218,28 @@ private:
      * Naive DBG construction + heads + tails
      */
     void _kmerCount();
+    void _thirdPartyKmerCounting(string);
     void _remove_isolated_nodes();
+    void _buildGraphRepresentation(size_t max_freq)
+    {
+        std::cout << "Total Number of Bases: "<<_sc.getTotalBases()<<"\n";
+        std::cout << "Average length read: "<<_sc.getAvLength()<<"\n";
+        std::cout << "Total Kmers in all Reads: "<<_kmers_map.size()<<"\n";
+
+        vector<size_t> histogram = getHistogram<Node,size_t>(_kmers_map, max_freq);
+        Parameters::get().accumulative_h = Parameters::calculateAccumulativeParam(histogram, _sc.getTotalBases(),_sc.getAvLength());
+        std::cout << "Threshold: "<<Parameters::get().accumulative_h<<"\n";
+        for (auto kmer:_kmers_map)
+        {
+            if (kmer.second.first >= Parameters::get().accumulative_h)
+            {
+                _insert(kmer.first, kmer.first);
+            }
+        }
+        std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
+                 <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
+        _kmers_map.clear();
+    }
     /*
      * Only paired_version gives impl
      */
@@ -373,8 +399,8 @@ private:
     vector<Node> _in_0;
     //Extend
     SequenceContainer& _sc;
-    //Standard
-    bool _is_standard = false;
+    //Canonical Representation
+    bool _is_standard = true;
 };
 /*
  * Boost implementation
@@ -399,10 +425,14 @@ public:
         NodeInfo():id(-1){}
         NodeInfo(Node node, int32_t id):node(node), id(id){}
         NodeInfo(Node node, int32_t id, ExtraInfoNode extra):node(node), id(id),node_set(extra){}
-        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set){}
+        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set)
+                ,parent_cliques(nodeInfo.parent_cliques){}
         NodeInfo& operator=(const NodeInfo& other)
         {
-            node = other.node;
+            this->node = other.node;
+            this->id = other.id;
+            this->node_set = other.node_set;
+            this->parent_cliques = other.parent_cliques;
             return *this;
         }
         bool empty()
@@ -415,7 +445,8 @@ public:
         }
         bool operator ==(const NodeInfo &other) const
         {
-            return equal(other.node) && (this->id == other.id);
+            return equal(other.node) && (this->id == other.id) && (node_set==other.node_set)
+                   && (parent_cliques == other.parent_cliques);
         }
         Node node;
         int32_t id;
@@ -494,18 +525,25 @@ public:
         return neigh;
     }
 
-    vector<it_node> getKmerNeighbors(it_node node) const
+    vector<it_node> getOutKmerNeighbors(it_node node)
     {
         vector<it_node> neigh;
         NodeInfo nodeInfo = _g[node.first], neighInfo;
         for (auto n:getKmerNeighbors(node.first))
         {
             neighInfo = _g[n];
+            vector<ExtraInfoNode> rejected;
             for (auto s:neighInfo.parent_cliques[nodeInfo.node])
             {
-                if (isSubset(node.second, s))
-                    neigh.push_back(pair<vertex_t,ExtraInfoNode>(n,getIntersection(s,neighInfo.node_set)));
+                if (isSame(getIntersection(node.second,nodeInfo.node_set), getIntersection(s,nodeInfo.node_set)))
+                {
+                    neigh.push_back(pair<vertex_t,ExtraInfoNode>(n,s));
+                }else{
+                    rejected.push_back(s);
+                }
             }
+            neighInfo.parent_cliques[nodeInfo.node] = rejected;
+            _g[n] = neighInfo;
         }
         return neigh;
     }
@@ -518,11 +556,11 @@ public:
         {
             for (auto n: m.second)
             {
-                if (isSubset(node.second, n))
+                vertex_t neighNode = _getNode(m.first);
+                NodeInfo neighInfo = _g[neighNode];
+                if (isSame(getIntersection(node.second,neighInfo.node_set), getIntersection(n, neighInfo.node_set)))
                 {
-                    vertex_t neighNode = _getNode(m.first);
-                    NodeInfo neighInfo = _g[neighNode];
-                    neigh.push_back(pair<vertex_t, ExtraInfoNode>(neighNode,getIntersection(neighInfo.node_set, n)));
+                    neigh.push_back(pair<vertex_t, ExtraInfoNode>(neighNode,n));
                 }
             }
         }
@@ -609,6 +647,7 @@ public:
     {
         cout << "Lets try Unitigs Pair_End graph\n";
         //UnitigExtender<P, graphBU>::full_extension(this, vector<graphBU>(), path_to_write);
+        extension(vector<Node>(),path_to_write);
         cout << "Unitigs donette\n";
     }
     //Show methods
@@ -760,7 +799,12 @@ public:
     }
     bool is_solid(Node& node) const
     {
-        return (_solid_kmers.find(node) != _solid_kmers.end());
+        if (_is_standard) {
+            Node node_aux = node;
+            node_aux.standard();
+            return (_solid_kmers.find(node_aux) != _solid_kmers.end());
+        }else
+            return (_solid_kmers.find(node) != _solid_kmers.end());
     }
 
     size_t length() const
@@ -830,4 +874,6 @@ private:
     size_t seg = 0;
     //InfoHeads
     typename DBG<P>::Heads _heads,_tails;
+    //Canonical Representation
+    bool _is_standard = true;
 };

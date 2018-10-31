@@ -1,0 +1,6 @@
+file=$1
+kmer_size=$2
+output=$3
+outputtxt=$4
+./Utils/jellyfish-linux count -m $kmer_size -s 100M -C $file -o $output
+./Utils/jellyfish-linux dump $output > $outputtxt

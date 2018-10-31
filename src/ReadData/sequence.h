@@ -1,3 +1,4 @@
+#include <boost/functional/hash.hpp>
 #include <cassert>
 #include <string>
 #include <unistd.h>
@@ -182,38 +183,56 @@ public:
 		return *this;
 	}
 
+    /*
+     * Seria necesario extenderlo para tratar la orientacion de las lecturas
+     */
 	bool operator==(const DnaSequence& other) const {
 		if (other.length() != this->length())
 			return false;
-		for (uint i = 0; i < this->length(); ++i)
-			if (this->atRaw(i) != other.atRaw(i)) {
-				if (other.str() == this->str())
-					std::cout << "Salgo por aqui\n";
-				return false;
-			}
-		return true;
+        return this->_data->chunks == other._data->chunks;
 	}
 
 	bool operator!=(const DnaSequence& other) const {
 		if (other.length() != this->length())
 			return true;
-		for (uint i = 0; i < this->length(); ++i)
-			if (this->atRaw(i) != other.atRaw(i))
-				return true;
-		return false;
+		return !(this->_data->chunks == other._data->chunks);
 	}
+
+    bool higher(const DnaSequence & other) const
+    {
+        if (other.length() > length())
+            return false;
+        if (other.length() < length())
+            return true;
+        for (uint i = 0; i < _data->length;++i)
+        {
+            if (atRaw(i) > other.atRaw(i))
+                return true;
+            if (atRaw(i) < other.atRaw(i))
+                return false;
+        }
+        return false;
+    }
 
     bool operator<(const DnaSequence & other) const
     {
-        return (str() < other.str());
+        return (!higher(other));
     }
 
     bool operator>(const DnaSequence & other) const
     {
-        return (str() > other.str());
+        return (higher(other));
     }
 
 	size_t length() const {return _data->length;}
+
+	size_t hash() const
+	{
+		size_t seed = 0;
+		for (uint i = 0; i < _data->chunks.size();++i)
+		    boost::hash_combine(seed, _data->chunks[i]);
+		return seed;
+	}
 
 	char at(size_t index) const
 	{
@@ -246,7 +265,7 @@ public:
 	DnaSequence complement() const
 	{
 		DnaSequence complSequence(*this);
-		complSequence._complement = true;
+		complSequence._complement = !(this->_complement);
 		return complSequence;
 	}
 
