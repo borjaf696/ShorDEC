@@ -16,10 +16,10 @@ auto print_use = [](char ** argc)
         ,argc[0]);};
 
 bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write
-        ,std::string& path_unitigs, bool &pair_end, bool & thirdPartyCount)
+        ,std::string& path_unitigs, std::string& program, bool &pair_end, bool & thirdPartyCount)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:h:t:r:cp";
+    char optString[] = "f:k:o:u:h:t:r:c:p";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -46,6 +46,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'c':
                 thirdPartyCount = true;
+                program = optarg;
                 break;
             case 'r':
                 Parameters::get().missmatches = atof(optarg);
@@ -67,9 +68,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
 
 int main(int argv, char ** argc){
 
-	std::string path_to_file(argc[1]),path_to_write, path_unitigs;
+	std::string path_to_file(argc[1]),path_to_write, path_unitigs, program;
     bool pair_end = false, thirdPartyCount = false;
-    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs, pair_end, thirdPartyCount))
+    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs, program, pair_end, thirdPartyCount))
         exit(0);
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
@@ -117,32 +118,32 @@ int main(int argv, char ** argc){
     /*
      * Iteratively we are going to correct the reads
      */
-    NaiveDBG<false> naiveDBG(sc, thirdPartyCount, path_to_file);
+    NaiveDBG<false> naiveDBG(sc, thirdPartyCount, path_to_file, program);
     std::cout << "Number of Reads: " << sc.getIndex().size() << "\n";
     for (auto i: kmer_sizes) {
         Parameters::get().kmerSize = Parameters::get().kmerSize * i;
         std::cout << "Building DBG\n Kmer Size: " << Parameters::get().kmerSize << "\n";
         if (i > 1)
-            naiveDBG = NaiveDBG<false>(sc,thirdPartyCount, path_to_file);
+            naiveDBG = NaiveDBG<false>(sc,thirdPartyCount, path_to_write, program);
         listDBG<false> listDBG(&naiveDBG);
         ReadCorrector<false> read(sc, listDBG);
+        std::cout << "Writing new reads in: " << path_to_write << "\n";
+        sc.writeSequenceContainer(path_to_write);
         print_blanks(5);
         //sc.ShowInfo();
     }
-    std::cout << "Writing new reads in: " << path_to_write << "\n";
-    sc.writeSequenceContainer(path_to_write);
     /*
      * Depending on pair_end info one approach or another
      */
     std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
     if (pair_end)
     {
-        NaiveDBG<true> dbg = NaiveDBG<true>(sc,thirdPartyCount, path_to_file);
+        NaiveDBG<true> dbg = NaiveDBG<true>(sc,thirdPartyCount, path_to_write, program);
         dbg.ProcessTigs(path_unitigs);
         exit(1);
     }
-    NaiveDBG<false> dbg = NaiveDBG<false>(sc,thirdPartyCount, path_to_file);
+    NaiveDBG<false> dbg = NaiveDBG<false>(sc,thirdPartyCount, path_to_write, program);
     listDBG<false> listDBG(&dbg);
-    listDBG.ProcessTigs(path_unitigs);
+    //listDBG.ProcessTigs(path_unitigs);
     dbg.ProcessTigs(path_unitigs);
 }

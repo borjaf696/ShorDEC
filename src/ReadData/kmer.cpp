@@ -33,6 +33,7 @@ DnaSequence::NuclType Kmer::at(size_t index) const
 
 Kmer& Kmer::operator=(const Kmer &other) {
     _seq = other._seq;
+    _standard = other._standard;
     return *this;
 }
 
@@ -119,6 +120,7 @@ pair<DnaSequence::NuclType,DnaSequence::NuclType> Pair_Kmer::at(size_t index) co
 Pair_Kmer& Pair_Kmer::operator=(const Pair_Kmer &other) {
     _seq_left = other._seq_left;
     _seq_right = other._seq_right;
+    _standard = other._standard;
     return *this;
 }
 

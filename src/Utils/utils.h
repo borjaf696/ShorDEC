@@ -239,9 +239,14 @@ std::vector<vector<Vt>> findMaxClique(const G & graph) {
     return endCliques;
 }
 
-//Process Counts
+/*
+ * Process Counts:
+ *      * First JellyFish output
+ *      * Second DSK output
+ */
+
 template<typename T, typename Y>
-size_t createCountMap(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
+size_t createCountMapJelly(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
 {
     int lineNo = 1;
     size_t max_freq = 0;
@@ -268,4 +273,29 @@ size_t createCountMap(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
         lineNo++;
     }
     return max_freq;
-};
+}
+
+template<typename T, typename Y>
+size_t createCountMapDSK(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
+{
+    int lineNo = 1;
+    size_t max_freq = 0;
+    Y count;
+    std::string node;
+    std::ifstream infile(path_to_file);
+    for( std::string line; getline( infile, line ); )
+    {
+        if (line.back() == '\n' or line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        node = line.substr(0,Parameters::get().kmerSize);
+        T t(node);
+        count = stoi(line.substr(Parameters::get().kmerSize+1,line.size()-(Parameters::get().kmerSize+1)));
+        max_freq = (count > max_freq)?count:max_freq;
+        map[t] = pair<Y,Y>(count,count);
+        lineNo++;
+    }
+    return max_freq;
+}
+

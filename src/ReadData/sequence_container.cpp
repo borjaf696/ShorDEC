@@ -444,12 +444,17 @@ void SequenceContainer::writeSequenceContainer(const std::string & filename) con
 {
 	FILE* fout = fopen(filename.c_str(),"w");
 	if (!fout) throw std::runtime_error("Can't open " + filename);
-
+	size_t cont = 0;
 	for (auto& id_rec: _seqIndex)
 	{
-		std::string corrected_read = id_rec.second.sequence.str()+"\n";
-		std::string header = ">" + id_rec.second.description+"\n";
-		fwrite(header.data(), sizeof(header.data()[0]), header.size(),fout);
-		fwrite(corrected_read.data(), sizeof(corrected_read.data()[0]),corrected_read.size(),fout);
+		if (cont % 2 == 0)
+		{
+			std::string corrected_read = id_rec.second.sequence.str()+"\n";
+			std::string header = ">" + id_rec.second.description+"\n";
+			fwrite(header.data(), sizeof(header.data()[0]), header.size(),fout);
+			fwrite(corrected_read.data(), sizeof(corrected_read.data()[0]),corrected_read.size(),fout);
+		}
+		cont++;
 	}
+    fclose(fout);
 }

@@ -1,4 +1,5 @@
 #include "path.h"
+#include <math.h>
 
 void insert_queue(std::queue<Kmer>& t, std::queue<size_t> &p_t, Kmer kmer, size_t pos)
 {
@@ -165,6 +166,9 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
     }
     //Expected fail length (maximum fail length)
     size_t fail_len = t.kmer_pos - h.kmer_pos;
+    if (fail_len >= MAX_PATH_LEN)
+        return MAX_PATH_LEN;
+    size_t maximal_allowed_extension = fail_len+ ceil(Parameters::get().missmatches*fail_len);
     while (neighbors.size() > 0 && branches > 0)
     {
         stack_el * el_kmer = neighbors.top();
@@ -176,9 +180,11 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
         //Deallocate the stack_el
         delete el_kmer;
 
-        //This can me improved->Why leave
-        if (pos >= MAX_PATH_LEN)
-            return MAX_PATH_LEN;
+        if (pos >= maximal_allowed_extension)
+        {
+            branches++;
+            continue;
+        }
 
         path[pos-1] = nuc;
         _DP[pos*(MAX_PATH_LEN+1)] = pos;
@@ -247,17 +253,16 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
 template<>
 size_t PathContainer<false>::check_read()
 {
-    for (auto cur_kmer: IterKmers<false>(_seq)){
+    for (auto cur_kmer: IterKmers<false>(_seq))
+    {
         //Optimizar esto
         /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
                 ,cur_kmer.kmer.getSeq().length()));*/
-        Kmer kmer = cur_kmer.kmer;
-        if (_dbg.is_solid(kmer))
+        if (_dbg.is_solid(cur_kmer.kmer))
         {
-            _solid.push_back(KmerInfo<false>(kmer, cur_kmer.kmer_pos));
+            _solid.push_back(KmerInfo<false>(cur_kmer.kmer, cur_kmer.kmer_pos));
         }
     }
-    cout << "NUMSOLID KMERS: "<<_solid.size() << "\n";
     /*for (uint i = 0; i < _solid.size(); ++i)
         std::cout << _solid[i].kmer.str()<<" "<<_solid[i].kmer_pos<<"\n";*/
     return 1;
@@ -469,10 +474,10 @@ void ReadCorrector<false>::correct_reads() {
             #pragma omp task shared(read)
             {
                 //std::cout << read.first.getId() <<" " << read.second.sequence.length()<<"\n";
-                /*if (read.first.getId() != 416)
+                /*if (read.first.getId() != 192)
                     continue;*/
                 Progress::update(read.first.getId());
-                if (read.first.getId() % 2 == 1)
+                if (read.first.getId() % 2 == 0)
                 {
                     PathContainer<false> pc(read.first,_dbg,read.second.sequence);
                     DnaSequence seq = pc.correct_read();

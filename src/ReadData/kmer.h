@@ -17,9 +17,11 @@ public:
 	Kmer(DnaSequence seq):_seq(seq){}
 	Kmer(const Kmer & kmer){
 		_seq = kmer.getSeq();
+        _standard = kmer._standard;
 	}
 	Kmer(const Kmer *kmer){
 		_seq = kmer->getSeq();
+        _standard = kmer->_standard;
 	}
 
 	Kmer(const string &string_own)
@@ -45,8 +47,12 @@ public:
 	}
 
     void standard(){
-        if ((*this) > this->rc())
-            (*this) = this->rc();
+        if (!_standard)
+        {
+            if ((*this) > this->rc())
+                (*this) = this->rc();
+            _standard = true;
+        }
     }
 
 	DnaSequence::NuclType at(size_t index) const;
@@ -81,6 +87,7 @@ public:
     }
 private:
 	DnaSequence _seq;
+    bool _standard = false;
 };
 
 /*
@@ -99,11 +106,13 @@ public:
         pair<DnaSequence,DnaSequence> seqs = kmer.getSeq();
         _seq_left = seqs.first;
         _seq_right = seqs.second;
+        _standard = kmer._standard;
     }
     Pair_Kmer(const Pair_Kmer *kmer){
         pair<DnaSequence,DnaSequence> seqs = kmer->getSeq();
         _seq_left = seqs.first;
         _seq_right = seqs.second;
+        _standard = kmer->_standard;
     }
 
     Pair_Kmer(const string &string_own_left, const string &string_own_right)
@@ -118,10 +127,14 @@ public:
 
     void standard()
     {
-        if (_seq_left > _seq_left.complement())
-            _seq_left = _seq_left.complement();
-        if (_seq_right > _seq_right.complement())
-            _seq_right = _seq_right.complement();
+        if (!_standard)
+        {
+            if (_seq_left > _seq_left.complement())
+                _seq_left = _seq_left.complement();
+            if (_seq_right > _seq_right.complement())
+                _seq_right = _seq_right.complement();
+            _standard = true;
+        }
     }
 
     void appendRight(DnaSequence::NuclType, DnaSequence::NuclType);
@@ -169,6 +182,7 @@ public:
     }
 private:
     DnaSequence _seq_left,_seq_right;
+    bool _standard = false;
 };
 namespace std{
     template <>

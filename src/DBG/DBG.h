@@ -13,7 +13,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 2
+#define MIN_PATH_LEN 20
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -59,14 +59,14 @@ public:
     /*
      * Define how to check if rc or just forward
      */
-    NaiveDBG(SequenceContainer& sc, bool thirdPartyCount, string path_to_file):_sc(sc)
+    NaiveDBG(SequenceContainer& sc, bool thirdPartyCount, string path_to_file, string program):_sc(sc)
     {
         Progress::get().size_total = _sc.getIndex().size();
         Progress::get().show = true;
         if (!thirdPartyCount)
             _kmerCount();
         else
-            _thirdPartyKmerCounting(path_to_file);
+            _thirdPartyKmerCounting(path_to_file, program);
         _cleaning();
     }
     /*
@@ -218,7 +218,7 @@ private:
      * Naive DBG construction + heads + tails
      */
     void _kmerCount();
-    void _thirdPartyKmerCounting(string);
+    void _thirdPartyKmerCounting(string, string);
     void _remove_isolated_nodes();
     void _buildGraphRepresentation(size_t max_freq)
     {

@@ -10,10 +10,10 @@ auto print_use = [](char ** argc)
         ,argc[0]);};
 
 bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& path_to_write
-        ,std::string& path_unitigs, bool &pair_end, bool & thirdPartyCount)
+        ,std::string& path_unitigs, std::string& program, bool &pair_end, bool & thirdPartyCount)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:h:t:r:c:p";
+    char optString[] = "f:k:o:u:h:t:r:cp";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -40,6 +40,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
                 break;
             case 'c':
                 thirdPartyCount = true;
+                program = optarg;
                 break;
             case 'r':
                 Parameters::get().missmatches = atof(optarg);
@@ -61,15 +62,15 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
 
 int main(int argv, char ** argc){
     std::cout << "Test Environment\n";
-    std::string path_to_file(argc[1]),path_to_write, path_unitigs;
+    std::string path_to_file(argc[1]),path_to_write, path_unitigs, program;
     bool pair_end = false, thirdPartyCount = false;
-    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs, pair_end, thirdPartyCount))
+    if (!parse_args(argv,argc,path_to_file,path_to_write, path_unitigs, program, pair_end, thirdPartyCount))
         exit(0);
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
     sc.load(path_to_file, pair_end);
     //NaiveDBG<false> graph(sc);
-    DBG<true> * graph = new NaiveDBG<true>(sc, thirdPartyCount,path_to_file);
+    DBG<true> * graph = new NaiveDBG<true>(sc, thirdPartyCount,path_to_file, program);
     //Lets try boost
     boostDBG<true> boostDBG1(graph);
     boostDBG1.ProcessTigs(path_unitigs);

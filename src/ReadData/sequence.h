@@ -266,6 +266,8 @@ public:
 	{
 		DnaSequence complSequence(*this);
 		complSequence._complement = !(this->_complement);
+        complSequence = complSequence.substr(0, complSequence._data->length);
+        complSequence._complement = !(complSequence._complement);
 		return complSequence;
 	}
 
@@ -344,6 +346,7 @@ inline DnaSequence DnaSequence::substr(size_t start, size_t length) const
 		size_t newChunkId = i / NUCL_IN_CHUNK;
 		newSequence._data->chunks[newChunkId] |= nucId << (i % NUCL_IN_CHUNK) * offset;
 	}
+    newSequence._complement = _complement;
 
 	return newSequence;
 }

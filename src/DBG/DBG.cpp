@@ -71,17 +71,26 @@ void NaiveDBG<false>::show_info()
 
 //ThirdPartyCounting
 template<>
-void NaiveDBG<false>::_thirdPartyKmerCounting(string path_to_file_count)
+void NaiveDBG<false>::_thirdPartyKmerCounting(string path_to_file_count, string third)
 {
-    string instruction = "./jellyfish_script ";
+    string instruction = "";
+    if (third == "jelly")
+        instruction += "./jellyfish_script ";
+    else
+        instruction += "./dsk_script ";
     instruction+= path_to_file_count+" ";
     instruction+= to_string(Parameters::get().kmerSize)+" ";
-    instruction+="output output.txt";
+    instruction+="output output.txt >/dev/null 2>&1";
+    cout << "INSTRUCTION: "<<instruction<<"\n";
     if ((system(instruction.c_str())))
     {
         cout << "FAIL\n";
     }
-    size_t max_freq = createCountMap<Node,size_t>(_kmers_map, "output.txt");
+    size_t max_freq = 0;
+    if (third == "jelly")
+        max_freq = createCountMapJelly<Node,size_t>(_kmers_map, "output.txt");
+    else
+        max_freq = createCountMapDSK<Node,size_t>(_kmers_map,"output.txt");
 
     _buildGraphRepresentation(max_freq);
 }
@@ -308,7 +317,7 @@ vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
 
 //ThirdPartyKmerCounting
 template<>
-void NaiveDBG<true>::_thirdPartyKmerCounting(string path_to_file)
+void NaiveDBG<true>::_thirdPartyKmerCounting(string path_to_file, string sad_face)
 {
     cout << "Not supported yet\n";
 }
@@ -694,6 +703,8 @@ void boostDBG<true>::_modify_info()
             }
         }
     }
+    //Free Floyd
+    free(distance_matrix);
     std::cout << "\n";
 }
 template<>
@@ -977,10 +988,7 @@ template<>
 void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
 {
     pair<unordered_set<Node>,unordered_set<Node>> graph_shape = dbg->getNodes();
-    for (auto n: graph_shape.first)
-    {
-        _solid_kmers.emplace(n);
-    }
+    _solid_kmers = dbg->getSolidKmers();
     for (auto n: graph_shape.second)
     {
         vector<Node> neighbors = dbg->getKmerNeighbors(n);
@@ -993,18 +1001,17 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
                 _g[n_2].first = vector<Node>(1,n);
         }
     }
-    //GetSuspicious Starts
+    //GetSuspicious Starts as unbalanced nodes
     for (auto n: _g)
     {
-        if (!n.second.first.size())
+        if (n.second.first.size() < n.second.second.size())
             _in_0.push_back(n.first);
     }
     cout << "Start Kmers: "<<_in_0.size()<<"\n";
     //show_info();
-    cout << "SOLID INFORMATION\n";
+    /*cout << "SOLID INFORMATION\n";
     for (auto n:_solid_kmers)
-        cout << "Kmer: "<<n.str()<<"\n";
-
+        cout << "Kmer: "<<n.str()<<"\n";*/
     /*for (auto n: _in_0)
         cout << "StartPoint: "<<n.str()<<"\n";*/
 }
