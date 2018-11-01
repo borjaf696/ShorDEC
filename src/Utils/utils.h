@@ -272,6 +272,7 @@ size_t createCountMapJelly(unordered_map<T,pair<Y,Y>> & map, string path_to_file
         }
         lineNo++;
     }
+    infile.close();
     return max_freq;
 }
 
@@ -289,13 +290,13 @@ size_t createCountMapDSK(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
         {
             line.pop_back();
         }
-        node = line.substr(0,Parameters::get().kmerSize);
-        T t(node);
+        T t(line.substr(0,Parameters::get().kmerSize));
         count = stoi(line.substr(Parameters::get().kmerSize+1,line.size()-(Parameters::get().kmerSize+1)));
         max_freq = (count > max_freq)?count:max_freq;
         map[t] = pair<Y,Y>(count,count);
         lineNo++;
     }
+    infile.close();
     return max_freq;
 }
 

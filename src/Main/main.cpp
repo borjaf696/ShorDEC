@@ -144,6 +144,6 @@ int main(int argv, char ** argc){
     }
     NaiveDBG<false> dbg = NaiveDBG<false>(sc,thirdPartyCount, path_to_write, program);
     listDBG<false> listDBG(&dbg);
-    //listDBG.ProcessTigs(path_unitigs);
+    listDBG.ProcessTigs(path_unitigs);
     dbg.ProcessTigs(path_unitigs);
 }

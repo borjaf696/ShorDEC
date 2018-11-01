@@ -189,7 +189,7 @@ public:
 	bool operator==(const DnaSequence& other) const {
 		if (other.length() != this->length())
 			return false;
-        return this->_data->chunks == other._data->chunks;
+        return (this->_data->chunks == other._data->chunks);
 	}
 
 	bool operator!=(const DnaSequence& other) const {
@@ -214,9 +214,25 @@ public:
         return false;
     }
 
+    bool lower(const DnaSequence & other) const
+    {
+        if (other.length() > length())
+            return true;
+        if (other.length() < length())
+            return false;
+        for (uint i = 0; i < _data->length;++i)
+        {
+            if (atRaw(i) > other.atRaw(i))
+                return false;
+            if (atRaw(i) < other.atRaw(i))
+                return true;
+        }
+        return false;
+    }
+
     bool operator<(const DnaSequence & other) const
     {
-        return (!higher(other));
+        return (lower(other));
     }
 
     bool operator>(const DnaSequence & other) const

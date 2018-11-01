@@ -904,6 +904,7 @@ void listDBG<false>::_transverse(Node n,
         _transverse(neighbors[0], map_nodo_seq_start, map_seq_nodo_end,map_seqs,sequence);
     }else
     {
+        cout << "SEG: "<<seg<< " NODE: "<<n.str()<<"\n";
         map_seq_nodo_end[seg] = n;
         if (neighbors.size()==0)
         {
@@ -925,28 +926,31 @@ void listDBG<false>::_transverse(Node n,
                     map_nodo_seq_start[n].push_back(seg);
                     _transverse(n2,map_nodo_seq_start, map_seq_nodo_end,map_seqs,seq);
                 }
-            }else
+            }else{
                 map_seq_nodo_end[seg-1] = n;
+            }
         }
         if (in_degree(n) != 1)
         {
             cout << "Kmer with more than 1 inDegree: "<<n.str()<<"\n";
-            if (map_nodo_seq_start.find(n) != map_nodo_seq_start.end())
+            if (map_nodo_seq_start.find(n) != map_nodo_seq_start.end()){
                 map_seq_nodo_end[seg-1] = n;
+            }
             else
             {
-                if (neighbors.size())
+                cout << "Soy: "<<n.str() << "---> Extiendo\n";
+                for (auto n2: neighbors)
                 {
-                    cout << "Soy: "<<n.str() << "---> Extiendo\n";
                     DnaSequence seq("");
                     seq.append_nuc_right(n.at(0));
                     map_nodo_seq_start[n] = vector<size_t>(1,seg);
-                    _transverse(neighbors[0], map_nodo_seq_start, map_seq_nodo_end, map_seqs,seq);
+                    _transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs,seq);
                 }
             }
         }
     }
 }
+
 template<>
 void listDBG<false>::_writeUnitigs(map <Node, vector<size_t>> map_nodo_seq_start,
                                    map <size_t, Node> map_seq_nodo_end,
@@ -964,6 +968,7 @@ void listDBG<false>::_writeUnitigs(map <Node, vector<size_t>> map_nodo_seq_start
                 links.push_back(pair<size_t,size_t>(end, origin));
     UnitigExtender<false>::_write_gfa(file_to_path, seqs,links);
 }
+
 template<>
 void listDBG<false>::extension(vector <Node> in_0, string path_to_write)
 {
@@ -972,6 +977,7 @@ void listDBG<false>::extension(vector <Node> in_0, string path_to_write)
     map<size_t, DnaSequence> map_seqs;
     for (auto n: _in_0)
     {
+        cout << "KMER START: "<<n.str()<<"\n";
         map_nodo_seq_start[n] = vector<size_t>();
         for (auto n2: getKmerNeighbors(n))
         {
@@ -988,7 +994,7 @@ template<>
 void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
 {
     pair<unordered_set<Node>,unordered_set<Node>> graph_shape = dbg->getNodes();
-    _solid_kmers = dbg->getSolidKmers();
+    _solid_kmers = graph_shape.first;
     for (auto n: graph_shape.second)
     {
         vector<Node> neighbors = dbg->getKmerNeighbors(n);
@@ -1007,11 +1013,12 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
         if (n.second.first.size() < n.second.second.size())
             _in_0.push_back(n.first);
     }
+    /*for (auto n:_solid_kmers)
+        cout << "Kmer: "<<n.str()<<"\n";*/
     cout << "Start Kmers: "<<_in_0.size()<<"\n";
     //show_info();
-    /*cout << "SOLID INFORMATION\n";
-    for (auto n:_solid_kmers)
-        cout << "Kmer: "<<n.str()<<"\n";*/
+    cout << "SOLID INFORMATION\n";
+
     /*for (auto n: _in_0)
         cout << "StartPoint: "<<n.str()<<"\n";*/
 }

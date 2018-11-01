@@ -466,12 +466,12 @@ DnaSequence PathContainer<false>::correct_read() {
 template<>
 void ReadCorrector<false>::correct_reads() {
     std::cout << "STAGE: Reads Correction\n";
-    #pragma omp parallel
+    //#pragma omp parallel
     {
-        #pragma omp single
+        //#pragma omp single
         for (auto &read: _sc.getIndex())
         {
-            #pragma omp task shared(read)
+            //#pragma omp task shared(read)
             {
                 //std::cout << read.first.getId() <<" " << read.second.sequence.length()<<"\n";
                 /*if (read.first.getId() != 192)

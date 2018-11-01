@@ -233,7 +233,13 @@ private:
         {
             if (kmer.second.first >= Parameters::get().accumulative_h)
             {
-                _insert(kmer.first, kmer.first);
+                if (_is_standard)
+                {
+                    Node node = kmer.first;
+                    node.standard();
+                    _insert(node, node);
+                }else
+                    _insert(kmer.first, kmer.first);
             }
         }
         std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
