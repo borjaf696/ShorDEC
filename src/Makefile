@@ -16,17 +16,17 @@ tests: test_environment
 
 #Read, seq, kmer
 obj := ${patsubst %.cpp,%.o,${wildcard ReadData/*.cpp}}
-ReadData/%.o: ReadData/%.cpp ReadData/*.h
+ReadData/%.o: ReadData/%.cpp ReadData/*.h Utils/*h
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 #Extender
 extender_obj := ${patsubst %.cpp,%.o,${wildcard Extender/*.cpp}}
-Extender/%.o: Extender/%.cpp Extender/*.h Utils/*h
+Extender/%.o: Extender/%.cpp Extender/*.h 
 	${CXX} -c ${CXXFLAGS} $< -o $@
 
 #Dbg
 dbg_obj := ${patsubst %.cpp,%.o,${wildcard DBG/*.cpp}}
-DBG/%.o: DBG/%.cpp DBG/*.h Utils/*.h
+DBG/%.o: DBG/%.cpp DBG/*.h
 	${CXX} -c ${CXXFLAGS} $< -o $@ ${OPENMPFLAG}
 
 #Main_code

@@ -64,8 +64,6 @@ public:
             fwrite(l_line.data(), sizeof(l_line.data()[0])
                     ,l_line.size(), fout);
         }
+        fclose(fout);
     }
-
-    //TODO: remove nodes to kmer -> this is a kmer extender
-
 };

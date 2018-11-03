@@ -1,5 +1,9 @@
 #include <fstream>
+#include <stdexcept>
+#include <fstream>
 #include <sstream>
+#include <iostream>
+#include <boost/filesystem.hpp>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -83,6 +87,41 @@ private:
     }
     static void _prepare_next(){
         Progress::get().f = std::vector<bool>(10,false);
+    }
+};
+
+struct System{
+    /*
+     * System utils
+     */
+    static std::vector<string> getAllFaFqFiles(std::string path)
+    {
+        namespace fs = boost::filesystem;
+        std::vector<string> output;
+        fs::path fs_path(path);
+        if (fs::is_regular_file(fs_path))
+            output.push_back(path);
+        else
+        {
+            for (auto & p : fs::directory_iterator(path))
+            {
+                std::ostringstream oss;
+                oss << p;
+                std::string converted_path = oss.str().substr(1, oss.str().size() - 2);
+                output.push_back(converted_path);
+            }
+        }
+        return output;
+    }
+
+    static std::string appendFiles(std::vector<string> files, std::string newFile)
+    {
+        std::string instruction = "cat ";
+        for (auto s: files)
+            instruction += s+" ";
+        instruction += ">"+newFile;
+        (system(instruction.c_str()))?std::cout<<"FAIL\n":std::cout<<"Files joined\n";
+        return newFile;
     }
 };
 
@@ -299,4 +338,3 @@ size_t createCountMapDSK(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
     infile.close();
     return max_freq;
 }
-

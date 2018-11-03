@@ -69,32 +69,6 @@ void NaiveDBG<false>::show_info()
     }
 }
 
-//ThirdPartyCounting
-template<>
-void NaiveDBG<false>::_thirdPartyKmerCounting(string path_to_file_count, string third)
-{
-    string instruction = "";
-    if (third == "jelly")
-        instruction += "./jellyfish_script ";
-    else
-        instruction += "./dsk_script ";
-    instruction+= path_to_file_count+" ";
-    instruction+= to_string(Parameters::get().kmerSize)+" ";
-    instruction+="output output.txt >/dev/null 2>&1";
-    cout << "INSTRUCTION: "<<instruction<<"\n";
-    if ((system(instruction.c_str())))
-    {
-        cout << "FAIL\n";
-    }
-    size_t max_freq = 0;
-    if (third == "jelly")
-        max_freq = createCountMapJelly<Node,size_t>(_kmers_map, "output.txt");
-    else
-        max_freq = createCountMapDSK<Node,size_t>(_kmers_map,"output.txt");
-
-    _buildGraphRepresentation(max_freq);
-}
-
 //Own->KmerCounting
 template<>
 void NaiveDBG<false>::_kmerCount() {
@@ -315,13 +289,6 @@ vector<DnaSequence::NuclType> NaiveDBG<true>::getNeighbors
     return nts;
 }
 
-//ThirdPartyKmerCounting
-template<>
-void NaiveDBG<true>::_thirdPartyKmerCounting(string path_to_file, string sad_face)
-{
-    cout << "Not supported yet\n";
-}
-
 template<>
 void NaiveDBG<true>::_kmerCount()
 {
@@ -382,6 +349,7 @@ void NaiveDBG<true>::_kmerCount()
     }
     std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
              <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
+    exit(1);
     _kmers_map.clear();
     /*
      * Insert pair_end info from reads

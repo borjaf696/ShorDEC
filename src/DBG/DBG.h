@@ -13,7 +13,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 20
+#define MIN_PATH_LEN 1
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -218,7 +218,35 @@ private:
      * Naive DBG construction + heads + tails
      */
     void _kmerCount();
-    void _thirdPartyKmerCounting(string, string);
+    //ThirdPartyCounting
+    void _thirdPartyKmerCounting(string path_to_file_count, string third)
+    {
+        vector<string> files = System::getAllFaFqFiles(path_to_file_count);
+        if (files.size() > 1)
+            path_to_file_count = System::appendFiles(files, "newFile_tmp.fasta");
+        string instruction = "";
+        if (third == "jelly")
+            instruction += "./jellyfish_script ";
+        else
+            instruction += "./dsk_script ";
+        instruction += path_to_file_count+" ";
+        instruction+= to_string(Parameters::get().kmerSize)+" ";
+        instruction+="output output.txt >/dev/null 2>&1";
+        cout << "INSTRUCTION: "<<instruction<<"\n";
+        if ((system(instruction.c_str())))
+        {
+            cout << "FAIL\n";
+        }
+        size_t max_freq = 0;
+        if (third == "jelly")
+            max_freq = createCountMapJelly<Node,size_t>(_kmers_map, "output.txt");
+        else
+            max_freq = createCountMapDSK<Node,size_t>(_kmers_map,"output.txt");
+        _buildGraphRepresentation(max_freq);
+        if (P)
+            _insert_extra_info();
+    }
+
     void _remove_isolated_nodes();
     void _buildGraphRepresentation(size_t max_freq)
     {
@@ -244,6 +272,7 @@ private:
         }
         std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
                  <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
+        exit(1);
         _kmers_map.clear();
     }
     /*
