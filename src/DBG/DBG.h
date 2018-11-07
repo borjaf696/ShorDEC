@@ -236,9 +236,9 @@ private:
             path_to_file_count = System::appendFiles(files, "newFile_tmp.fasta");
         string instruction = "";
         if (third == "jelly")
-            instruction += "./jellyfish_script ";
+            instruction += "./Utils/script/jellyfish_script ";
         else
-            instruction += "./dsk_script ";
+            instruction += "./Utils/script/dsk_script ";
         instruction += path_to_file_count+" ";
         instruction+= to_string(Parameters::get().kmerSize)+" ";
         instruction+="output output.txt >/dev/null 2>&1";
