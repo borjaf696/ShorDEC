@@ -1,8 +1,5 @@
 #include "DBG.h"
 /*
- * Single_end reads
- */
-/*
  * Number of in_edges
  */
 template<>
@@ -774,6 +771,7 @@ void listDBG<false>::extension(vector <Node> in_0, string path_to_write)
 template<>
 void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
 {
+    cout << "STAGE: IntoAdjacentLists\n";
     pair<unordered_set<Node>,unordered_set<Node>> graph_shape = dbg->getNodes();
     _solid_kmers = graph_shape.first;
     for (auto n: graph_shape.second)
@@ -796,6 +794,7 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
             _in_0.push_back(n.first);
         }
     }
+    cout << "End Translation\n";
     /*for (auto n:_solid_kmers)
         cout << "Kmer: "<<n.str()<<"\n";*/
     cout << "Start Kmers: "<<_in_0.size()<<"\n";

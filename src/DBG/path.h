@@ -83,7 +83,6 @@ public:
 
     ~PathContainer()
     {
-        _path_extended.clear();
         _solid.clear();
         _solid.shrink_to_fit();
     }
@@ -97,7 +96,6 @@ public:
     int check_solids(size_t,size_t,size_t,size_t
             ,size_t &,Kmer&);
 private:
-    std::vector<Path<P>> _path_extended;
     std::vector<KmerInfo<P>> _solid;
     FastaRecord::Id _readId;
     const DBG<P> * _dbg;

@@ -158,8 +158,11 @@ public:
 
     DnaSequence& operator=(DnaSequence&& other)
     {
-        _data = other._data;
+        --_data->useCount;
+        if (_data->useCount == 0) delete _data;
+
         _complement = other._complement;
+        _data = other._data;
         other._data = nullptr;
         return *this;
     }

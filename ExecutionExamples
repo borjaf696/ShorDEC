@@ -1,7 +1,7 @@
 Pair_end:
-./src/test_test -f ../DataSets/DataPrueba/little_test_pairs/ -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.fasta -k 5 -h 1 -p
+./src/test_test -f ../DataSets/DataPrueba/little_test_pairs/ -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.fasta -k 5 -r 0.005 -c jellyfish
 Single_end:
-./src/test -f ../DataSets/DataPrueba/dir_pairs/output_prueba_1.fasta -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.fasta -k 12 -h 8
+./src/test -f ../DataSets/DataPrueba/dir_pairs/output_prueba_1.fasta -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.fasta -k 12 -r 0.005 -c dsk
 Single_end (big case):
 ./src/test -f ../DataSets/DataPrueba/big_hiv/SRR961514_1.fastq -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.fasta -k 15 -r 0.005
 

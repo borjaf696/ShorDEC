@@ -35,6 +35,14 @@ public:
     typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
     typedef typename BUgraph<Node>::graphBU graphBU;
     typedef typename BUgraph<FuncNode>::graphBU graphBU_Func;
+    void clear()
+    {
+        _heads.clear();
+        _tails.clear();
+        _in_0.clear();
+        _dbg_nodes.clear();
+        _dbg_naive.clear();
+    }
 
     size_t in_degree(Node);
     size_t out_degree(Node);
@@ -247,6 +255,32 @@ private:
         _buildGraphRepresentation(max_freq);
     }
 
+    bool _asses(vector<Node> &erase,vector<Node> aux, size_t len)
+    {
+        if (len < MIN_PATH_LEN)
+            for (auto k:aux) {
+                erase.push_back(k);
+            }
+        return (len < MIN_PATH_LEN);
+    }
+
+    void _erase(vector<Node>& kmer_to_erase)
+    {
+        for (auto kmer_erase:kmer_to_erase) {
+            _dbg_nodes.erase(kmer_erase);
+            for (uint i = 0; i < 8; i++) {
+                Node new_kmer = kmer_erase;
+                (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
+                if (_is_standard)
+                    new_kmer.standard();
+                _dbg_naive.erase(new_kmer);
+            }
+        }
+        cout << "NaiveSizePost: "<<_dbg_naive.size() << "\n";
+        cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";
+        kmer_to_erase.clear();
+    }
+
     void _remove_isolated_nodes()
     {
         bool change = false;
@@ -443,32 +477,6 @@ private:
             len_fw += MIN_PATH_LEN;
     }
 
-    bool _asses(vector<Node> &erase,vector<Node> aux, size_t len)
-    {
-        if (len < MIN_PATH_LEN)
-            for (auto k:aux) {
-                erase.push_back(k);
-            }
-        return (len < MIN_PATH_LEN);
-    }
-
-    void _erase(vector<Node>& kmer_to_erase)
-    {
-        for (auto kmer_erase:kmer_to_erase) {
-            _dbg_nodes.erase(kmer_erase);
-            for (uint i = 0; i < 8; i++) {
-                Node new_kmer = kmer_erase;
-                (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
-                if (_is_standard)
-                    new_kmer.standard();
-                _dbg_naive.erase(new_kmer);
-            }
-        }
-        /*cout << "NaiveSizePost: "<<_dbg_naive.size() << "\n";
-        cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
-        kmer_to_erase.clear();
-    }
-
     /*
      * AdHoc Methods
      */
@@ -579,6 +587,13 @@ public:
      * TODO: Needs implementation
      */
     boostDBG(DBG<P> *);
+    void clear()
+    {
+        _heads.clear();
+        _tails.clear();
+        _in_0.clear();
+    }
+
     bool is_solid(Node&) const
     {
         return true;
@@ -872,6 +887,15 @@ public:
     typedef unordered_map<Node,pair<vector<Node>,vector<Node>>> Graph;
     listDBG(DBG<P> *);
 
+    void clear()
+    {
+        _g.clear();
+        _solid_kmers.clear();
+        _heads.clear();
+        _tails.clear();
+        _in_0.clear();
+    }
+
     size_t in_degree(Node node)
     {
         return _g[node].first.size();
@@ -893,7 +917,7 @@ public:
             node = node.substr(1, Parameters::get().kmerSize);
         return _g.at(node).second;
     }
-    bool is_solid(Node& node) const
+    bool is_solid(Node & node) const
     {
         if (_is_standard) {
             Node node_aux = node;

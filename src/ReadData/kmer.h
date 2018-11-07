@@ -12,8 +12,6 @@ class Kmer
 public:
 	bool exist = true;
 	Kmer():exist(false){}
-	~Kmer()
-    {}
 	Kmer(const DnaSequence&,size_t,size_t);
 	Kmer(DnaSequence seq):_seq(seq){}
 	Kmer(const Kmer & kmer){
@@ -99,8 +97,6 @@ class Pair_Kmer
 public:
     bool exist = true;
     Pair_Kmer():exist(false){}
-    ~Pair_Kmer()
-    {}
     Pair_Kmer(const DnaSequence&,const DnaSequence&,size_t,size_t);
     Pair_Kmer(DnaSequence seq_left, DnaSequence seq_right):
             _seq_left(seq_left),_seq_right(seq_right){}
@@ -244,8 +240,6 @@ template<> struct KmerInfo<false>{
 
 template<> struct KmerInfo<true>{
     KmerInfo()
-    {}
-    ~KmerInfo()
     {}
     KmerInfo(Pair_Kmer kmer, size_t pos)
             :pair_kmer(kmer),kmer_pos(pos)

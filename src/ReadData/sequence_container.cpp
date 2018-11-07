@@ -13,6 +13,8 @@
 
 #include "sequence_container.h"
 
+//TODO: Anhadir la parte del procesamiento de las Ns
+
 size_t SequenceContainer::g_nextSeqId = 0;
 size_t SequenceContainer::g_nextRightSeqId = 2;
 
@@ -436,6 +438,7 @@ void SequenceContainer::writeFasta(const std::vector<FastaRecord>& records,
 
 void SequenceContainer::setRead(FastaRecord::Id readId, DnaSequence newSeq)
 {
+    _totalBases+=_seqIndex.at(readId).sequence.length()-newSeq.length();
 	_seqIndex.at(readId) = FastaRecord(newSeq,_seqIndex.at(readId).getDescription()
 			,FastaRecord::Id(readId));
 }

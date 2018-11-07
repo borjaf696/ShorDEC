@@ -289,7 +289,8 @@ size_t PathContainer<false>::check_read()
         }
     }
     /*for (uint i = 0; i < _solid.size(); ++i)
-        std::cout << _solid[i].kmer.str()<<" "<<_solid[i].kmer_pos<<"\n";*/
+        std::cout << _solid[i].kmer.str()<<" "<<_solid[i].kmer_pos<<"\n";
+    std::cout << "NumSolids: "<<_solid.size()<<"\n";*/
     return 1;
 }
 
@@ -496,8 +497,6 @@ void ReadCorrector<false>::correct_reads() {
        // #pragma omp single
         for (auto &read: _sc.getIndex())
         {
-            if (!(read.first.getId() % 100))
-                std::cout << "Read Number: "<<read.first.getId()<<"\n";
             //#pragma omp task shared(read)
             {
                 /*if (read.first.getId() != 192)
@@ -506,8 +505,8 @@ void ReadCorrector<false>::correct_reads() {
                 if (read.first.getId() % 2 == 0)
                 {
                     PathContainer<false> pc(read.first,(&_dbg),read.second.sequence);
-                    DnaSequence seq = pc.correct_read();
-                    _sc.setRead(read.first.getId(),seq);
+                    //DnaSequence seq = pc.correct_read();
+                    //_sc.setRead(read.first.getId(),seq);
                 }
             };
         }

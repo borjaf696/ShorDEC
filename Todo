@@ -20,3 +20,16 @@ Todo:
 						* Incluso en este caso no sería ninguna tontería separar ambos estudios y usar de manera separada la informción forward de la reverse. Es decir trabajar en dos iteraciones distintas cuando sean los casos forward, reverse. Esto debería incrementar la precisión pues imposibilitaría la mezcla de fragmentos de la hebra complementaria en le hebra forward (típico caso de recombinación).
 	- Una vez se haya comprobado que todo funciona de la manera apropiada, saltar a la versión de uso de información tipo PAIR_END.
 
+	- Tratamiento de las Ns (revisar y probar): -> ¡Nos permite volver a guardarlo todo con solo 2 bits!
+		- Cuando se lean las reads seleccionar donde aparece una N (guardar la posición en la que aparece) -> vector<size_t> Ns;
+		- Para cada n en Ns -> for (auto n: Ns)
+			for i in {A,C,G,T}:
+				synthetic_read(seq, n, i);
+			if ((n + kmersize - 1) < seq.length())
+				new_seq = seq.substr(n+1, seq.length())
+			erase(seq);
+		synthetic_read(seq, n, i):
+			seq.set(n,i);
+			new_seq = seq.substr(max(0, n-kmer_size+1), min(seq.length()-n,kmer_size-1));
+			add_seq(new_seq);
+

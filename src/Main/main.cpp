@@ -126,7 +126,13 @@ int main(int argv, char ** argc){
         if (i > 1)
             naiveDBG = NaiveDBG<false>(sc,thirdPartyCount, path_to_write, program);
         listDBG<false> listDBG(&naiveDBG);
+        //Clean naiveDBG:
+        naiveDBG.clear();
+
         ReadCorrector<false> read(sc, listDBG);
+        //Clean listDBG:
+        listDBG.clear();
+
         std::cout << "Writing new reads in: " << path_to_write << "\n";
         sc.writeSequenceContainer(path_to_write);
         print_blanks(5);
