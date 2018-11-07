@@ -12,7 +12,8 @@ class Kmer
 public:
 	bool exist = true;
 	Kmer():exist(false){}
-	~Kmer(){}
+	~Kmer()
+    {}
 	Kmer(const DnaSequence&,size_t,size_t);
 	Kmer(DnaSequence seq):_seq(seq){}
 	Kmer(const Kmer & kmer){
@@ -49,9 +50,11 @@ public:
     void standard(){
         if (!_standard)
         {
-            if ((*this) > this->rc())
-                (*this) = this->rc();
-            _standard = true;
+            Kmer rc = this->rc();
+            if ((*this) > rc) {
+                (*this) = rc;
+                _standard = true;
+            }
         }
     }
 
@@ -64,9 +67,7 @@ public:
 	Kmer& operator=(const Kmer&);
 
 	std::size_t hash() const{
-        size_t seed = 0;
-        boost::hash_combine(seed, _seq.hash());
-		return seed;
+		return _seq.hash();
 	}
 
 	std::string str() const
@@ -98,7 +99,8 @@ class Pair_Kmer
 public:
     bool exist = true;
     Pair_Kmer():exist(false){}
-    ~Pair_Kmer(){}
+    ~Pair_Kmer()
+    {}
     Pair_Kmer(const DnaSequence&,const DnaSequence&,size_t,size_t);
     Pair_Kmer(DnaSequence seq_left, DnaSequence seq_right):
             _seq_left(seq_left),_seq_right(seq_right){}
@@ -208,13 +210,6 @@ template<> struct KmerInfo<false>{
     KmerInfo(Kmer kmer1, size_t pos)
             :kmer(kmer1),kmer_pos(pos)
     {}
-    size_t hash() const
-    {
-        size_t seed = 0;
-        boost::hash_combine(seed,kmer.hash());
-        boost::hash_combine(seed, kmer_pos);
-        return seed;
-    }
     KmerInfo(const KmerInfo & k_info)
             :kmer(k_info.kmer),kmer_pos(k_info.kmer_pos)
     {
@@ -225,13 +220,20 @@ template<> struct KmerInfo<false>{
         kmer_pos = k_info.kmer_pos;
         return *this;
     }
+    size_t hash() const
+    {
+        size_t seed = 0;
+        boost::hash_combine(seed,kmer.hash());
+        boost::hash_combine(seed, kmer_pos);
+        return seed;
+    }
     bool operator==(const KmerInfo & k_info) const
     {
-        return(kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos);
+        return ((kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos));
     }
     bool operator!=(const KmerInfo & k_info) const
     {
-        return !((kmer == k_info.kmer) && (kmer_pos == k_info.kmer_pos));
+        return !(*this == k_info);
     }
     string str() const {
         return " KmerInfo<false>: "+kmer.str()+";"+to_string(kmer_pos);
@@ -242,6 +244,8 @@ template<> struct KmerInfo<false>{
 
 template<> struct KmerInfo<true>{
     KmerInfo()
+    {}
+    ~KmerInfo()
     {}
     KmerInfo(Pair_Kmer kmer, size_t pos)
             :pair_kmer(kmer),kmer_pos(pos)

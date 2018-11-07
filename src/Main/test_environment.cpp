@@ -13,7 +13,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
         ,std::string& path_unitigs, std::string& program, bool &pair_end, bool & thirdPartyCount)
 {
     int opt = 0;
-    char optString[] = "f:k:o:u:h:t:r:cp";
+    char optString[] = "f:k:o:u:h:t:r:c:p";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -60,6 +60,21 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& p
 
 }
 
+void iteraKmers(const SequenceContainer & sc)
+{
+    std::vector<KmerInfo<false>> v_info;
+    for (auto &read: sc.getIndex())
+    {
+        std::cout << "Read Number: "<<read.first.getId()<<"\n";
+        for (auto k: IterKmers<false>(read.second.sequence))
+        {
+            v_info.push_back(k);
+        }
+    }
+    std::cout << "Ahora que llame a los destructores de secuencias\n";
+    v_info.clear();
+}
+
 int main(int argv, char ** argc){
     std::cout << "Test Environment\n";
     std::string path_to_file(argc[1]),path_to_write, path_unitigs, program;
@@ -69,6 +84,9 @@ int main(int argv, char ** argc){
 	std::cout << path_to_file << "\n";
 	SequenceContainer sc;
     sc.load(path_to_file, pair_end);
+    std::cout << "Empiezo a iterar\n";
+    iteraKmers(sc);
+    sleep(10000);
     //NaiveDBG<false> graph(sc);
     DBG<true> * graph = new NaiveDBG<true>(sc, thirdPartyCount,path_to_file, program);
     //Lets try boost

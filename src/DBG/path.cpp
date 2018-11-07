@@ -142,7 +142,7 @@ template<>
 size_t Path<false>::extend(const DnaSequence &sub_sequence
         ,KmerInfo<false> h
         ,KmerInfo<false> t
-        ,const DBG<false> &dbg
+        ,const DBG<false> * dbg
         ,size_t * score_ed
         ,char *expected_path
         ,size_t & branches)
@@ -150,13 +150,13 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
     size_t best_len = MAX_PATH_LEN, kmerSize = Parameters::get().kmerSize;
     Kmer kmer_objective = Kmer(t.kmer.substr(0,kmerSize-1));
     unordered_set<Kmer> processed;
-    char path[MAX_PATH_LEN+1];
+    char * path = (char*) malloc ( sizeof(char) * (MAX_PATH_LEN+1));
     stack<stack_el*> neighbors;
     /*
      * Extract (k-1)mer from header to start the extension
      */
     vector<Kmer> nts
-            = dbg.getKmerNeighbors(h.kmer);
+            = dbg->getKmerNeighbors(h.kmer);
     //Continuacion del kmer actual
     for (auto k: nts)
     {
@@ -167,7 +167,10 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
     //Expected fail length (maximum fail length)
     size_t fail_len = t.kmer_pos - h.kmer_pos;
     if (fail_len >= MAX_PATH_LEN)
+    {
+        free(path);
         return MAX_PATH_LEN;
+    }
     size_t maximal_allowed_extension = fail_len+ ceil(Parameters::get().missmatches*fail_len);
     while (neighbors.size() > 0 && branches > 0)
     {
@@ -182,7 +185,7 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
 
         if (pos >= maximal_allowed_extension)
         {
-            branches++;
+            branches--;
             continue;
         }
 
@@ -222,7 +225,7 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
                 }
             } else {
                 //We havent reached our objective we extend the path again
-                nts = dbg.getKmerNeighbors(cur_kmer);
+                nts = dbg->getKmerNeighbors(cur_kmer);
                 for (auto k: nts)
                 {
                     if (processed.find(k) == processed.end())
@@ -245,6 +248,7 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
         delete rem_el;
     }
     //std::cout << "NumOfNeighbors "<<neighbors.size()<< " "<<best_len<< "\n";
+    free(path);
     return best_len;
 }
 
@@ -253,14 +257,35 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
 template<>
 size_t PathContainer<false>::check_read()
 {
+    bool occupied = false;
+    size_t remaining_solids = 0;
+    KmerInfo<false> lka, pks;
     for (auto cur_kmer: IterKmers<false>(_seq))
     {
-        //Optimizar esto
-        /*Kmer kmer(cur_kmer.kmer.getSeq().substr(0
-                ,cur_kmer.kmer.getSeq().length()));*/
-        if (_dbg.is_solid(cur_kmer.kmer))
+        if (_dbg->is_solid(cur_kmer.kmer))
         {
-            _solid.push_back(KmerInfo<false>(cur_kmer.kmer, cur_kmer.kmer_pos));
+            if (remaining_solids)
+            {
+                lka = cur_kmer;
+                --remaining_solids;
+                _solid.push_back(cur_kmer);
+            }
+            pks = cur_kmer;
+            occupied = true;
+        }else{
+            if (occupied)
+            {
+                if (_solid.size() == 0)
+                {
+                    _solid.push_back(pks);
+                }
+                else if (lka != pks)
+                {
+                    _solid.push_back(pks);
+                }
+                occupied = false;
+            }
+            remaining_solids = MAX_NUM_TRIALS;
         }
     }
     /*for (uint i = 0; i < _solid.size(); ++i)
@@ -274,7 +299,6 @@ size_t PathContainer<false>::check_read()
  *  Si estan solapados -> No se busca
  *  Si estan demasiado lejos no se busca
  * En cualquier otro caso se busca -> -1 trial
- * TODO: Check for more accuracy!
  * */
 template<>
 int PathContainer<false>::check_solids(size_t pos_i, size_t pos_j, size_t i,size_t j
@@ -341,7 +365,7 @@ DnaSequence PathContainer<false>::correct_read() {
                                                                                              : _solid[j].kmer));
                 if (outcome == 0) {
                     //Extension path
-                    char way[MAX_PATH_LEN + 1];
+                    char * way = (char*) malloc (sizeof(char) * (MAX_PATH_LEN+1));
                     size_t ed_score = MAX_PATH_LEN, max_branch = MAX_BRANCH;
                     /*
                      * The path starts at the end of the first k-mer or in the middle, but never at the beginning
@@ -378,6 +402,7 @@ DnaSequence PathContainer<false>::correct_read() {
                                     ,_solid[j].kmer_pos - start
                                     ,_seq.substr(start,_solid[j].kmer_pos - start));
                     }
+                    free(way);
                 } else {
                     if (outcome == 1) {
                         /*
@@ -468,23 +493,22 @@ void ReadCorrector<false>::correct_reads() {
     std::cout << "STAGE: Reads Correction\n";
     //#pragma omp parallel
     {
-        //#pragma omp single
+       // #pragma omp single
         for (auto &read: _sc.getIndex())
         {
+            if (!(read.first.getId() % 100))
+                std::cout << "Read Number: "<<read.first.getId()<<"\n";
             //#pragma omp task shared(read)
             {
-                //std::cout << read.first.getId() <<" " << read.second.sequence.length()<<"\n";
                 /*if (read.first.getId() != 192)
                     continue;*/
                 Progress::update(read.first.getId());
                 if (read.first.getId() % 2 == 0)
                 {
-                    PathContainer<false> pc(read.first,_dbg,read.second.sequence);
+                    PathContainer<false> pc(read.first,(&_dbg),read.second.sequence);
                     DnaSequence seq = pc.correct_read();
                     _sc.setRead(read.first.getId(),seq);
                 }
-                //std::cout << "Chain: "<<_sc.getSeq(read.first.getId()).str()<<"\n";
-                //std::cout << read.first.getId() << " "<<pc.getSolidLength()<<"\n"
             };
         }
     };
@@ -522,7 +546,7 @@ template<>
 size_t Path<true>::extend(const DnaSequence &sub_sequence
         ,KmerInfo<true> h
         ,KmerInfo<true> t
-        ,const DBG<true> &dbg
+        ,const DBG<true> * dbg
         ,size_t * score_ed
         ,char *expected_path
         ,size_t & branches)

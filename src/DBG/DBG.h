@@ -13,7 +13,7 @@
 #include "../Extender/Extender.h"
 
 //Constants
-#define MIN_PATH_LEN 1
+#define MIN_PATH_LEN 20
 #define DELTA_PATH_LEN 4
 
 using namespace std;
@@ -68,6 +68,8 @@ public:
         else
             _thirdPartyKmerCounting(path_to_file, program);
         _cleaning();
+        if (P)
+            _insert_extra_info();
     }
     /*
      * Check whether a kmer is solid or not
@@ -111,7 +113,7 @@ public:
         vector<pair<size_t,size_t>> _links;
         //Sequences
         vector<DnaSequence> _seqs;
-        std::cout << "Voy a extender como un pro!\n";
+        cout << "STAGE: Extension\n";
         /*
          * Set of already assesed heads
          */
@@ -243,11 +245,71 @@ private:
         else
             max_freq = createCountMapDSK<Node,size_t>(_kmers_map,"output.txt");
         _buildGraphRepresentation(max_freq);
-        if (P)
-            _insert_extra_info();
     }
 
-    void _remove_isolated_nodes();
+    void _remove_isolated_nodes()
+    {
+        bool change = false;
+        vector<Node> erase;
+        size_t cont_2 = 0;
+        for (auto kmer:_dbg_nodes) {
+            size_t cont = 0;
+            size_t in_nodes_fw = in_degree(kmer);
+            size_t in_nodes_total = in_nodes_fw;
+            size_t len = 1;
+            /*
+             * InDegree = 0
+             */
+            if (!in_nodes_total) {
+                cont ++;
+                cont_2++;
+                vector<Node> aux = {kmer};
+                _check_forward_path(len,aux);
+                _asses(erase,aux,len);
+            }
+            /*
+             * Check FWNeighbors and RCNeighbors (if proceeds)
+             */
+            vector<Node> neighbors = getKmerNeighbors(kmer);
+            size_t num_neighbors = neighbors.size();
+            size_t cont_fake_branches = 0;
+            if ( num_neighbors > 1)
+            {
+                /*
+                 * Check branches
+                 */
+                for (auto sibling:neighbors)
+                {
+                    len = 1;
+                    vector<Node> aux = {sibling};
+                    _check_forward_path(len,aux);
+                    if (_asses(erase,aux,len)) {
+                        cont_fake_branches++;
+                    }
+                }
+            }
+        }
+        if (erase.size() > 0) {
+            change = true;
+            _erase(erase);
+        }
+        /*
+         * We have to iterate until convergence
+         */
+        if (change) {
+            _remove_isolated_nodes();
+        }else {
+            cout << "Extra info:\n";
+            _extra_info.show_info();
+            /*for (auto k:_in_0)
+                cout << "KmerSuspicious: " << k.str() << "\n";*/
+        }
+        /*for (auto k:_dbg_nodes)
+            cout << "KmerNodes: "<<k.str()<<"\n";
+        for (auto k:_dbg_naive)
+            cout << "KmerSolidos: "<<k.str()<<"\n";*/
+    }
+
     void _buildGraphRepresentation(size_t max_freq)
     {
         std::cout << "Total Number of Bases: "<<_sc.getTotalBases()<<"\n";
@@ -272,7 +334,6 @@ private:
         }
         std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
                  <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
-        exit(1);
         _kmers_map.clear();
     }
     /*

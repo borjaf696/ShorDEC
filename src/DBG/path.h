@@ -46,11 +46,15 @@ public:
         for (uint i = 0; i < (1+ERROR_RATE)*MAX_PATH_LEN+1; ++i)
             _DP[i] = i;
     }
+    ~Path()
+    {
+        _DP.clear();
+    }
     //Extender
     size_t extend(const DnaSequence&
             ,KmerInfo<P>
             ,KmerInfo<P>
-            ,const DBG<P>&
+            ,const DBG<P> *
             ,size_t*
             ,char*
             ,size_t&);
@@ -71,11 +75,18 @@ template<bool P>
 class PathContainer
 {
 public:
-    PathContainer(FastaRecord::Id id, const DBG<P>& dbg, const DnaSequence& seq):
+    PathContainer(FastaRecord::Id id, const DBG<P> * dbg, DnaSequence seq):
             _readId(id),_dbg(dbg),_seq(seq)
     {
         check_read();
     };
+
+    ~PathContainer()
+    {
+        _path_extended.clear();
+        _solid.clear();
+        _solid.shrink_to_fit();
+    }
 
     DnaSequence correct_read();
     size_t getSolidLength(){
@@ -87,11 +98,10 @@ public:
             ,size_t &,Kmer&);
 private:
     std::vector<Path<P>> _path_extended;
-    std::vector<Kmer> _heads;
     std::vector<KmerInfo<P>> _solid;
     FastaRecord::Id _readId;
-    const DBG<P> &_dbg;
-    const DnaSequence &_seq;
+    const DBG<P> * _dbg;
+    DnaSequence _seq;
 };
 
 template<bool P>

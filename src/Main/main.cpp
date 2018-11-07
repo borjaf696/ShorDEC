@@ -138,12 +138,13 @@ int main(int argv, char ** argc){
     std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
     if (pair_end)
     {
-        NaiveDBG<true> dbg = NaiveDBG<true>(sc,thirdPartyCount, path_to_write, program);
-        dbg.ProcessTigs(path_unitigs);
+        DBG<true> * dbg = new NaiveDBG<true>(sc,thirdPartyCount, path_to_write, program);
+        boostDBG<true> boostDBG1(dbg);
+        boostDBG1.ProcessTigs(path_unitigs);
         exit(1);
     }
     NaiveDBG<false> dbg = NaiveDBG<false>(sc,thirdPartyCount, path_to_write, program);
     listDBG<false> listDBG(&dbg);
     listDBG.ProcessTigs(path_unitigs);
-    dbg.ProcessTigs(path_unitigs);
+    //dbg.ProcessTigs(path_unitigs);
 }

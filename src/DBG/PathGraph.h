@@ -48,6 +48,10 @@ class PathGraphAdj: public PathGrap<P>
 {
 public:
     PathGraphAdj(){};
+    ~PathGraphAdj()
+    {
+        _adj_list.clear();
+    }
 
     void add_edge(const typename PathGrap<P>::Node&,const typename PathGrap<P>::Node&, size_t = 0, DnaSequence = DnaSequence()) ;
     DnaSequence shortest_path(const typename PathGrap<P>::Node&, const typename PathGrap<P>::Node&);

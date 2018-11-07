@@ -312,6 +312,7 @@ size_t createCountMapJelly(unordered_map<T,pair<Y,Y>> & map, string path_to_file
         lineNo++;
     }
     infile.close();
+    //TODO: Change para que reciba el previous max_size y busque los menores directos de este
     return max_freq;
 }
 
@@ -321,6 +322,7 @@ size_t createCountMapDSK(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
     int lineNo = 1;
     size_t max_freq = 0;
     Y count;
+    T t;
     std::string node;
     std::ifstream infile(path_to_file);
     for( std::string line; getline( infile, line ); )
@@ -329,10 +331,11 @@ size_t createCountMapDSK(unordered_map<T,pair<Y,Y>> & map, string path_to_file)
         {
             line.pop_back();
         }
-        T t(line.substr(0,Parameters::get().kmerSize));
+        t = T(line.substr(0,Parameters::get().kmerSize));
         count = stoi(line.substr(Parameters::get().kmerSize+1,line.size()-(Parameters::get().kmerSize+1)));
         max_freq = (count > max_freq)?count:max_freq;
-        map[t] = pair<Y,Y>(count,count);
+        map.insert(pair<T,pair<Y,Y>>(t, pair<Y,Y>(count,count)));
+        //map[t] = pair<Y,Y>(count,count);
         lineNo++;
     }
     infile.close();

@@ -163,7 +163,6 @@ public:
 
 	//typedef std::unordered_map<FastaRecord::Id, 
 	//						   FastaRecord> SequenceIndex;
-	//Sino fuese por la definicion de arriba esto no podria hacerse -> extendiendo std namespace
 	typedef std::map<FastaRecord::Id, FastaRecord> SequenceIndex;
 	SequenceContainer() {}
     ~SequenceContainer(){

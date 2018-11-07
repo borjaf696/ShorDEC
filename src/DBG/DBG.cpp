@@ -111,85 +111,6 @@ void NaiveDBG<false>::_kmerCount() {
     //sleep(10000);
 }
 
-//TODO: Check Standard
-template<>
-void NaiveDBG<false>::_remove_isolated_nodes()
-{
-    bool change = false, in_0_erase = true;
-    vector<Node> erase;
-    size_t cont_2 = 0;
-    for (auto kmer:_dbg_nodes) {
-        size_t cont = 0;
-        size_t in_nodes_fw = in_degree(kmer),out_nodes_fw = out_degree(kmer);
-        size_t in_nodes_total = in_nodes_fw;
-        size_t len = 1;
-        /*
-         * InDegree = 0
-         */
-        if (!in_nodes_total) {
-            cont ++;
-            cont_2++;
-            vector<Node> aux = {kmer};
-            _check_forward_path(len,aux);
-            in_0_erase = _asses(erase,aux,len);
-        }
-        if (!in_0_erase)
-            _in_0.push_back(kmer);
-        /*
-         * Unbalanced Nodes
-         */
-        if (!cont) {
-            if (out_nodes_fw > in_nodes_fw)
-                _in_0.push_back(kmer);
-        }
-        in_0_erase = true;
-        /*
-         * Check FWNeighbors and RCNeighbors (if proceeds)
-         */
-        vector<Node> neighbors = getKmerNeighbors(kmer);
-        size_t num_neighbors = neighbors.size();
-        size_t cont_fake_branches = 0;
-        if ( num_neighbors > 1)
-        {
-            /*
-             * Check branches
-             */
-            for (auto sibling:neighbors)
-            {
-                len = 1;
-                vector<Node> aux = {sibling};
-                _check_forward_path(len,aux);
-                if (_asses(erase,aux,len)) {
-                    cont_fake_branches++;
-                }
-            }
-        }
-    }
-    if (erase.size() > 0) {
-        change = true;
-        _erase(erase);
-    }
-    /*
-     * We have to iterate until convergence
-     */
-    if (change) {
-        _in_0.clear();
-        _remove_isolated_nodes();
-    }else {
-        cout << "Extra info:\n";
-        _extra_info.show_info();
-        /*for (auto k:_in_0)
-            cout << "KmerSuspicious: " << k.str() << "\n";*/
-    }
-    /*for (auto k:_dbg_nodes)
-        cout << "KmerNodes: "<<k.str()<<"\n";
-    for (auto k:_dbg_naive)
-        cout << "KmerSolidos: "<<k.str()<<"\n";*/
-}
-
-/*
- * Paired_end reads
- */
 /*
  * Process ExtraInfo
  */
@@ -205,7 +126,7 @@ void NaiveDBG<true>::_insert_extra_info()
             {
                 FuncNode nonstd_pk = k.pair_kmer;
                 pair<Node, Node> sep_nodes = nonstd_pk.getKmers();
-                if (is_solid(sep_nodes.first))
+                if (is_solid(sep_nodes.first) && is_solid(sep_nodes.second))
                 {
                     Node origin = sep_nodes.first.substr(0, Parameters::get().kmerSize-1),
                             target = sep_nodes.first.substr(1,Parameters::get().kmerSize),
@@ -349,12 +270,7 @@ void NaiveDBG<true>::_kmerCount()
     }
     std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
              <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
-    exit(1);
     _kmers_map.clear();
-    /*
-     * Insert pair_end info from reads
-     */
-    _insert_extra_info();
     //_extra_info.show_info();
     /*for (auto &k: _dbg_naive)
         cout << "KmerNaive: "<<k.str()<<"\n";
@@ -386,109 +302,6 @@ void NaiveDBG<true>::_to_pair_end()
 
         }
     }*/
-}
-/*
- * Pruning methods
- */
-template<>
-void NaiveDBG<true>::_erase(vector<Node>& kmer_to_erase)
-{
-    for (auto kmer_erase:kmer_to_erase) {
-        std::cout << "Kmer to erase: "<<kmer_erase.str()<<"\n";
-        _dbg_nodes.erase(kmer_erase);
-        for (uint i = 0; i < 8; i++) {
-            Node new_kmer = kmer_erase;
-            (i/4)?new_kmer.appendRight(i%4):new_kmer.appendLeft(i%4);
-            std::cout << "Try erase: "<<new_kmer.str()<<"\n";
-            if (_is_standard)
-                new_kmer.standard();
-            _dbg_naive.erase(new_kmer);
-        }
-        _extra_info.erase(kmer_erase);
-        std::cout << "Next\n";
-    }
-    std::cout << "OUT\n";
-    /*cout << "NaiveSizePost: "<<_dbg_naive.size() << "\n";
-    cout << "NodesSize: "<<_dbg_nodes.size()<<"\n";*/
-    kmer_to_erase.clear();
-}
-template<>
-void NaiveDBG<true>::_remove_isolated_nodes()
-{
-    bool change = false, in_0_erase = true;
-    vector<Node> erase;
-    size_t cont_2 = 0;
-    for (auto kmer:_dbg_nodes) {
-        size_t cont = 0;
-        size_t in_nodes_fw = in_degree(kmer),out_nodes_fw = out_degree(kmer);
-        size_t in_nodes_total = in_nodes_fw;
-        size_t len = 1;
-        /*
-         * InDegree = 0
-         */
-        if (!in_nodes_total) {
-            std::cout << "Kmers con cero indegree: "<<kmer.str() << "\n";
-            cont ++;
-            cont_2++;
-            vector<Node> aux = {kmer};
-            _check_forward_path(len,aux);
-            in_0_erase = _asses(erase,aux,len);
-        }
-        if (!in_0_erase)
-            _in_0.push_back(kmer);
-        /*
-         * Unbalanced Nodes
-         */
-        if (!cont) {
-            if (out_nodes_fw > in_nodes_fw)
-                _in_0.push_back(kmer);
-        }
-        in_0_erase = true;
-        /*
-         * Check FWNeighbors and RCNeighbors (if proceeds)
-         */
-        vector<Node> neighbors = getKmerNeighbors(kmer);
-        size_t num_neighbors = neighbors.size();
-        size_t cont_fake_branches = 0;
-        if ( num_neighbors > 1)
-        {
-            /*
-             * Check branches
-             */
-            for (auto sibling:neighbors)
-            {
-                len = 1;
-                vector<Node> aux = {sibling};
-                _check_forward_path(len,aux);
-                if (_asses(erase,aux,len)) {
-                    cont_fake_branches++;
-                }
-            }
-        }
-    }
-    if (erase.size() > 0) {
-        change = true;
-        _erase(erase);
-    }
-    /*
-     * We have to iterate until convergence
-     */
-    if (change) {
-        _in_0.clear();
-        _remove_isolated_nodes();
-    }else {
-        cout << "Size Solid kmers: "<<_dbg_naive.size()<< " Num nodes: "
-             << _dbg_nodes.size() << " Suspicious Starts: " << _in_0.size() << "\n";
-        cout << "Extra info:\n";
-        _extra_info.show_info();
-        for (auto k:_in_0)
-            cout << "KmerSuspicious: " << k.str() << "\n";
-        _to_pair_end();
-    }
-    /*for (auto k:_dbg_nodes)
-        cout << "KmerNodes: "<<k.str()<<"\n";
-    for (auto k:_dbg_naive)
-        cout << "KmerSolidos: "<<k.str()<<"\n";*/
 }
 
 template<>
@@ -979,7 +792,9 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
     for (auto n: _g)
     {
         if (n.second.first.size() < n.second.second.size())
+        {
             _in_0.push_back(n.first);
+        }
     }
     /*for (auto n:_solid_kmers)
         cout << "Kmer: "<<n.str()<<"\n";*/
