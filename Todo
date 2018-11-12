@@ -32,4 +32,7 @@ Todo:
 			seq.set(n,i);
 			new_seq = seq.substr(max(0, n-kmer_size+1), min(seq.length()-n,kmer_size-1));
 			add_seq(new_seq);
+		- Changed!
+	- Como cambio futuro se puede mirar de eliminar las lecturas rc ya que se están guardando los k-mers canónicos por lo tanto realmente no es necesario tener almacenadas las lecturas rc. De hecho es un gasto de memoria totalmente innecesario -> Corregir en un momento libre.
+	- Comprobar la construcción de las secuencias para verificar que está funcionando como dios manda.
 

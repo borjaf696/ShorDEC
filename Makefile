@@ -1,11 +1,11 @@
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-export LDFLAGS = -lz -lemon -lboost_system -lboost_filesystem -fopenmp
+export LDFLAGS = -lz -lemon -lboost_system -lboost_filesystem -fopenmp -lboost_regex
 export OPENMPFLAG = -fopenmp
 
 all: 
-	make release -C src
+	make release -C Src
 test:
-	make tests -C src
+	make tests -C Src
 clean:
-	make clean -C src
+	make clean -C Src

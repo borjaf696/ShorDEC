@@ -1,0 +1,22 @@
+Algoritmo LorDEC -> funcionamiento real:
+	- Se elije un source inicial y se va extendiendo paulatinamente.
+	- La idea es usar una pila de tal manera que partiendo del k-mer solido A (este está en la lectura pues sino no sería solido) y su posicion es su pos (en la tabla de programacion dinamica es 0), se añadan sus hijos (es decir aquellos kmers solidos con los que conecta en el DBG) y estos ocupen la posicion 1.
+	- Despues se evalua un algoritmo de programación dinamica muy simple:
+		- Si el nuevo nt coincide con el de la lectura -> se escoge el minimo(diagonal_izquierda, min(abajo, izquierda)+1)
+		- Si el nuevo nt no coincide con el de la lectura -> se escoge el minimo (diagonal_izquierda+1, min(abajo, izquierda)+1)
+	- Para poder evaluar todos los caminos de manera simultanea la idea es:
+		- A primer kmer -> 
+			- A+a -> pila (si es solido)
+			- A+c -> pila 
+			- A+g -> pila
+			- A+t -> pila
+		- Luego igual para A+t... y etctera. Como puede verse cuando se llega al final de un camino se vuelve a una iteración anterior y asi sucesivamente. De esta manera es posible ir evaluando todas las posibilidades por orden de abajo arriba y sin pisar resultados. 
+		- Cuando se está extendiendo una fila (que de hecho es lo que se hace con cada nuevo nucleotido, se extiende una fila) se almacena el valor minimo encontrado en dicha fila. De manera que el valor minimo pertenece a un valor K, que es el numero de columna en el que se encuentra. 
+			- Para el minimo de cada fila se evalua:
+				- Si esta bajo el umbral de error:
+					- min <= error*(distancia_entre_head/tail+k_mer)+1 -> si la tasa de error es admisible en base a la longitud de la secuencia
+					- min <= error*(mink+k_mer)+1 -> si la tasa de error es admisible en base a la longitud del k_mer
+					- mink > mejor_longitud_hasta_momento (es decir que para que tenga importancia el error ha de ser en una posición avanzada) || (mink = mejor_longitud && min < fallo_min_actual)
+			- De esta manera se puede ver como se llegaría a la solución minima y de mayor longitud. Notese que si el mink es mayor y cubre los criterios de error automaticamente es seleccionado.
+
+Primero hacer esto.

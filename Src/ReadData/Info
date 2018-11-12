@@ -1,0 +1,6 @@
+Sequence -> reads representation using only 2 bits per nucleotide (Ns are not allowed but it should be easy to adapt for more chars (increasing the numbers of bits))
+Sequence container -> container for reads. We are supposing that the orientation of the reads are unknown thus pair Ids are forward and odd are reverse. The reads are stored using a map< Id, FastaRecord> where Id is a internal class of FastaRecord which allows to say whether a read is forward or reverse, which is the Id of the rc read. FastaRecord is a class which stores a sequence of DNA and it associates an Id for each sequence of DNA:
+	Read 0 -> Sequence 1
+	Read 1 -> Sequence 1 - RC (this sequence is not stored just knowing the strand (fw or rc) it is easy to access to reverse_complement (remember that Id allows to know where the rc strand is) and change the read into his rc)
+	Read 2 -> Sequence 2
+	Read 3 -> Sequence 2 - RC (and so on)

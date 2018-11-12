@@ -4,3 +4,4 @@ output=$3
 outputtxt=$4
 ./Utils/dsk/bin/dsk -file $file -kmer-size $kmerSize -abundance-min 1 -out $output
 ./Utils/dsk/bin/dsk2ascii -file $output -out $outputtxt
+./Utils/dsk/bin/h5dump -y -d histogram/histogram output.h5 > histogram.txt
