@@ -68,7 +68,8 @@ public:
             size_t chunkId = i / NUCL_IN_CHUNK;
             size_t nt;
             if (string[i] == 'N')
-                nt = rand()%4;
+                //nt = rand()%4;
+                continue;
             else
                 nt = dnaToId(string[i]);
             _data->chunks[chunkId] |= nt << (i % NUCL_IN_CHUNK) * offset;
@@ -91,6 +92,11 @@ public:
         _data->length++;
     }
 
+    void append_seq_right (DnaSequence sequence) const {
+        for (size_t i = 0; i < sequence.length(); ++i)
+            append_nuc_right(sequence.atRaw(i));
+    }
+
     void append_with_replace_right(DnaSequence::NuclType symbol) const {
         for (int i = 0; i < std::max(0,(int)_data->chunks.size()-1); ++i)
             _data->chunks[i] = (_data->chunks[i] >> offset) |
@@ -99,7 +105,6 @@ public:
                                                 (symbol << ((_data->length-1) % NUCL_IN_CHUNK)*offset);
     }
 
-    //Only accepts 1 nuc insertion
     void append_nuc_left (DnaSequence::NuclType dnaSymbol) const{
         _data->length++;
         if ((_data->length/NUCL_IN_CHUNK) == _data->chunks.size())_data->chunks.push_back(0);
@@ -108,6 +113,11 @@ public:
                     (_data->chunks[i-1] >> (NUCL_IN_CHUNK-1)*offset));
         }
         _data->chunks[0] = (_data->chunks[0] << offset) | dnaSymbol;
+    }
+
+    void append_seq_left(DnaSequence sequence) const {
+        for (size_t i = 0; i < sequence.length(); ++i)
+            append_nuc_left(sequence.atRaw(i));
     }
 
     void append_with_replace_left(DnaSequence::NuclType symbol) const{
@@ -294,6 +304,7 @@ public:
     }
 
     DnaSequence substr(size_t start, size_t length) const;
+    std::vector<DnaSequence> firstLastSubstr(size_t length) const;
     std::string str() const;
 
 private:
@@ -371,4 +382,54 @@ inline DnaSequence DnaSequence::substr(size_t start, size_t length) const
     newSequence._complement = _complement;
 
     return newSequence;
+}
+/*
+ * AdHoc method to speed it up
+ */
+inline std::vector<DnaSequence> DnaSequence::firstLastSubstr(size_t length) const
+{
+    std::vector<DnaSequence> firstLastSubStrs;
+    if (length >= _data->length)
+        return firstLastSubStrs;
+    DnaSequence firstSubSeq, lastSubSeq, rc_firstSubSeq, rc_lastSubSeq;
+    firstSubSeq._data->length = length;
+    lastSubSeq._data->length = length;
+    firstSubSeq._data->chunks.assign((length - 1) / NUCL_IN_CHUNK + 1, 0);
+    lastSubSeq._data->chunks.assign((length-1) / NUCL_IN_CHUNK + 1, 0);
+
+    /*
+     * Complementary
+     */
+    DnaSequence comp(*this);
+    comp._complement = !(this->_complement);
+    rc_firstSubSeq._data->length = length;
+    rc_lastSubSeq._data->length = length;
+    rc_firstSubSeq._data->chunks.assign((length - 1) / NUCL_IN_CHUNK + 1, 0);
+    rc_lastSubSeq._data->chunks.assign((length-1) / NUCL_IN_CHUNK + 1, 0);
+    for (size_t i = 0; i < (length+1); ++i)
+    {
+        size_t nucId = this->atRaw(i);
+        size_t rc_nucId = comp.atRaw(i);
+
+        if (i < length) {
+            size_t newChunkId = i / NUCL_IN_CHUNK;
+            firstSubSeq._data->chunks[newChunkId] |= nucId << (i % NUCL_IN_CHUNK) * offset;
+            rc_lastSubSeq._data->chunks[newChunkId] |= rc_nucId << (i % NUCL_IN_CHUNK) * offset;
+        }
+        if (i > 0) {
+            size_t newChunkId = (i-1) / NUCL_IN_CHUNK;
+            lastSubSeq._data->chunks[newChunkId] |= nucId << ((i-1) % NUCL_IN_CHUNK) * offset;
+            rc_firstSubSeq._data->chunks[newChunkId] |= rc_nucId << ((i-1) % NUCL_IN_CHUNK) * offset;
+        }
+    }
+    firstSubSeq._complement = _complement;
+    lastSubSeq._complement = _complement;
+    firstLastSubStrs.push_back(firstSubSeq);
+    firstLastSubStrs.push_back(lastSubSeq);
+    /*
+     * Complementary
+     */
+    firstLastSubStrs.push_back(rc_lastSubSeq);
+    firstLastSubStrs.push_back(rc_firstSubSeq);
+    return firstLastSubStrs;
 }

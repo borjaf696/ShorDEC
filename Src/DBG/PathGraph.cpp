@@ -48,21 +48,8 @@ DnaSequence PathGraphAdj<false>::build_optimal_read(vector<typename PathGrap<fal
         //std::cout << nodes[i].str()<<"\n";
         vector<typename PathGrap<false>::Node>::iterator pos = find(adj.first.begin(),adj.first.end(),nodes[i+1]);
         pos_int = distance(adj.first.begin(),pos);
-        if (adj.second[pos_int].ed == 0) {
-            for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
-                optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
-            }
-        }else
-        {
-            /*std::cout << "No es cero\n";
-            std::cout << "Chain in the edge: "<<adj.second[pos_int].seq.str()<<"\n";
-            std::cout << "ED chain: "<<adj.second[pos_int].ed<<"\n";*/
-            for (uint j = 0; j < Parameters::get().kmerSize; ++j) {
-                optimal_read.append_nuc_right(nodes[i].kmer.at(j));
-            }
-            for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
-                optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
-            }
+        for (uint j = 0; j < adj.second[pos_int].seq.length(); ++j) {
+            optimal_read.append_nuc_right(adj.second[pos_int].seq.atRaw(j));
         }
     }
     uint j;

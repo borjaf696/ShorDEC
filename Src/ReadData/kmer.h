@@ -77,6 +77,11 @@ public:
 	{
 		return _seq.substr(start,end);
 	}
+
+    vector<DnaSequence> firstLastSubstr(size_t length) const
+    {
+        return _seq.firstLastSubstr(length);
+    }
     /*
      * Odd but need :(
      */

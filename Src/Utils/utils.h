@@ -17,6 +17,10 @@
 #include <boost/graph/labeled_graph.hpp>
 
 #define INF 99999
+
+#define CLICK_LIMIT 10
+//Smooth factor to take into accout legitimate k-mers at erroneous positions
+#define SMOOTH_FACTOR 1.0
 struct Parameters
 {
     static Parameters& get(){
@@ -40,7 +44,7 @@ struct Parameters
         size_t kmersAccumulated = 0, h = 0;
         float kmer_size = (float)Parameters::get().kmerSize-1, avgLeng = (float)avgLength+1, tBases = (float)totalBases;
         //float threshold = tBases*Parameters::get().missmatches*((avgLeng-2*kmer_size)*kmer_size/avgLeng+(kmer_size*(kmer_size-1))/avgLeng)+1;
-        float threshold = tBases*Parameters::get().missmatches*(kmer_size*(avgLeng-2*kmer_size)/avgLeng + (kmer_size-1)/2*(2*kmer_size)/avgLeng);
+        float threshold = (tBases*Parameters::get().missmatches*(kmer_size*(avgLeng-2*kmer_size)/avgLeng + (kmer_size-1)/2*(2*kmer_size)/avgLeng)+1)*SMOOTH_FACTOR;
         std::cout << "Fail Expected Kmers: "<<threshold<<"\n";
         for (auto k:histogram)
         {
@@ -307,7 +311,7 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph) {
     for (tie(vertex, v_end) = boost::vertices(graph); vertex != v_end; ++vertex) {
         sum = 0;
         tmpClique = findMaxCliqueWithVertex(*vertex, maxClique.size(), graph);
-        if ((tmpClique.size() >= 2) && (idCliques.find(sum) == idCliques.end()))
+        if ((tmpClique.size() >= CLICK_LIMIT) && (idCliques.find(sum) == idCliques.end()))
         {
             idCliques.emplace(sum);
             endCliques.push(pair<size_t,vector<Vt>>(tmpClique.size(), tmpClique));

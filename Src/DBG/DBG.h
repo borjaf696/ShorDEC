@@ -6,6 +6,7 @@
 #include <vector>
 #include <stack>
 #include <queue>
+#include <chrono>
 #include <boost/version.hpp>
 #include <boost/graph/undirected_graph.hpp>
 #include <boost/graph/bron_kerbosch_all_cliques.hpp>
@@ -18,8 +19,12 @@
 #define TIME_WAIT 2
 #define MAX_SC_SIZE 2000000
 
-#define MIN_PATH_LEN 20
+#define MIN_PATH_LEN 50
+
 #define DELTA_PATH_LEN 10
+#define FLOYD 0
+#define MAX_BRANCHES_CHECK 5
+
 
 using namespace std;
 template<typename T>
@@ -316,7 +321,8 @@ private:
         bool change = false;
         vector<Node> erase;
         size_t cont_2 = 0;
-        for (auto kmer:_dbg_nodes) {
+        for (auto kmer:_dbg_nodes)
+        {
             size_t cont = 0;
             size_t in_nodes_fw = in_degree(kmer);
             size_t in_nodes_total = in_nodes_fw;
@@ -354,6 +360,7 @@ private:
             }
         }
         if (erase.size() > 0) {
+            cout << "Erase size: "<<erase.size()<<"\n";
             change = true;
             _erase(erase);
         }
@@ -365,6 +372,7 @@ private:
         }else {
             cout << "Extra info:\n";
             _extra_info.show_info();
+            _updateInfo();
             /*for (auto k:_in_0)
                 cout << "KmerSuspicious: " << k.str() << "\n";*/
         }
@@ -372,6 +380,12 @@ private:
             cout << "KmerNodes: "<<k.str()<<"\n";
         for (auto k:_dbg_naive)
             cout << "KmerSolidos: "<<k.str()<<"\n";*/
+    }
+
+    void _updateInfo()
+    {
+        std::cout << "Total Solid k-Mers after cleaning: "<<_dbg_naive.size()
+                                                          << " Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
     }
 
     void _printInfo()
@@ -680,15 +694,20 @@ public:
             if (!neighInfo.node_set.empty() && !nodeInfo.node_set.empty())
             {
                 vector<ExtraInfoNode> rejected;
+                bool append = true;
                 for (auto s:neighInfo.parent_cliques[nodeInfo.node])
                 {
-                    if (isSame(getIntersection(node.second,nodeInfo.node_set), getIntersection(s,nodeInfo.node_set)))
+                    /*
+                     * The parent node paired-end info has to be in every son haplotype -> Redundant
+                     */
+                    if (!isSame(getIntersection(node.second,nodeInfo.node_set), getIntersection(s,nodeInfo.node_set)))
                     {
-                        neigh.push_back(pair<vertex_t,ExtraInfoNode>(n,s));
-                    }else{
-                        //rejected.push_back(s);
+                        append = false;
                     }
                 }
+                if (append)
+                    for (auto s:neighInfo.parent_cliques[nodeInfo.node])
+                        neigh.push_back(pair<vertex_t,ExtraInfoNode>(n, s));
                 //neighInfo.parent_cliques[nodeInfo.node] = rejected;
                 _g[n] = neighInfo;
             }else
@@ -868,31 +887,24 @@ private:
     }
 
     template<typename T>
-    void _insertExtraInfo(const T &g)
+    void _insertExtraInfo(const T &g, map<Node, vertex_t> map)
     {
-        std::cout << "Import extrainfo as vertex_t: "<<_node_id<<"\n";
         vertex_iterator v, vend;
         _map_extra_info.resize(_node_id);
         for (boost::tie(v,vend) = boost::vertices(g); v != vend; ++v)
         {
-            std::cout << g[*v].node.str()<<"\n";
             NodeInfo node_info = g[*v];
             if (!node_info.node_set.empty())
             {
                 unordered_set<vertex_t> local;
                 for (auto s:g[*v].node_set)
                 {
-                    std::cout << s.str()<<"\n";
-                    vertex_t pointerToExtraInfo = _getNode(s);
-                    std::cout << g[pointerToExtraInfo].node.str()<<"\n";
+                    vertex_t pointerToExtraInfo = map[s];
                     local.emplace(pointerToExtraInfo);
                 }
-                std::cout <<"Cualquier cosa: "<<g[*v].id<<" InfoSize: "<<_map_extra_info.size()
-                          <<"\n";
                 _map_extra_info[g[*v].id] = local;
             }
         }
-        std::cout << "ExtraInfo imported as vertex_t\n";
     }
 
     void _writeUnitigs(map <graphBU , vector<size_t>> map_nodo_seq_start,
@@ -916,6 +928,7 @@ private:
      */
     int* _floyds_warshall();
     bool _reachable(int*, size_t, size_t);
+    bool _reachable(graphBU , graphBU , size_t, size_t *);
     void _modify_info();
     //Graph
     Graph _g;

@@ -114,6 +114,7 @@ void NaiveDBG<false>::_kmerCount() {
 template<>
 void NaiveDBG<true>::_insert_extra_info()
 {
+    cout << "STAGE: Adding extra info\n";
     for (auto &read:_sc.getIndex())
     {
         Progress::update(read.first.getId());
@@ -125,27 +126,24 @@ void NaiveDBG<true>::_insert_extra_info()
                 pair<Node, Node> sep_nodes = nonstd_pk.getKmers();
                 if (is_solid(sep_nodes.first) && is_solid(sep_nodes.second))
                 {
-                    Node origin = sep_nodes.first.substr(0, Parameters::get().kmerSize-1),
+                    vector<DnaSequence> all_seqs_left = sep_nodes.first.firstLastSubstr(Parameters::get().kmerSize-1),
+                        all_seqs_right = sep_nodes.second.firstLastSubstr(Parameters::get().kmerSize-1);
+                    /*Node origin = sep_nodes.first.substr(0, Parameters::get().kmerSize-1),
                             target = sep_nodes.first.substr(1,Parameters::get().kmerSize),
                             origin_right = sep_nodes.second.substr(0, Parameters::get().kmerSize-1),
-                            target_right = sep_nodes.second.substr(1,Parameters::get().kmerSize);
-                    /*
-                     * TODO: Change to chunck insertion
-                     */
-                    /*std::cout << "Insertions: "<<"\n";
-                    std::cout << "From: "<<origin.str()<<" To:"<<origin_right.str()<<"\n";
-                    std::cout << "From: "<<target.str()<<" To:"<<target_right.str()<<"\n";
-                    std::cout << "From: "<<target_right_rc.str()<<" To:"<<target_rc.str()<<"\n";
-                    std::cout << "From: "<<origin_right_rc.str()<<" To:"<<origin_rc.str()<<"\n";*/
+                            target_right = sep_nodes.second.substr(1,Parameters::get().kmerSize);*/
+                    Node origin = all_seqs_left[0], target = all_seqs_left[1],
+                            origin_right = all_seqs_right[0], target_right = all_seqs_right[1];
                     _extra_info.insert(origin, origin_right);
                     _extra_info.insert(target, target_right);
                     if (_is_standard)
                     {
-                        Node k_left_rc = sep_nodes.first.rc(), k_right_rc = sep_nodes.second.rc();
-                        Node origin_rc = k_left_rc.substr(0, Parameters::get().kmerSize-1),
-                                target_rc = k_left_rc.substr(1, Parameters::get().kmerSize),
-                                origin_right_rc = k_right_rc.substr(0, Parameters::get().kmerSize-1),
-                                target_right_rc = k_right_rc.substr(1, Parameters::get().kmerSize);
+                        /*Node origin_rc = origin.rc(),
+                                target_rc = target.rc(),
+                                origin_right_rc = origin_right.rc(),
+                                target_right_rc = target_right.rc();*/
+                        Node origin_rc = all_seqs_left[3], target_rc = all_seqs_left[2],
+                            origin_right_rc = all_seqs_right[3], target_right_rc = all_seqs_right[2];
                         _extra_info.insert(target_right_rc, target_rc);
                         _extra_info.insert(origin_right_rc, origin_rc);
                     }
@@ -153,6 +151,7 @@ void NaiveDBG<true>::_insert_extra_info()
             }
         }
     }
+    Progress::update(_sc.size());
 }
 /*
   * Number of in_edges
@@ -327,7 +326,10 @@ int* boostDBG<true>::_floyds_warshall()
     {
         for (size_t i = 0; i < num_vertex; ++i)
         {
-            dist[_g[*v].id*num_vertex+i] = INF;
+            if (_g[*v].id != (int)i)
+                dist[_g[*v].id*num_vertex+(int)i] = INF;
+            else
+                dist[_g[*v].id*num_vertex+(int)i] = 1;
         }
         vector<size_t> neigh;
         pair<out_iterator, out_iterator> neighbors =
@@ -343,7 +345,7 @@ int* boostDBG<true>::_floyds_warshall()
     for (size_t k = 0; k < num_vertex; ++k) {
         for (size_t i = 0; i < num_vertex; ++i) {
             for (size_t j = 0; j < num_vertex; ++j) {
-                if (dist[i * num_vertex + k] + dist[k * num_vertex + j] < dist[i * num_vertex + j])
+                if ((dist[i * num_vertex + k] + dist[k * num_vertex + j]) < dist[i * num_vertex + j])
                     dist[i * num_vertex + j] = dist[i * num_vertex + k] + dist[k * num_vertex + j];
             }
         }
@@ -366,36 +368,65 @@ bool boostDBG<true>::_reachable(int * dm, size_t row, size_t col)
     return (dm[row*boost::num_vertices(_g)+col] < (2*DELTA_PATH_LEN));
 }
 template<>
+bool boostDBG<true>::_reachable(graphBU source, graphBU target, size_t distance, size_t * branches)
+{
+    if (!(*branches))
+        return false;
+    if (distance >= (2*DELTA_PATH_LEN)) {
+        (*branches)--;
+        return false;
+    }
+    if (target == source) {
+        (*branches)--;
+        return true;
+    }
+    vector<graphBU> neigh = getKmerNeighbors(source);
+    bool out = false;
+    for (auto n: neigh)
+    {
+        out |= _reachable(n, target, distance++, branches);
+    }
+    return out;
+}
+template<>
 void boostDBG<true>::_modify_info()
 {
     /*
+     * New graph definition:
+     *      - BidirectionalS/UndirectedS
+     */
+    typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, NodeInfo> Graph_l;
+    typedef Graph_l::vertex_descriptor vertex_graph;
+    typedef Graph_l::vertex_iterator vertex_it;
+    /*
      * We are going to use pair_info (ExtraInfoNodes) to "modify" the graph including this new information
      */
+    cout << "STAGE: Processing cliques\n";
     vertex_iterator v, vend;
     size_t num_vertex = boost::num_vertices(_g);
-    int * distance_matrix = _floyds_warshall();
+    int * distance_matrix;
+    if (FLOYD)
+        distance_matrix = _floyds_warshall();
     //New_graph container
     Graph tmp_graph;
+    //Progression
+    Progress::get().size_total = num_vertex;
     for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
     {
         pair<out_iterator, out_iterator> neighbors =
                 boost::out_edges((*v), _g);
         NodeInfo node_info = _g[*v];
-        /*
-         * Mirar como corregir
-         */
-        std::cout << "Kmer: "<<_g[*v].node.str()<<" ";
+        cout << "KMER: "<<node_info.id<<"\n";
+        Progress::update(node_info.id);
         for (; neighbors.first != neighbors.second; ++neighbors.first)
         {
             /*
-             * New graph definition:
-             *      - BidirectionalS/UndirectedS
-             */
-            typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, NodeInfo> Graph_l;
-            typedef Graph_l::vertex_descriptor vertex_graph;
-            typedef Graph_l::vertex_iterator vertex_it;
-            /*
              * Local Graph which joins evey single reachable node (from the others)
+             * Reminder:
+             *      - There are several nodes which are not reachable from me but can belong to my cliques
+             *      - Ocurre cuando toda la informacion contenida en un click por parte del hijo ya ha sido introducida
+             *      en otro click con anterioridad. En este caso probablemente estemos hablando de un puente. (punto
+             *      de conexion entre multiples bifurcaciones)
              */
             auto endpoint = boost::target(*neighbors.first,_g);
 
@@ -405,7 +436,6 @@ void boostDBG<true>::_modify_info()
             Graph_l local_graph;
             size_t curr_node = 0;
             map<Node, vertex_graph> local_node_map;
-            std::cout << "Neighbor: "<<neigh_info.node.str()<<"\n";
             if (_map_extra_info[node_info.id].empty())
             {
                 break;
@@ -414,7 +444,12 @@ void boostDBG<true>::_modify_info()
             {
                 continue;
             }
-            local_vect = getUnion(_map_extra_info[node_info.id], _map_extra_info[neigh_info.id]);
+            unordered_set<graphBU> extra_parent = _map_extra_info[node_info.id],
+                    extra_neigh = _map_extra_info[neigh_info.id];
+
+            local_vect = getUnion(extra_parent, extra_neigh);
+            cout << "Local_vect size: "<<local_vect.size()<<"\n";
+            auto start_build = std::chrono::high_resolution_clock::now();
             for (auto s:local_vect)
             {
                 NodeInfo s_info = _g[s];
@@ -428,9 +463,11 @@ void boostDBG<true>::_modify_info()
                 for (auto t:local_vect)
                 {
                     NodeInfo t_info = _g[t];
-                    std::cout << " " << s_info.node.str() << " "<<t_info.node.str();
-                    std::cout << " " << _reachable(distance_matrix, s_info.id, t_info.id)<<"\n";
-                    if (_reachable(distance_matrix, s_info.id, t_info.id))
+                    size_t  branches = MAX_BRANCHES_CHECK;
+                    bool reached = ((FLOYD)?
+                                    _reachable(distance_matrix, s_info.id, t_info.id):
+                                    _reachable(s,t,0, &branches));
+                    if (reached)
                     {
                         vertex_graph target;
                         if (local_node_map.find(t_info.node) == local_node_map.end())
@@ -443,11 +480,17 @@ void boostDBG<true>::_modify_info()
                     }
                 }
             }
+            auto finish_build = std::chrono::high_resolution_clock::now();
+            cout << "Duration: "<<(finish_build - start_build).count()<<"\n";
             /*
-             * Calculate all cliques in the local graph -> TODO: Select only maximal k-mers
+             * Calculate all cliques in the local graph
              */
+            cout << "Cliques\n";
+            auto start = std::chrono::high_resolution_clock::now();
             priority_queue<pair<size_t,vector<vertex_graph>>> output = findMaxClique<Graph_l, vertex_graph,vertex_it>(local_graph);
             unordered_set<vertex_graph> edge_transversed;
+            auto min = neigh_info.node_set;
+            size_t num_clicks = 0;
             if (boost::num_edges(local_graph) == 0)
                 _g[endpoint].parent_cliques[node_info.node].push_back(ExtraInfoNode());
             while (!output.empty() && (edge_transversed.size() != boost::num_edges(local_graph))) {
@@ -464,21 +507,40 @@ void boostDBG<true>::_modify_info()
                  * Add cliques (presumed haplotypes which contains both nodes)
                  */
                 _g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                auto sub = getIntersection(local_haplotype, neigh_info.node_set);
+                if (!sub.empty())
+                    min = getIntersection(min, local_haplotype);
+                num_clicks++;
+            }
+            auto finish = std::chrono::high_resolution_clock::now();
+            cout << "Duration: "<<(finish - start).count()<<"\n";
+            /*
+             * Clean cliques
+             *      * min = max min set from neighbor -> but we need to have some neigh info.
+             */
+            vector<vector<ExtraInfoNode>::iterator> erase;
+            for (auto i = _g[endpoint].parent_cliques[node_info.node].begin();
+                 i != _g[endpoint].parent_cliques[node_info.node].end(); ++i)
+            {
+                auto content = getIntersection(neigh_info.node_set, *i);
+                if (isSame(content, min))
+                {
+                    if (((*i).size() != min.size()) & (num_clicks > 1))
+                        erase.push_back(i);
+                }
             }
             /*
-             * Get in_neighbors
+             * Cleaning:
              */
-            pair<in_iterator,in_iterator> in_neighbors =boost::in_edges((*v), _g);
-            cout << "InNeighbors: "<<_g[*v].node.str()<<"\n";
-            for (; in_neighbors.first != in_neighbors.second; ++in_neighbors.first)
-            {
-                cout << _g[boost::source(*in_neighbors.first, _g)].node.str() << "\n";
-            }
+            for (auto s: erase)
+                _g[endpoint].parent_cliques[node_info.node].erase(s);
         }
     }
     //Free Floyd
-    free(distance_matrix);
+    if (FLOYD)
+        free(distance_matrix);
     std::cout << "\n";
+    Progress::update(num_vertex);
 }
 template<>
 void boostDBG<true>::show_info()
@@ -523,6 +585,13 @@ void boostDBG<true>::_transverse(it_node n,
     cout << "Sequence: "<<sequence.str()<<"\n";
     vector<it_node> neighbors = getOutKmerNeighbors(n);
     cout << "NumNeighbors: "<<neighbors.size()<<":"<<in_nodes<<"\n";
+    for (auto it: neighbors)
+    {
+        cout << _g[it.first].node.str() <<"\n";
+        for (auto hap1: it.second)
+            cout <<hap1.str()<<"\n";
+        cout << "\n";
+    }
     for (auto t:n.second)
         cout << t.str()<<"\n";
     if ((neighbors.size()==1) && (in_nodes==1))
@@ -592,12 +661,17 @@ void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
         map_nodo_seq_start[n] = vector<size_t>();
         for (auto n2: getKmerNeighbors(n)) {
             NodeInfo neigh_info = _g[n2];
-            DnaSequence sequence("");
-            cout << "New launching" << "\n";
-            sequence.append_nuc_right(node_info.node.at(0));
-            map_nodo_seq_start[n].push_back(seg);
-            _transverse(pair<graphBU, ExtraInfoNode>(n2, neigh_info.node_set), map_nodo_seq_start, map_seq_nodo_end, map_seqs,
-                        sequence);
+            //Cambiar neigh_info.node_set -> por haplotipo del padre
+            for (auto hap: neigh_info.parent_cliques[node_info.node])
+            {
+                cout << "Hap 1\n";
+                DnaSequence sequence("");
+                cout << "New launching" << "\n";
+                sequence.append_nuc_right(node_info.node.at(0));
+                map_nodo_seq_start[n].push_back(seg);
+                _transverse(pair<graphBU, ExtraInfoNode>(n2, hap), map_nodo_seq_start, map_seq_nodo_end, map_seqs,
+                            sequence);
+            }
         }
     }
     cout << "Seq_start: \n";
@@ -620,7 +694,7 @@ void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
 template<>
 boostDBG<true>::boostDBG(DBG<true> * dbg)
 {
-    std::cout << "Trying to fill the graph: \n";
+    std::cout << "STAGE: Filling boost graph\n";
     map<Node, vertex_t > local_map;
     pair<unordered_set<Node>, unordered_set<Node>> graph_struct = dbg->getNodes();
     for (auto k: graph_struct.second)
@@ -655,7 +729,7 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
             _g[e] = EdgeInfo(k2.at(Parameters::get().kmerSize-2), _edge_id++);
         }
     }
-    _insertExtraInfo(_g);
+    _insertExtraInfo(_g, local_map);
     _modify_info();
     //GetInDegree 0
     show_info();
@@ -795,8 +869,8 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
     }
     cout << "End Translation\n";
     /*for (auto n:_solid_kmers)
-        cout << "Kmer: "<<n.str()<<"\n";*/
-    cout << "Start Kmers: "<<_in_0.size()<<"\n";
+        cout << "Kmer: "<<n.str()<<":"<<n.hash()<<"\n";
+    cout << "Start Kmers: "<<_in_0.size()<<"\n";*/
     //show_info();
 
     /*for (auto n: _in_0)

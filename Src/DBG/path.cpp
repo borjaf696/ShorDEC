@@ -198,8 +198,8 @@ size_t Path<false>::extend(const DnaSequence &sub_sequence
         for (uint k = 1; k <= (fail_len); ++k)
         {
             size_t ev_pos = pos*(MAX_PATH_LEN+1)+k;
-            //char nt = (sub_sequence.at(k-1)=='N')?path[pos-1]:sub_sequence.at(k-1);
-            (path[pos-1] == sub_sequence.at(k-1))?
+            char nt = (sub_sequence.at(k-1)=='N')?path[pos-1]:sub_sequence.at(k-1);
+            (path[pos-1] == nt)?
                     _DP[ev_pos] = std::min(
                             _DP[ev_pos-(MAX_PATH_LEN+1)-1]
                             ,std::min(_DP[ev_pos-(MAX_PATH_LEN+1)]
@@ -385,8 +385,7 @@ DnaSequence PathContainer<false>::correct_read() {
                         std::cout << "Original seq: "<<_seq.str()<<" "<<start_path<<"\n";
                         std::cout << "Path Found: "<<way<<" "<<way_string<<"\n"<<"SCORE: "<<ed_score<<"\n";*/
                         path_graph.add_edge(_solid[i], _solid[j], ed_score
-                                ,(!ed_score)?DnaSequence(_solid[i].kmer.str()+way_string)
-                                            :DnaSequence(way_string));
+                                ,DnaSequence(_solid[i].kmer.str()+way_string));
                     } else {
                         //TODO: Crear logs y meter estas salidas ahi
                         /*if (max_branch == 0)
@@ -397,11 +396,16 @@ DnaSequence PathContainer<false>::correct_read() {
                         size_t start = _solid[i].kmer_pos+Parameters::get().kmerSize;
                         if (_solid[j].kmer_pos-start <= 0)
                             path_graph.add_edge(_solid[i],_solid[j]
-                                    ,0,_seq.substr(_solid[i].kmer_pos,_solid[j].kmer_pos-_solid[i].kmer_pos));
+                                    ,_solid[j].kmer_pos-_solid[i].kmer_pos,_seq.substr(_solid[i].kmer_pos,_solid[j].kmer_pos-_solid[i].kmer_pos));
                         else
+                        {
+                            DnaSequence inner_seq = _seq.substr(start,_solid[j].kmer_pos-start);
+                            inner_seq.append_seq_left(_solid[i].kmer.getSeq());
                             path_graph.add_edge(_solid[i], _solid[j]
                                     ,_solid[j].kmer_pos - start
-                                    ,_seq.substr(start,_solid[j].kmer_pos - start));
+                                    ,inner_seq);
+                        }
+
                     }
                     free(way);
                 } else {
@@ -415,7 +419,7 @@ DnaSequence PathContainer<false>::correct_read() {
                             //Fix!!!
                             /*std::cout << _solid[i].kmer.str()<<" "<<_solid[i+1].kmer.str()<<" "<<_solid[i+1].kmer_pos << " " <<
                                       _solid[i].kmer.substr(0, _solid[i+1].kmer_pos - _solid[i].kmer_pos).str()<<"\n";*/
-                            path_graph.add_edge(_solid[i],_solid[i+1],0
+                            path_graph.add_edge(_solid[i],_solid[i+1],_solid[i+1].kmer_pos-_solid[i].kmer_pos
                                     ,_solid[i].kmer.substr(0, _solid[i+1].kmer_pos - _solid[i].kmer_pos));
                             /*
                              * If not it will connect with the last kmer
@@ -431,8 +435,7 @@ DnaSequence PathContainer<false>::correct_read() {
                                   _solid[i].kmer.substr(0, _solid[j].kmer_pos - _solid[i].kmer_pos).str()<<"\n";*/
                         path_graph.add_edge(_solid[i], _solid[j], 0,
                                             _solid[i].kmer.substr(0, _solid[j].kmer_pos - _solid[i].kmer_pos));
-                        num_trials = MAX_NUM_TRIALS;
-                        break;
+                        num_trials++;
                     }
                 }
             }
@@ -499,8 +502,9 @@ void ReadCorrector<false>::correct_reads() {
         {
             #pragma omp task shared(read)
             {
-                /*if (read.first.getId() != 192)
-                    continue;*/
+                /*if (read.first.getId() != 14)
+                    continue;
+                cout << "Read: "<<read.second.sequence.str()<<"\n";*/
                 /*if (!(read.first.getId() % 10000))
                     cout << "Read: "<<read.first.getId()<<"\n";*/
                 Progress::update(read.first.getId());

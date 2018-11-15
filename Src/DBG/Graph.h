@@ -97,8 +97,6 @@ template <> struct Extra<true>
     void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
     {
         mapPair[key].emplace(val);
-        if (mapPair.find(val) != mapPair.end())
-            key_and_value.emplace(val);
     }
     void show_info()
     {

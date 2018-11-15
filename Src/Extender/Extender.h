@@ -62,7 +62,7 @@ public:
          */
         for (auto & link:_links)
         {
-            string l_line = "L\t"+to_string(link.second)+"\t"+"+\t"+to_string(link.first)+"\t+\t*\n";
+            string l_line = "L\t"+to_string(link.first)+"\t"+"+\t"+to_string(link.second)+"\t+\t*\n";
             fwrite(l_line.data(), sizeof(l_line.data()[0])
                     ,l_line.size(), fout);
         }
