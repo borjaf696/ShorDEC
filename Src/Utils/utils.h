@@ -18,7 +18,7 @@
 
 #define INF 99999
 
-#define CLICK_LIMIT 10
+#define CLICK_LIMIT 2
 //Smooth factor to take into accout legitimate k-mers at erroneous positions
 #define SMOOTH_FACTOR 1.0
 struct Parameters
@@ -252,13 +252,12 @@ bool isSame(const unordered_set<T> & set1, const unordered_set<T> & set2)
  * Check -> maximal_clique (using heuristic approach)
  */
 template<typename G, typename Vt, typename Vi>
-std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph) {
+std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std::set<size_t> & idCliques) {
     if (!boost::num_edges(graph))
         return std::priority_queue<pair<size_t,vector<Vt>>>();
     std::priority_queue<pair<size_t,vector<Vt>>> endCliques;
     std::vector<Vt> maxClique;
     std::vector<Vt> tmpClique;
-    std::set<size_t> idCliques;
     /*
      * Sum -> shift id to the left. Example:
      *      - 0 1 4 -> 1 0 0 1 1 -> 19
@@ -308,7 +307,8 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph) {
         return clique;
     };
     Vi vertex, v_end;
-    for (tie(vertex, v_end) = boost::vertices(graph); vertex != v_end; ++vertex) {
+    for (tie(vertex, v_end) = boost::vertices(graph); vertex != v_end; ++vertex)
+    {
         sum = 0;
         tmpClique = findMaxCliqueWithVertex(*vertex, maxClique.size(), graph);
         if ((tmpClique.size() >= CLICK_LIMIT) && (idCliques.find(sum) == idCliques.end()))

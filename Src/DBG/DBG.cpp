@@ -397,6 +397,7 @@ void boostDBG<true>::_modify_info()
      */
     typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, NodeInfo> Graph_l;
     typedef Graph_l::vertex_descriptor vertex_graph;
+    typedef Graph_l::out_edge_iterator out_it_local;
     typedef Graph_l::vertex_iterator vertex_it;
     /*
      * We are going to use pair_info (ExtraInfoNodes) to "modify" the graph including this new information
@@ -416,7 +417,6 @@ void boostDBG<true>::_modify_info()
         pair<out_iterator, out_iterator> neighbors =
                 boost::out_edges((*v), _g);
         NodeInfo node_info = _g[*v];
-        cout << "KMER: "<<node_info.id<<"\n";
         Progress::update(node_info.id);
         for (; neighbors.first != neighbors.second; ++neighbors.first)
         {
@@ -448,7 +448,6 @@ void boostDBG<true>::_modify_info()
                     extra_neigh = _map_extra_info[neigh_info.id];
 
             local_vect = getUnion(extra_parent, extra_neigh);
-            cout << "Local_vect size: "<<local_vect.size()<<"\n";
             auto start_build = std::chrono::high_resolution_clock::now();
             for (auto s:local_vect)
             {
@@ -480,14 +479,68 @@ void boostDBG<true>::_modify_info()
                     }
                 }
             }
+            /*
+             * Polish Graph
+             */
+            map<vertex_graph, vector<Node>> clique_representation;
+            unordered_set<vertex_graph> nodes_erase;
+            auto _mod_clique_graph = [&clique_representation, &local_graph, &nodes_erase] ()
+            {
+                vertex_it v, vend;
+                for (boost::tie(v, vend) = boost::vertices(local_graph); v != vend; ++v)
+                {
+                    if (nodes_erase.find(*v) == nodes_erase.end())
+                    {
+                        clique_representation[(*v)] = vector<Node>();
+                        pair<out_it_local, out_it_local> neigh = boost::out_edges((*v), local_graph);
+                        for (; neigh.first != neigh.second; ++neigh.first)
+                        {
+                            auto endpoint = boost::target(*neigh.first,local_graph);
+                            if (endpoint != (*v))
+                            {
+                                if (boost::degree(endpoint, local_graph) == boost::degree((*v), local_graph))
+                                {
+                                    nodes_erase.emplace(endpoint);
+                                    clique_representation[(*v)].push_back(local_graph[endpoint].node);
+                                }
+                            }
+                        }
+                        if (clique_representation[(*v)].empty())
+                            clique_representation.erase((*v));
+                    }
+                }
+            };
             auto finish_build = std::chrono::high_resolution_clock::now();
-            cout << "Duration: "<<(finish_build - start_build).count()<<"\n";
             /*
              * Calculate all cliques in the local graph
              */
-            cout << "Cliques\n";
             auto start = std::chrono::high_resolution_clock::now();
-            priority_queue<pair<size_t,vector<vertex_graph>>> output = findMaxClique<Graph_l, vertex_graph,vertex_it>(local_graph);
+            std::set<size_t> idCliques;
+            priority_queue<pair<size_t,vector<vertex_graph>>> output;
+            size_t num_vertex_local = boost::num_vertices(local_graph),
+                    num_edges_local = boost::num_edges(local_graph);
+            if (((num_vertex_local*(num_vertex_local-1))/2) == (num_edges_local-num_vertex_local))
+            {
+                ExtraInfoNode uniqueHaplotype;
+                for (auto s:local_vect)
+                    uniqueHaplotype.emplace(_g[s].node);
+                _g[endpoint].parent_cliques[node_info.node].push_back(uniqueHaplotype);
+            }else
+            {
+                if (num_vertex_local > 2)
+                    _mod_clique_graph();
+                for (auto n: nodes_erase) {
+                    if (clique_representation.find(n) != clique_representation.end())
+                    {
+                        clique_representation[n].clear();
+                        clique_representation.erase(n);
+                    }
+                    boost::clear_vertex(n, local_graph);
+                    boost::remove_vertex(n, local_graph);
+                }
+                output = findMaxClique<Graph_l, vertex_graph,vertex_it>(local_graph, idCliques);
+            }
+            auto finish = std::chrono::high_resolution_clock::now();
             unordered_set<vertex_graph> edge_transversed;
             auto min = neigh_info.node_set;
             size_t num_clicks = 0;
@@ -506,14 +559,21 @@ void boostDBG<true>::_modify_info()
                 /*
                  * Add cliques (presumed haplotypes which contains both nodes)
                  */
+                for (auto p:clique_representation)
+                {
+                    Node key = local_graph[p.first].node;
+                    if (local_haplotype.find(key) != local_haplotype.end())
+                    {
+                        for (auto n:p.second)
+                            local_haplotype.emplace(n);
+                    }
+                }
                 _g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
                 auto sub = getIntersection(local_haplotype, neigh_info.node_set);
                 if (!sub.empty())
                     min = getIntersection(min, local_haplotype);
                 num_clicks++;
             }
-            auto finish = std::chrono::high_resolution_clock::now();
-            cout << "Duration: "<<(finish - start).count()<<"\n";
             /*
              * Clean cliques
              *      * min = max min set from neighbor -> but we need to have some neigh info.
@@ -539,8 +599,8 @@ void boostDBG<true>::_modify_info()
     //Free Floyd
     if (FLOYD)
         free(distance_matrix);
-    std::cout << "\n";
     Progress::update(num_vertex);
+    std::cout << "\n";
 }
 template<>
 void boostDBG<true>::show_info()
@@ -732,13 +792,12 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
     _insertExtraInfo(_g, local_map);
     _modify_info();
     //GetInDegree 0
-    show_info();
+    //show_info();
     vertex_iterator v, vend;
     for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
     {
-        if (!in_degree(_g[*v].node))
+        if (!in_degree(*v))
         {
-            cout << "Kmer: "<<_g[*v].node.str()<<"\n";
             _in_0.push_back(*v);
         }
     }

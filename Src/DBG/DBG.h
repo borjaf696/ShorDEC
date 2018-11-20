@@ -21,7 +21,7 @@
 
 #define MIN_PATH_LEN 50
 
-#define DELTA_PATH_LEN 10
+#define DELTA_PATH_LEN 15
 #define FLOYD 0
 #define MAX_BRANCHES_CHECK 5
 
