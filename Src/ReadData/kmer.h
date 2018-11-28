@@ -78,9 +78,9 @@ public:
 		return _seq.substr(start,end);
 	}
 
-    vector<DnaSequence> firstLastSubstr(size_t length) const
+    vector<DnaSequence> firstLastSubstr(size_t length, bool canonical) const
     {
-        return _seq.firstLastSubstr(length);
+        return _seq.firstLastSubstr(length, canonical);
     }
     /*
      * Odd but need :(
@@ -364,7 +364,7 @@ public:
     IterKmers(const DnaSequence &seq_left, const DnaSequence &seq_right):
             _seq_left(seq_left),_seq_right(seq_right)
     {
-        assert(_seq_right.length() >= _seq_left.length());
+        //assert(_seq_right.length() >= _seq_left.length());
     }
     KmerIt<true> begin();
     KmerIt<true> end();

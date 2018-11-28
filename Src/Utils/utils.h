@@ -44,7 +44,7 @@ struct Parameters
         size_t kmersAccumulated = 0, h = 0;
         float kmer_size = (float)Parameters::get().kmerSize-1, avgLeng = (float)avgLength+1, tBases = (float)totalBases;
         //float threshold = tBases*Parameters::get().missmatches*((avgLeng-2*kmer_size)*kmer_size/avgLeng+(kmer_size*(kmer_size-1))/avgLeng)+1;
-        float threshold = (tBases*Parameters::get().missmatches*(kmer_size*(avgLeng-2*kmer_size)/avgLeng + (kmer_size-1)/2*(2*kmer_size)/avgLeng)+1)*SMOOTH_FACTOR;
+        float threshold = (tBases*Parameters::get().missmatches*(kmer_size*(avgLeng-2*kmer_size)/avgLeng + (kmer_size-1)/2*(2*kmer_size)/avgLeng))*SMOOTH_FACTOR;
         std::cout << "Fail Expected Kmers: "<<threshold<<"\n";
         for (auto k:histogram)
         {
@@ -197,6 +197,15 @@ vector<T> getHistogramFromFile(std::string path_to_file)
 /*
  * Set operations
  */
+template<typename T>
+unordered_set<T> sustract(const unordered_set<T> & set1, const unordered_set<T> & set2)
+{
+    unordered_set<T> s_set;
+    for (auto i = set1.begin(); i != set1.end(); ++i)
+        if (set2.find(*i) == set2.end())
+            s_set.emplace(*i);
+    return s_set;
+}
 template<typename T>
 unordered_set<T> getIntersection(const unordered_set<T>& set_full,const unordered_set<T>& nn_pair)
 {

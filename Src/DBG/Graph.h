@@ -15,13 +15,24 @@ template<> struct NodeType<false>
     typedef Kmer DBGNode;
     typedef Kmer DBGFuncInp;
     //TODO: Corregir
-    typedef int set_couples;
+    typedef int * key;
+    typedef unordered_set<key> value;
+    typedef int static_paired_info;
 };
 template<> struct NodeType<true>
 {
     typedef Kmer DBGNode;
     typedef Pair_Kmer DBGFuncInp;
-    typedef unordered_set<DBGNode> set_couples;
+    struct iterator_hash
+    {
+        size_t operator()(unordered_set<DBGNode>::const_iterator it) const
+        {
+            return (*it).hash();
+        }
+    };
+    typedef unordered_set<DBGNode>::const_iterator key;
+    typedef unordered_set<key, iterator_hash> value;
+    typedef unordered_set<DBGNode> static_paired_info;
 };
 
 template<typename T>
@@ -30,24 +41,22 @@ struct BUgraph{
 };
 
 template <bool P> struct Extra{
-    virtual void insert(typename NodeType<P>::DBGNode, typename NodeType<P>::DBGNode);
-    virtual void show_info();
+    virtual void insert(typename NodeType<P>::key , typename NodeType<P>::key );
     virtual void clear();
-    virtual bool find(typename NodeType<true>::DBGNode);
-    virtual void erase(typename NodeType<true>::DBGNode);
-    virtual unordered_set<typename NodeType<P>::DBGNode> operator[] (typename NodeType<P>::DBGNode) const;
-    virtual pair<bool,typename NodeType<false>::set_couples> getInfoNode(typename NodeType<P>::DBGNode);
+    virtual bool find(typename NodeType<true>::key );
+    virtual void erase(typename NodeType<true>::key );
+    virtual typename NodeType<P>::value operator[] (typename NodeType<P>::key ) const;
+    virtual pair<bool,typename NodeType<P>::value> getInfoNode(typename NodeType<P>::key );
 };
 template <> struct Extra<false>
 {
-    void show_info() {}
     void clear() {}
-    bool find(typename NodeType<false>::DBGNode){
+    bool find(typename NodeType<false>::key ){
         return true;
     }
-    pair<bool,typename NodeType<false>::set_couples> getInfoNode(typename NodeType<false>::DBGNode)
+    pair<bool,typename NodeType<false>::value> getInfoNode(typename NodeType<false>::key )
     {
-        return pair<bool, typename NodeType<false>::set_couples >(false,0);
+        return pair<bool, typename NodeType<false>::value>(false,NodeType<false>::value());
     }
 };
 /*
@@ -55,34 +64,15 @@ template <> struct Extra<false>
  */
 template <> struct Extra<true>
 {
-    unordered_map<typename NodeType<true>::DBGNode, NodeType<true>::set_couples> mapPair;
-    unordered_set<typename NodeType<true>::DBGNode> key_and_value;
-    pair<bool,typename NodeType<true>::set_couples> getInfoNode(typename NodeType<true>::DBGNode node)
+    unordered_map<NodeType<true>::key, NodeType<true>::value, NodeType<true>::iterator_hash> mapPair;
+    pair<bool,typename NodeType<true>::value> getInfoNode(typename NodeType<true>::key node)
     {
         if (find(node))
-            return pair<bool,typename NodeType<true>::set_couples>(true,mapPair[node]);
+            return pair<bool,typename NodeType<true>::value>(true,mapPair[node]);
         else
-            return pair<bool,typename NodeType<true>::set_couples>(false,NodeType<true>::set_couples());
+            return pair<bool,typename NodeType<true>::value>(false,NodeType<true>::value());
     }
-    void erase(typename NodeType<true>::DBGNode node)
-    {
-        unordered_map<typename NodeType<true>::DBGNode, NodeType<true>::set_couples>::iterator map_iterator =
-                mapPair.find(node);
-        if (map_iterator != mapPair.end())
-            mapPair.erase(node);
-        /*
-         * How to know places where a key is stored as value? -> This is painful
-         */
-        if (key_and_value.find(node) != key_and_value.end())
-        {
-            for (auto & pk: mapPair)
-            {
-                if (pk.second.find(node) != pk.second.end())
-                    pk.second.erase(node);
-            }
-        }
-    }
-    unordered_set<typename NodeType<true>::DBGNode> operator[] (typename NodeType<true>::DBGNode node) const
+    typename NodeType<true>::value operator[] (typename NodeType<true>::key node) const
     {
         return mapPair.at(node);
     }
@@ -90,23 +80,17 @@ template <> struct Extra<true>
     {
         mapPair.clear();
     }
-    bool find(typename NodeType<true>::DBGNode node) const
+    bool find(typename NodeType<true>::key node) const
     {
         return mapPair.find(node)!=mapPair.end();
     }
-    void insert(typename NodeType<true>::DBGNode key, typename NodeType<true>::DBGNode val)
+    bool in(typename NodeType<true>::key key, typename NodeType<true>::key val)
+    {
+        return mapPair[key].find(val) != mapPair[key].end();
+    }
+    void insert(typename NodeType<true>::key key, typename NodeType<true>::key val)
     {
         mapPair[key].emplace(val);
-    }
-    void show_info()
-    {
-        for (auto k:mapPair)
-        {
-            cout <<"\t" <<k.first.str()<<":";
-            for (auto k_:k.second)
-                cout << k_.str() << " ";
-            cout << "\n";
-        }
     }
 };
 
@@ -139,7 +123,8 @@ public:
     typedef unordered_set<KmerInfo<P>> Heads;
     typedef typename NodeType<P>::DBGNode Parent_Node;
     typedef typename NodeType<P>::DBGFuncInp Parent_FuncNode;
-    typedef typename NodeType<P>::set_couples Parent_Extra;
+    typedef typename NodeType<P>::value Parent_Extra;
+    typedef typename NodeType<P>::static_paired_info Parent_Paired_Info;
 
     DBG(){}
     virtual void clear() = 0;
@@ -149,11 +134,11 @@ public:
             (Parent_Node) const = 0;
     virtual size_t out_degree(Parent_Node) = 0;
     //Getter
-    virtual Heads  get(bool) const = 0;
+    virtual Heads get(bool) const = 0;
     virtual pair<unordered_set<Parent_Node>,
             unordered_set<Parent_Node>> getNodes() = 0;
     //Todo: think better (or not)
-    virtual pair<bool,typename NodeType<P>::set_couples> getExtra(Parent_Node) = 0;
+    virtual pair<bool,Parent_Paired_Info> getExtra(Parent_Node) = 0;
     virtual vector<Parent_Node> getEngagers() = 0;
     /*
      * This is like a hot fix but however->polymorphism :(

@@ -107,7 +107,6 @@ void SequenceContainer::load(const std::string &path, bool is_paired)
 void SequenceContainer::loadFromFile(const std::string& fileName, bool is_paired, size_t side_read)
 {
 	std::vector<FastaRecord> records;
-
 	if (this->isFasta(fileName))
 		this->readFasta(records, fileName, is_paired, side_read);
 	else

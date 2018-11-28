@@ -5,7 +5,7 @@ from random import randint
 args = sys.argv
 
 mutation_ratio = 0.1
-fail_on_reads = 0.05
+fail_on_reads = 0.00
 len_var = 0.01
 num_copies = 4
 output_file = "output.fasta"
@@ -18,7 +18,7 @@ coverage = 25
 nuc = ['A', 'C', 'G', 'T']
 
 def parse_args(args = None):
-	global input_file, mutation_ratio, output_file, num_copies, read_size, coverage
+	global input_file, mutation_ratio, output_file, num_copies, read_size, coverage, insert_size, max_delta, len_var
 	if "-f" not in args:
 		print "-f input_file (mandatory) -o output_file (optional, with out .fasta) -m mutation_ratio -n num_haplotypes -r read_size -c coverage -i insert_size -d max_delta -g read_len_var"
 		exit(1)

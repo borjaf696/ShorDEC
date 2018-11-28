@@ -51,7 +51,6 @@ public:
          */
         for (auto& seq : _seqs)
         {
-            std::cout << "Seq: "<<seq.str()<<"\n";
             string s_line = "S\t"+to_string(num_seq++)+"\t";
             s_line+= seq.str()+"\n";
             fwrite(s_line.data(), sizeof(s_line.data()[0]),
@@ -62,7 +61,7 @@ public:
          */
         for (auto & link:_links)
         {
-            string l_line = "L\t"+to_string(link.first)+"\t"+"+\t"+to_string(link.second)+"\t+\t*\n";
+            string l_line = "L\t"+to_string(link.second)+"\t"+"+\t"+to_string(link.first)+"\t+\t*\n";
             fwrite(l_line.data(), sizeof(l_line.data()[0])
                     ,l_line.size(), fout);
         }

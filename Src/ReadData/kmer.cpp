@@ -144,7 +144,7 @@ bool Pair_Kmer::operator!=(const Pair_Kmer& other) const{
 KmerIt<true>::KmerIt(const DnaSequence *seq_left, const DnaSequence *seq_right,  size_t pos)
         :_seq_left(seq_left),_seq_right(seq_right),_pos(pos)
 {
-    if (pos != seq_left->length() - Parameters::get().kmerSize+1)
+    if ((pos != (seq_left->length() - Parameters::get().kmerSize+1)) & (pos != (seq_right->length() - Parameters::get().kmerSize+1)))
         _pair_kmer = Pair_Kmer(*seq_left, *seq_right, pos, Parameters::get().kmerSize);
 }
 
@@ -158,7 +158,7 @@ bool KmerIt<true>::operator!=(const KmerIt &kmerIt) const {
 
 KmerIt<true>& KmerIt<true>::operator++() {
     size_t newPos = _pos + Parameters::get().kmerSize;
-    if (newPos < _seq_left->length())
+    if ((newPos < _seq_left->length()) & (newPos < _seq_right->length()))
         _pair_kmer.appendRight(_seq_left->atRaw(newPos),_seq_right->atRaw(newPos));
     ++_pos;
     return *this;
@@ -170,7 +170,7 @@ KmerInfo<true> KmerIt<true>::operator*() const {
 
 //IterKmers -> Pair_end (true)
 KmerIt<true> IterKmers<true>::begin() {
-    if (_seq_left.length() < Parameters::get().kmerSize)
+    if ((_seq_left.length() < Parameters::get().kmerSize) || (_seq_right.length() < Parameters::get().kmerSize))
         return this->end();
     return KmerIt<true>(&_seq_left,&_seq_right, 0);
 }

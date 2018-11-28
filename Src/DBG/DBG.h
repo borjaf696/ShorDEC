@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <map>
 #include <unordered_set>
 #include <vector>
@@ -19,7 +20,7 @@
 #define TIME_WAIT 2
 #define MAX_SC_SIZE 2000000
 
-#define MIN_PATH_LEN 50
+#define MIN_PATH_LEN 1
 
 #define DELTA_PATH_LEN 15
 #define FLOYD 0
@@ -43,6 +44,7 @@ public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
     typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
+    typedef typename DBG<P>::Parent_Paired_Info PairedInfoNode;
     typedef typename BUgraph<Node>::graphBU graphBU;
     typedef typename BUgraph<FuncNode>::graphBU graphBU_Func;
     void clear()
@@ -88,7 +90,11 @@ public:
             _thirdPartyKmerCounting(path_to_file, program, &trials);
         _cleaning();
         if (P)
-            _insert_extra_info();
+        {
+            unordered_map<Node, unordered_set<Node>> paired_info;
+            _insert_extra_info(paired_info);
+            //_set_extra_info(paired_info);
+        }
     }
     /*
      * Check whether a kmer is solid or not
@@ -211,10 +217,11 @@ public:
         return pair<unordered_set<Node>, unordered_set<Node>>(_dbg_naive, _dbg_nodes);
     };
 
-    pair<bool,ExtraInfoNode> getExtra(Node node)
+    pair<bool,PairedInfoNode> getExtra(Node node)
     {
-        return _extra_info.getInfoNode(node);
-    }
+        cout << "Soy una puta mierda de lenguaje de los putos cojones\n";
+        return {false, PairedInfoNode()};
+    };
 
     void insert(Node node)
     {
@@ -371,7 +378,6 @@ private:
             _remove_isolated_nodes();
         }else {
             cout << "Extra info:\n";
-            _extra_info.show_info();
             _updateInfo();
             /*for (auto k:_in_0)
                 cout << "KmerSuspicious: " << k.str() << "\n";*/
@@ -411,8 +417,10 @@ private:
                     Node node = kmer.first;
                     node.standard();
                     _insert(node, node);
-                }else
+                }else{
+                    Node node = kmer.first;
                     _insert(kmer.first, kmer.first);
+                }
             }
         }
         _printInfo();
@@ -421,7 +429,8 @@ private:
     /*
      * Only paired_version gives impl
      */
-    void _insert_extra_info();
+    void _insert_extra_info(unordered_map<Node, unordered_set<Node>> &);
+    void _set_extra_info(unordered_map<Node, unordered_set<Node>>);
     void _to_pair_end();
 
     void _cleaning()
@@ -551,7 +560,7 @@ private:
     //Extend
     SequenceContainer& _sc;
     //Canonical Representation
-    bool _is_standard = true;
+    bool _is_standard = false;
 };
 /*
  * Boost implementation
@@ -561,7 +570,8 @@ template <bool P> class boostDBG:public DBG<P>
 public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
-    typedef typename NodeType<P>::set_couples ExtraInfoNode;
+    typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
+    typedef typename DBG<P>::Parent_Paired_Info PairedInfoNode;
     /*
      * Boost structure
      */
@@ -575,7 +585,7 @@ public:
     struct NodeInfo {
         NodeInfo():id(-1){}
         NodeInfo(Node node, int32_t id):node(node), id(id){}
-        NodeInfo(Node node, int32_t id, ExtraInfoNode extra):node(node), id(id),node_set(extra){}
+        NodeInfo(Node node, int32_t id, PairedInfoNode extra):node(node), id(id),node_set(extra){}
         NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set)
                 ,parent_cliques(nodeInfo.parent_cliques){}
         NodeInfo& operator=(const NodeInfo& other)
@@ -601,8 +611,8 @@ public:
         }
         Node node;
         int32_t id;
-        ExtraInfoNode node_set;
-        map<Node,vector<ExtraInfoNode>> parent_cliques;
+        PairedInfoNode node_set;
+        map<Node,vector<PairedInfoNode>> parent_cliques;
     };
 
     struct EdgeInfo {
@@ -629,7 +639,7 @@ public:
     typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
     typedef typename BUgraph<vertex_t>::graphBU graphBU;
-    typedef pair<graphBU, ExtraInfoNode> it_node;
+    typedef pair<graphBU, PairedInfoNode> it_node;
     /*
      * TODO: Needs implementation
      */
@@ -685,7 +695,7 @@ public:
 
     vector<it_node> getOutKmerNeighbors(it_node node)
     {
-        vector<it_node> neigh;
+        vector<it_node> neigh, neigh_alter;
         NodeInfo nodeInfo = _g[node.first], neighInfo;
         for (auto n:getKmerNeighbors(node.first))
         {
@@ -694,26 +704,23 @@ public:
             if (!neighInfo.node_set.empty() && !nodeInfo.node_set.empty())
             {
                 vector<ExtraInfoNode> rejected;
-                bool append = true;
+                vector<bool> append;
                 for (auto s:neighInfo.parent_cliques[nodeInfo.node])
                 {
                     /*
                      * The parent node paired-end info has to be in every son haplotype -> Redundant
                      */
-                    if (!isSame(getIntersection(node.second,nodeInfo.node_set), getIntersection(s,nodeInfo.node_set)))
-                    {
-                        append = false;
-                    }
+                    if (isSame(getIntersection(node.second,nodeInfo.node_set), getIntersection(s,nodeInfo.node_set)))
+                        neigh.push_back(pair<vertex_t,PairedInfoNode>(n, s));
+                    else
+                        neigh_alter.push_back(pair<vertex_t,PairedInfoNode>(n,s));
                 }
-                if (append)
-                    for (auto s:neighInfo.parent_cliques[nodeInfo.node])
-                        neigh.push_back(pair<vertex_t,ExtraInfoNode>(n, s));
                 //neighInfo.parent_cliques[nodeInfo.node] = rejected;
                 _g[n] = neighInfo;
             }else
-                neigh.push_back(pair<vertex_t, ExtraInfoNode>(n, ExtraInfoNode()));
+                neigh.push_back(pair<vertex_t, PairedInfoNode>(n, PairedInfoNode()));
         }
-        return neigh;
+        return (!neigh.empty())?neigh:neigh_alter;
     }
 
     vector<it_node> getInNeighbors(it_node node) const
@@ -725,10 +732,10 @@ public:
             vertex_t neighNode = _getNode(m.first);
             NodeInfo neighInfo = _g[neighNode];
             if (m.second.size() == 0)
-                neigh.push_back(pair<vertex_t, ExtraInfoNode>(neighNode,ExtraInfoNode()));
+                neigh.push_back(pair<vertex_t, PairedInfoNode>(neighNode,PairedInfoNode()));
             for (auto n: m.second) {
                 if (isSame(getIntersection(node.second, neighInfo.node_set), getIntersection(n, neighInfo.node_set))) {
-                    neigh.push_back(pair<vertex_t, ExtraInfoNode>(neighNode, n));
+                    neigh.push_back(pair<vertex_t, PairedInfoNode>(neighNode, n));
                 }
             }
         }
@@ -788,13 +795,10 @@ public:
         return pair<unordered_set<Node>, unordered_set<Node>>(unordered_set<Node>(), unordered_set<Node>());
     }
 
-    pair<bool,ExtraInfoNode> getExtra(Node node)
+    pair<bool, PairedInfoNode> getExtra(Node node)
     {
-        /*
-         * Iterate over all nodes and return the paired info for the Node = node
-         */
-        return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
-    }
+        return {false, PairedInfoNode()};
+    };
 
     unordered_set<Node> getSolidKmers()
     {
@@ -897,7 +901,7 @@ private:
             if (!node_info.node_set.empty())
             {
                 unordered_set<vertex_t> local;
-                for (auto s:g[*v].node_set)
+                for (auto s:node_info.node_set)
                 {
                     vertex_t pointerToExtraInfo = map[s];
                     local.emplace(pointerToExtraInfo);
@@ -928,7 +932,7 @@ private:
      */
     int* _floyds_warshall();
     bool _reachable(int*, size_t, size_t);
-    bool _reachable(graphBU , graphBU , size_t, size_t *);
+    bool _reachable(graphBU, graphBU , graphBU , size_t, size_t *, vector<bool> &, vector<bool> &);
     void _modify_info();
     //Graph
     Graph _g;
@@ -950,6 +954,7 @@ public:
     typedef typename DBG<P>::Parent_Node Node;
     typedef typename DBG<P>::Parent_FuncNode FuncNode;
     typedef typename DBG<P>::Parent_Extra ExtraInfoNode;
+    typedef typename DBG<P>::Parent_Paired_Info PairedInfoNode;
     typedef typename BUgraph<Node>::graphBU graphBU;
     typedef DnaSequence Unitig;
     typedef unordered_map<Node,pair<vector<Node>,vector<Node>>> Graph;
@@ -1011,9 +1016,9 @@ public:
     {
         return _solid_kmers;
     }
-    pair<bool,ExtraInfoNode> getExtra(Node node)
+    pair<bool,PairedInfoNode> getExtra(Node node)
     {
-        return pair<bool,ExtraInfoNode>(false,ExtraInfoNode ());
+        return pair<bool,PairedInfoNode>(false,PairedInfoNode());
     }
     vector<Node> getEngagers()
     {
