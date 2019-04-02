@@ -1,0 +1,2 @@
+#Script ejecucion xermade dataset definitivo
+perf stat -d ./Src/test -p ../Datasets/Helsinki2.0/HIVTrimm/ -o Output/ -u ../Output/UnitigsDiscovered_definitivo.gfa -k 30 -r 0.02 -c dsk -g 45000

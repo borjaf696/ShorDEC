@@ -1,0 +1,40 @@
+Todo:
+	- De bruijn graph -> que almacene solo el kmer más chiquitito no todos, y que cuando se haga la unión esta pueda ser tanto con el guardado como con el reverso complementario. -> Queda probarlo actualmente ya existe la versión que transforma cada Kmer en su versión estándar. Es decir, aquella que a priori debe ser la más pequeña. Por desgracia no dispongo ahora mismo el tiempo para chequear el correcto funcionamiento. TODO: Probar que todo funciona correctamente y que obtenemos únicamente 3 haplotipos en el caso de prueba.
+	- Siguiente parte usar los paired de bruijn graph: (Semana que viene tiene que quedar listo)
+		- Lo primero hacer toda la faena de la corrección de la manera regular.
+		- Construir el de bruijn graph normal, pero almacenando para cada {K1, {k2,k3...kn}} es decir sus posibles conexiones.
+		- Crear un grafo que unifique las conexiones entre los kmers definidos con anterioridad.
+			- Bueno esto realmente es algo más trickie de lo que parece:
+				- Primero para cada entrada k1:k2,k3,k4,kn se ha de calcular si existe camino desde cada uno de estos al resto, es decir: k2-k3,k2-k4... Todos con todos.
+				- Una vez se ha hecho para una entrada se ha de calcular en el nuevo grafo definido los máximos cliques. Es decir, aquellos nodos k que son adyacentes todos con todos y que por lo tanto pertencen, presumiblemente, al mismo haplotipo.
+				- Ahora viene la duda del millón de dolares ¿Que hacemos ahora?
+				- La idea clara, es tratar de simular el comportamiento del APDB. En este si lo recordamos bien. Se hacía una aproximación similar al PBG pero en este se fusionan los nodos que tuviesen exactamente la misma label (a|B). Sino que se fusionan los nodos (a|B) y (a|B'), si entre B y B' hay un camino directo (unario) con longitud menor igual que 2*Delta.
+			- SAVAGE -> esta gente crea un overlapgraph directed y calcula ahí los cliques maximales y elimina las aristas una vez los ha encontrado. 
+	- La opción de almacenar solo uno vamos a tener que dejarla para más adelante cuando realmente aporte algo. En la actualidad las lecturas se contemplan todas como si fuesen o FW o RC. Por lo tanto, es imposible saber de donde vienen o que orientación tienen. De hecho todas las lecturas tienen ambas orientaciones, por tanto es siempre necesario siempre comprobar la version fw o rc. Por lo que usar una versión donde solo se compruebe una orientación y se construya la secuencia a partir de esto. No es realmente asequible. Lo que habría que hacer en estos momentos es coger cada k-mer sólido y comprobar fw y rc. Otra solución más asequible sería obviar la parte de las reverso complementarias pero no lo veo razonable, no en este punto. Si las lecturas vienen con la etiqueta +/- lo propio sería utilizar esta información.
+		- MEJORA FUTURA: Utilizar las etiquetas +/- como procede. (barajar en futuro próximo)
+			- Mejor opción: (más rápida al menos):
+				- Acceder igual que hasta el momento, pero incluir un nuevo atributo ¿LEER? Que diga si una lectura ha de ser comprobada o no:
+					- Caso actual: LEER siempre True. (no existe información relativa a la orientación de la lectura, es decir tanto puede ser forward como reverse)
+					- Caso etiquetas: 
+						* LEER solo true cuando realmente haya que leer. ¡Ojo! Si las lecturas vienen etiquetadas se ha de mantener el orden de + (FW) y - (RC)
+						* Incluso en este caso no sería ninguna tontería separar ambos estudios y usar de manera separada la informción forward de la reverse. Es decir trabajar en dos iteraciones distintas cuando sean los casos forward, reverse. Esto debería incrementar la precisión pues imposibilitaría la mezcla de fragmentos de la hebra complementaria en le hebra forward (típico caso de recombinación).
+	- Una vez se haya comprobado que todo funciona de la manera apropiada, saltar a la versión de uso de información tipo PAIR_END.
+
+	- Tratamiento de las Ns (revisar y probar): -> ¡Nos permite volver a guardarlo todo con solo 2 bits!
+		- Cuando se lean las reads seleccionar donde aparece una N (guardar la posición en la que aparece) -> vector<size_t> Ns;
+		- Para cada n en Ns -> for (auto n: Ns)
+			for i in {A,C,G,T}:
+				synthetic_read(seq, n, i);
+			if ((n + kmersize - 1) < seq.length())
+				new_seq = seq.substr(n+1, seq.length())
+			erase(seq);
+		synthetic_read(seq, n, i):
+			seq.set(n,i);
+			new_seq = seq.substr(max(0, n-kmer_size+1), min(seq.length()-n,kmer_size-1));
+			add_seq(new_seq);
+		- Changed!
+	- Como cambio futuro se puede mirar de eliminar las lecturas rc ya que se están guardando los k-mers canónicos por lo tanto realmente no es necesario tener almacenadas las lecturas rc. De hecho es un gasto de memoria totalmente innecesario -> Corregir en un momento libre.  
+	- Comprobar la construcción de las secuencias para verificar que está funcionando como dios manda.
+	
+	*Temita clicks volver a cambiar para que devuelva todos los máximos clicks de igual tamaño e iterativamente ir completando el resto.
+

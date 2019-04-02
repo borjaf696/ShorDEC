@@ -1,0 +1,3 @@
+#Script test xermade
+ulimit -s 32000
+perf stat -d ./Src/test_test -p ../Datasets/Helsinki2.0/20000x20/ -o Output/ -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.0000000001 -c dsk -g 41000

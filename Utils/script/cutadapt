@@ -1,0 +1,1 @@
+cutadapt -q 10 -o out.1.fastq -p out.2.fastq $1 $2
