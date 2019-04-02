@@ -4,8 +4,8 @@
 CXXFLAGS = -Wall -std=c++17 -g 
 
 #Poner luego un bin
-BIN_release = test
-BIN_test = test_test
+BIN_release = ../bin/viaDBG
+BIN_test = ../bin/viaDBG_test
 
 #El resto de la ejecucion
 release: CXXFLAGS += -O3 -DNDEBUG
