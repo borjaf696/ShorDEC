@@ -289,6 +289,8 @@ struct Parameters
             Parameters::get().num_unique_kmers = param;
         if (param_read == "genome_size")
             Parameters::get().genome_size = param;
+        if (param_read == "full_info")
+            Parameters::get().full_info = param;
     }
     /*
     * Calculate H.
@@ -361,6 +363,7 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
+    bool full_info = false;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;
@@ -440,7 +443,8 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std:
      *      - 0 3 2 -> 1 1 0 0 -> 10
      * Both cases sum = 5 but id_different. Problem with cliques larger than 64 Nodes.
      */
-    int64_t sum, min_flow;
+    int64_t sum;
+    size_t min_flow;
 
     auto findMaxCliqueWithVertex = [&sum, &already_checked, &min_flow](const Vt vertex, const int maxCliqueSize, const G &graph,
                                                             unordered_map<Vt,size_t> store_map, size_t * score)
@@ -467,6 +471,11 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std:
                     return graph[lhs].id > graph[rhs].id;
                 return (store_map.at(lhs)*boost::degree(lhs,graph)) < (store_map.at(rhs)*boost::degree(rhs,graph));
             });
+            /*const auto highestDegNeighborIt = std::max_element(candidateNeighbors.begin(), candidateNeighbors.end(), [graph, store_map](const Vt &lhs, const Vt &rhs) {
+                if ((boost::degree(lhs,graph)) == (boost::degree(rhs,graph)))
+                    return graph[lhs].id > graph[rhs].id;
+                return (boost::degree(lhs,graph)) < (boost::degree(rhs,graph));
+            });*/
 
             const auto highestDegVert = *highestDegNeighborIt;
             min_flow = (store_map.at(highestDegVert) < min_flow)?store_map.at(highestDegVert):min_flow;
@@ -488,9 +497,21 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std:
         }
         return clique;
     };
+    /*typedef std::function<bool(std::pair<Vt, size_t>, std::pair<Vt, size_t>)> Comparator;
+    Comparator compFunctor =
+            [](std::pair<Vt, size_t> elem1 ,std::pair<Vt, size_t> elem2)
+            {
+                return elem1.second > elem2.second;
+            };
+
+    // Declaring a set that will store the pairs using above comparision logic
+    std::set<std::pair<Vt, size_t>, Comparator> sortedNodes(store_map.begin(), store_map.end(), compFunctor);
+    Vt vertex;*/
     Vi vertex, v_end;
     for (tie(vertex, v_end) = boost::vertices(graph); vertex != v_end; ++vertex)
+    //for (auto v: sortedNodes)
     {
+        //vertex = v.first;
         sum = 0;
         min_flow = 0;
         size_t score = 0;

@@ -35,7 +35,7 @@ struct FastaRecord
 		Id rc() const		//reverse complement 
 			{return Id(_id + 1 - (_id % 2) * 2);}
         Id pr() const   //pair_read
-            {return (_id%4<2)?(_id%4==0)?Id(_id+2):Id(_id+1):Id(_id-2);}
+            {return (_id%4<2)?(_id%4==0)?Id(_id+3):Id(_id+1):Id(_id-2);}
 
 		bool strand() const		//true = positive(forward), false = negative
 			{return !(_id % 2);}

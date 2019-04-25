@@ -836,6 +836,18 @@ public:
         return neigh;
     }
 
+    vector<graphBU> getInKmerNeighbors(graphBU node) const
+    {
+        vector<graphBU> neigh = vector<graphBU>();
+        pair<in_iterator,in_iterator> in_neighbors =
+                boost::in_edges(node, _g);
+        for (; in_neighbors.first != in_neighbors.second; ++in_neighbors.first) {
+            //in_neighs[_g[boost::source(*in_neighbors.first,_g)].node] = boost::source(*in_neighbors.first, _g);
+            neigh.push_back(boost::source(*in_neighbors.first, _g));
+        }
+        return neigh;
+    }
+
     pair<vector<it_node>, vector<it_node>> getOutKmerNeighbors(const it_node& node, bool full = true)
     {
         vector<it_node> neigh, neigh_alter;
@@ -1150,7 +1162,6 @@ private:
         vertex_iterator v, vend;
         size_t num_vertex = boost::num_vertices(_g);
         _map_extra_info.resize(num_vertex);
-        #pragma omp parallel for
         for(size_t i = 0; i < num_vertex; ++i)
         {
             for (auto s:_g[i].node_set){
@@ -1193,9 +1204,11 @@ private:
     //Graph
     Graph _g;
     vector<bool> reach;
+    vector<size_t> translator_vector;
     unordered_map<Node, unordered_set<size_t>> _node_reads;
     //Representants
     vector<graphBU> _representants;
+    unordered_set<graphBU> _first_last;
     unordered_map<graphBU, graphBU> _representants_map;
     unordered_map<graphBU, unordered_map<graphBU,size_t>> _representants_hits;
     unordered_map<graphBU, pair<graphBU, graphBU>> _represent_first_last;

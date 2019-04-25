@@ -40,7 +40,7 @@ size_t Path<false>::extend_head(const DnaSequence &sub_sequence
     //Expected fail length (maximum fail length)
     size_t fail_len = (behave)?t.kmer_pos:(sub_sequence.length()-startPos-2);
     size_t offset = ceil(DELTA_EXTENSION*fail_len);
-    size_t maximal_allowed_extension = fail_len+offset, maximal_ed = ceil(fail_len*DELTA_EXTENSION)+1;
+    size_t maximal_allowed_extension = fail_len+offset;
     if (maximal_allowed_extension >= MAX_PATH_LEN)
     {
         free(path);

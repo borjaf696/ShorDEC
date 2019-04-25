@@ -8,7 +8,7 @@ BIN_release = ../bin/viaDBG
 BIN_test = ../bin/viaDBG_test
 
 #El resto de la ejecucion
-release: CXXFLAGS += -O3 -DNDEBUG
+release: CXXFLGS += -O3 -DNDEBUG
 release: test
 
 tests: CXXFLGS += -O3 -DNDEBUG

@@ -13,7 +13,8 @@ auto print_blanks = [](size_t num_blanks)
 auto print_use = [](char ** argc)
 {printf("Usage: %s "
                 "-s [single_end_file] -p [paired_end_file] -k [kmer_size] -u [path_to_unitigs.gfa] -o [output file]"
-                " -c [dsk/jelly] -b [Do_Error_Correction (Default - FALSE)] -h [Do_polish (Default - FALSE)] -d [0 (ReverseComplement paired end/otherwise]\n"
+                " -c [dsk/jelly] -b [Do_Error_Correction (Default - FALSE)] -h [Do_polish (Default - FALSE)] -d [0 (ReverseComplement paired end/otherwise]"
+                "-f [use bot forward and reverse hits (Default - False)\n"
         ,argc[0]);};
 
 bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& dir_pairs, std::string& path_to_write
@@ -21,7 +22,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
         ,bool & do_polish)
 {
     int opt = 0;
-    char optString[] = "s:k:o:u:h:t:r:c:g:p:bh";
+    char optString[] = "s:k:o:u:h:t:r:c:g:p:bhf";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -32,6 +33,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
             case 's':
                 path_to_file = optarg;
                 mandatory[0] = true;
+                break;
+            case 'f':
+                Parameters::get().full_info = true;
                 break;
             case 'k':
                 Parameters::get().kmerSize = atoi(optarg);
