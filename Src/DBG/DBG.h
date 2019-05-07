@@ -286,11 +286,11 @@ public:
         return &_extra_info;
     }
 
-    void insert(Node node)
+    void insert(Node node, size_t freq)
     {
         if (_is_standard)
             node.standard();
-        _insert(node, node);
+        _insert(node, node, freq);
     }
 
     Node getNode(Node t)
@@ -532,10 +532,10 @@ private:
                 {
                     Node node = kmer.first;
                     node.standard();
-                    _insert(node, node);
+                    _insert(node, node, kmer.second.first);
                 }else{
                     Node node = kmer.first;
-                    _insert(kmer.first, kmer.first);
+                    _insert(kmer.first, kmer.first, kmer.second.first);
                 }
             }
         }
@@ -556,10 +556,8 @@ private:
     /*
      * Insertion into the graph_nodes and graph_edges
      */
-    void _insert(Node k, Node kmer)
+    void _insert(Node k, Node kmer, size_t freq)
     {
-        if (_dbg_naive.find(k) ==_dbg_naive.end())
-        {
             Node origin = kmer.substr(0, Parameters::get().kmerSize-1),
                     target = kmer.substr(1, Parameters::get().kmerSize);
             _dbg_naive.emplace(k);
@@ -573,7 +571,6 @@ private:
                 _dbg_nodes.emplace(origin_rc);
                 _dbg_nodes.emplace(target_rc);
             }
-        }
     }
     /*
      * Check real neighbors:
@@ -637,7 +634,7 @@ private:
     /*
      * First Counter
      */
-    unordered_map<Node, pair<size_t,size_t>> _kmers_map;
+    unordered_map<Node, pair<size_t,size_t>> _kmers_map, _nodes_tmp_map;
     /*
      * PairedInfo
      */
@@ -677,17 +674,21 @@ public:
         NodeInfo():id(-1){}
         NodeInfo(Node node, int32_t id):node(node), id(id)
         {
+            coverage = 0;
             node_set = PairedInfoNode ();
             parent_cliques = map<Node, vector<PairedInfoNode>>();
         }
         NodeInfo(Node node, int32_t id, PairedInfoNode extra):node(node), id(id),node_set(extra){}
-        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set)
+        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set), coverage(nodeInfo.coverage)
                 ,parent_cliques(nodeInfo.parent_cliques){}
+        NodeInfo(Node node, int32_t id, size_t ex_coverage):node(node), id(id),coverage(ex_coverage){
+        }
         NodeInfo& operator=(const NodeInfo& other)
         {
             node = other.node;
             id = other.id;
             node_set = other.node_set;
+            coverage = other.coverage;
             parent_cliques = other.parent_cliques;
             return *this;
         }
@@ -701,25 +702,32 @@ public:
         }
         bool operator ==(const NodeInfo &other) const
         {
-            return equal(other.node) && (this->id == other.id) && (node_set==other.node_set)
+            return equal(other.node) && (this->id == other.id) && (node_set==other.node_set) && (coverage == other.coverage)
                    && (parent_cliques == other.parent_cliques);
         }
         Node node;
+        size_t coverage;
         int32_t id;
         PairedInfoNode node_set;
         map<Node,vector<PairedInfoNode>> parent_cliques;
     };
 
     struct EdgeInfo {
-        EdgeInfo(){}
-        EdgeInfo(int8_t nt_received, size_t id):nt(nt_received),id(id){}
+        EdgeInfo():active(true){}
+        EdgeInfo(size_t coverage):active(true), coverage(coverage){}
+        EdgeInfo(int8_t nt_received, size_t id):nt(nt_received),id(id), active(true){}
         EdgeInfo& operator=(const EdgeInfo& other)
         {
             nt = other.nt;
+            id = other.id;
+            coverage = other.coverage;
+            active = other.active;
             return *this;
         }
         int8_t nt;
         size_t id;
+        size_t coverage;
+        bool active;
     };
     struct GraphInfo{};
     typedef typename boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, NodeInfo,
@@ -733,6 +741,7 @@ public:
     typedef typename Graph::out_edge_iterator out_iterator;
     typedef typename Graph::in_edge_iterator in_iterator;
     typedef typename Graph::vertex_iterator vertex_iterator;
+    typedef typename Graph::edge_iterator edge_iterator;
     typedef typename BUgraph<vertex_t>::graphBU graphBU;
     typedef unordered_set<graphBU> Extratmp;
     typedef pair<graphBU, PairedInfoNode> it_node;
@@ -789,6 +798,8 @@ public:
      * BoostDBG
      */
     boostDBG(DBG<P> *);
+    boostDBG(string, string, SequenceContainer*);
+
     void clear()
     {
         _heads.clear();
@@ -819,7 +830,8 @@ public:
                 boost::out_edges(vertex, _g);
         for(; neighbors.first != neighbors.second; ++neighbors.first)
         {
-            neigh.push_back(_g[boost::target(*neighbors.first,_g)].node);
+            if (!_g[*neighbors.first].active)
+                neigh.push_back(_g[boost::target(*neighbors.first,_g)].node);
         }
         return neigh;
     }
@@ -831,7 +843,8 @@ public:
                 boost::out_edges(node, _g);
         for (; neighbors.first != neighbors.second; ++neighbors.first)
         {
-            neigh.push_back(boost::target(*neighbors.first,_g));
+            if (_g[*neighbors.first].active)
+                neigh.push_back(boost::target(*neighbors.first,_g));
         }
         return neigh;
     }
@@ -842,8 +855,8 @@ public:
         pair<in_iterator,in_iterator> in_neighbors =
                 boost::in_edges(node, _g);
         for (; in_neighbors.first != in_neighbors.second; ++in_neighbors.first) {
-            //in_neighs[_g[boost::source(*in_neighbors.first,_g)].node] = boost::source(*in_neighbors.first, _g);
-            neigh.push_back(boost::source(*in_neighbors.first, _g));
+            if (_g[*in_neighbors.first].active)
+                neigh.push_back(boost::source(*in_neighbors.first, _g));
         }
         return neigh;
     }
@@ -876,40 +889,11 @@ public:
                 /*
                  * The parent node paired-end info has to be in every son haplotype -> Redundant
                  */
-                /*bool all_p =true, all_n = true;
-                for (auto p: s)
-                {
-                    if (all_p)
-                        if (neighInfo.node_set.find(p) != neighInfo.node_set.end())
-                            all_p = false;
-                    if (all_n)
-                        if (nodeInfo.node_set.find(p) != nodeInfo.node_set.end())
-                            all_n = false;
-                }
-                if ((!all_p && !all_n)) {
-                    if (isSame(getIntersection(node.second, nodeInfo.node_set),
-                               getIntersection(s, nodeInfo.node_set), IDENTITY_RATIO)) {
-                        neigh.push_back(pair<vertex_t, PairedInfoNode>(n, s));
-                    }
-                }*/
                 if (isSame(getIntersection(node.second, nodeInfo.node_set),
                            getIntersection(s, nodeInfo.node_set), IDENTITY_RATIO)) {
                     neigh.push_back(pair<vertex_t, PairedInfoNode>(n, s));
                 }
             }
-                //neighInfo.parent_cliques[nodeInfo.node] = rejected;
-            /*}else {
-                neigh_alter.push_back(pair<vertex_t,PairedInfoNode>(n, PairedInfoNode()));
-                if (neighInfo.node_set.empty() && nodeInfo.node_set.empty())
-                    neigh_alter.push_back(pair<vertex_t,PairedInfoNode>(n, PairedInfoNode()));
-                else if (!neighInfo.node_set.empty()) {
-                    neigh_alter.push_back(pair<vertex_t, PairedInfoNode>(n, PairedInfoNode()));
-                    neigh_alter.push_back(pair<vertex_t, PairedInfoNode>(n, neighInfo.node_set));
-                }else if (!nodeInfo.node_set.empty()){
-                    neigh_alter.push_back(pair<vertex_t, PairedInfoNode>(n, PairedInfoNode()));
-                    neigh_alter.push_back(pair<vertex_t, PairedInfoNode>(n, nodeInfo.node_set));
-                }
-            }*/
         }
         if (neigh.empty() && full)
         {
@@ -936,6 +920,8 @@ public:
         for (; in_neighbors.first != in_neighbors.second; ++in_neighbors.first)
         {
             //in_neighs[_g[boost::source(*in_neighbors.first,_g)].node] = boost::source(*in_neighbors.first, _g);
+            if (!_g[*in_neighbors.first].active)
+                continue;
             graphBU endpoint_first = boost::source(*in_neighbors.first,_g);
             for (auto cliques:_g[endpoint_first].parent_cliques)
             {
@@ -959,32 +945,6 @@ public:
             return (neigh.size() > 0)?neigh:neigh_aux;
         else
             return neigh;
-        /*for (auto m:nodeInfo.parent_cliques)
-        {
-            if (in_neighs.find(m.first) != in_neighs.end())
-            {
-                NodeInfo neighInfo = _g[in_neighs[m.first]];
-                if (m.second.empty() && node.second.empty())
-                {
-                    neigh.push_back(pair<vertex_t, PairedInfoNode>(in_neighs[m.first], PairedInfoNode()));
-                    continue;
-                }
-                for (auto n: m.second) {
-                    if (node.second.empty())
-                    {
-                        neigh.push_back(pair<vertex_t, PairedInfoNode>(in_neighs[m.first],n));
-                        continue;
-                    }
-                    if (isSame(getIntersection(node.second, neighInfo.node_set),
-                               getIntersection(n, neighInfo.node_set), IDENTITY_RATIO)) {
-                        neigh.push_back(pair<vertex_t, PairedInfoNode>(in_neighs[m.first], n));}
-                }
-            }
-        }
-        if (check_all)
-            return (neigh.size() > 0)?neigh:neigh_aux;
-        else
-            return neigh;*/
     }
 
     Extra<P> * getPairedInfo()
@@ -1100,6 +1060,113 @@ public:
 
     void show_info(size_t);
 private:
+    void _show_internal_info()
+    {
+        cout << "Showing internal information: "<<endl;
+        edge_iterator ei, ei_end;
+        for (tie(ei, ei_end) = edges(_g); ei != ei_end; ++ei) {
+            vertex_t  s = source(*ei, _g), t = target(*ei, _g);
+            cout << "Source: "<<_g[s].node.str()<< " Coverage: "<<_g[s].coverage << endl;
+            cout << "Target: "<<_g[t].node.str()<<" Coverage: "<<_g[t].coverage << endl;
+            cout << "Edge Information (coverage): "<<_g[*ei].coverage <<endl;
+        }
+        std::cout << std::endl;
+    }
+    void _insert(Node kmer, size_t coverage)
+    {
+        graphBU origin_node, target_node;
+        pair<Node,Node> suffix_preffix(kmer.substr(0, Parameters::get().kmerSize-1),kmer.substr(1, Parameters::get().kmerSize));
+        pair<Node,Node> suffix_preffix_2 = kmer.preffixsuffix();
+        typename unordered_map<Node, graphBU>::const_iterator origin = local_map.find(suffix_preffix.first),
+                target = local_map.find(suffix_preffix.second);
+        if (origin == local_map.end())
+        {
+            origin_node = boost::add_vertex(NodeInfo(suffix_preffix.first, _node_id++, coverage), _g);
+            local_map[suffix_preffix.first] = origin_node;
+        }else {
+            origin_node = (*origin).second;
+            _g[origin_node].coverage = std::max(_g[origin_node].coverage, coverage);
+        }
+        if (target == local_map.end())
+        {
+            target_node = boost::add_vertex(NodeInfo(suffix_preffix.second, _node_id++, coverage), _g);
+            local_map[suffix_preffix.second] = target_node;
+        }else {
+            target_node = (*target).second;
+            _g[target_node].coverage = std::max(_g[target_node].coverage, coverage);
+        }
+        edge_t edge = boost::add_edge(origin_node, target_node, EdgeInfo(coverage), _g).first;
+    }
+    void _thirdPartyKmerCounting(string path_to_file_count, string dir_pairs, size_t * retries)
+    {
+        vector <string> files;
+        if (path_to_file_count != "")
+            for (auto f: System::getAllFaFqFiles(path_to_file_count))
+                files.push_back(f);
+        if (dir_pairs != "")
+            for (auto f: System::getAllFaFqFiles(dir_pairs))
+                files.push_back(f);
+        if (files.size() > 1)
+            path_to_file_count = System::appendFiles(files, "newFile_tmp.fasta");
+        else if (files.size() == 1)
+            path_to_file_count = files[0];
+        string instruction = "";
+        instruction += "bash -c \"./Utils/script/dsk_script ";
+        instruction += path_to_file_count + " ";
+        instruction += to_string(Parameters::get().kmerSize) + " ";
+        instruction += "output output.txt >/dev/null 2>&1\"";
+        cout << "INSTRUCTION: " << instruction << "\n";
+        while ((system(instruction.c_str()))) {
+            cout << "Problem executing: " << instruction << "\n";
+            if ((*retries) > MAX_RETRIES)
+                exit(1);
+            cout << "Retrying with an alternative approach (first wait " << TIME_WAIT << "s)\n";
+            sleep(TIME_WAIT);
+            (*retries)++;
+            _thirdPartyKmerCounting(path_to_file_count, dir_pairs, retries);
+            return;
+        }
+        _directConstruction("output.txt");
+    }
+    void _polishing()
+    {
+        cout << "Starting polish"<<endl;
+        edge_iterator ei, ei_end;
+        for (tie(ei, ei_end) = edges(_g); ei != ei_end; ++ei)
+            if (_g[source(*ei, _g)].coverage > _g[*ei].coverage ||
+                _g[target(*ei, _g)].coverage > _g[*ei].coverage)
+                _g[*ei].active = false;
+    }
+    void _directConstruction(string inFile)
+    {
+        int lineNo = 1, count = 0;
+        Node y;
+        std::ifstream infile(inFile);
+        for( std::string line; getline( infile, line ); )
+        {
+            if (line.back() == '\n' or line.back() == '\r')
+            {
+                line.pop_back();
+            }
+            count = stoi(line.substr(Parameters::get().kmerSize+1,line.size()-(Parameters::get().kmerSize+1)));
+            y = Node(line.substr(0, Parameters::get().kmerSize));
+            _insert(y, count);
+            //map[t] = pair<Y,Y>(count,count);
+            lineNo++;
+        }
+        infile.close();
+        cout << "End building"<<endl;
+        cout << "Initial properties: "<<endl;
+    }
+    /*
+     * Check Information
+     */
+    void _printInfo()
+    {
+        size_t num_vertex = boost::num_vertices(_g), num_edges = boost::num_edges(_g);
+        cout << "Number of vertex: "<<num_vertex<<endl;
+        cout << "Number of edges: "<<num_edges<<endl;
+    }
     /*
      * Boost insert extra info
      */
@@ -1157,7 +1224,7 @@ private:
         return graphBU();
     }
 
-    void _insertExtraInfo(map<Node, vertex_t> map, DBG<P> * dbg)
+    void _insertExtraInfo(unordered_map<Node, vertex_t> map, DBG<P> * dbg)
     {
         vertex_iterator v, vend;
         size_t num_vertex = boost::num_vertices(_g);
@@ -1216,7 +1283,7 @@ private:
     unordered_set<graphBU> extended;
 
     //Properties + nodes (this should be fixed with vecS)
-    map<Node, graphBU > local_map;
+    unordered_map<Node, graphBU > local_map;
     Extra<P> _extra_info;
     vector<unordered_set<graphBU>> _map_extra_info;
     vector<map<graphBU, vector<Extratmp>>> _map_click_parents;

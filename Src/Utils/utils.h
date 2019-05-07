@@ -291,6 +291,8 @@ struct Parameters
             Parameters::get().genome_size = param;
         if (param_read == "full_info")
             Parameters::get().full_info = param;
+        if (param_read == "metagenomic")
+            Parameters::get().metagenomic = param;
     }
     /*
     * Calculate H.
@@ -363,7 +365,7 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
-    bool full_info = false;
+    bool full_info = false, metagenomic = false;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;
@@ -611,7 +613,7 @@ void createCountMapDSK(T * dbg, string path_to_file, vector<size_t> histogram, s
         if (count >= Parameters::get().accumulative_h)
         {
             y = Y(line.substr(0,Parameters::get().kmerSize));
-            dbg->insert(y);
+            dbg->insert(y, count);
         }
         //map[t] = pair<Y,Y>(count,count);
         lineNo++;

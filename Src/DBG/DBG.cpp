@@ -318,7 +318,7 @@ void NaiveDBG<true>::_kmerCount()
     {
         if (kmer.second.first >= Parameters::get().accumulative_h)
         {
-            _insert(kmer.first, kmer.first);
+            _insert(kmer.first, kmer.first, kmer.second.first);
         }
     }
     std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
@@ -1228,7 +1228,8 @@ void boostDBG<true>::show_info(size_t max_it)
         cout << " Kmer:"     << _g[*v].node.str()
                   << " id:"  << _g[*v].id
                   << " Puntero: " << (*v)
-                  << "\n";
+                  << " Coverage: "<<_g[*v].coverage
+                  << endl;
         vector<Node> neighbors = getKmerNeighbors(_g[*v].node);
         cout << "Neighbors: ";
         for (auto n:neighbors)
@@ -1982,10 +1983,22 @@ void boostDBG<true>::_get_representatives()
     //cin.get();
     //exit(1);
 }
+
+template<>
+boostDBG<true>::boostDBG(string path_to_file, string dir_path, SequenceContainer * sc)
+{
+    cout << "STAGE: Building boost graph from file"<<endl;
+    size_t retries = 0;
+    _thirdPartyKmerCounting(path_to_file, dir_path, &retries);
+    cout << "Initial information: "<<endl;
+    _printInfo();
+    //_show_internal_info();
+    _polishing();
+}
 template<>
 boostDBG<true>::boostDBG(DBG<true> * dbg)
 {
-    std::cout << "STAGE: Building boost graph\n";
+    std::cout << "STAGE: Building boost graph (standard)"<<endl;
     pair<unordered_set<Node> * , unordered_set<Node>* > graph_struct = dbg->getNodes();
     for (auto k: (*graph_struct.second))
     {

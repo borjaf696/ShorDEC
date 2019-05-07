@@ -53,6 +53,7 @@ public:
                 (*this) = rc;
                 _standard = true;
             }
+            _standard = true;
         }
     }
 

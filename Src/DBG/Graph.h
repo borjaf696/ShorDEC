@@ -242,7 +242,7 @@ public:
     virtual unordered_set<Parent_Node> getSolidKmers() = 0;
     virtual Parent_Node getNode(Parent_Node k)
     {return k;}
-    virtual void insert(Parent_Node node){};
+    virtual void insert(Parent_Node, size_t){};
     virtual size_t in_degree(Parent_Node) = 0;
 
     virtual vector<Parent_Node> getKmerNeighbors(Parent_Node) const = 0;

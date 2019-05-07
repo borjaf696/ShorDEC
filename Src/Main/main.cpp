@@ -19,14 +19,17 @@ auto print_use = [](char ** argc)
 
 bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& dir_pairs, std::string& path_to_write
         ,std::string& path_unitigs, std::string& program, bool &pair_end, bool & thirdPartyCount, bool & do_correction
-        ,bool & do_polish)
+        ,bool & do_polish, bool & meta)
 {
     int opt = 0;
-    char optString[] = "s:k:o:u:h:t:r:c:g:p:bhf";
+    char optString[] = "s:k:o:u:h:t:r:c:g:p:bhfm";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
         {
+            case 'm':
+                meta = true;
+                break;
             case 'b':
                 do_correction = true;
                 break;
@@ -83,9 +86,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
 int main(int argv, char ** argc){
 
 	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program;
-    bool pair_end = false, thirdPartyCount = false, do_correction = false, do_polish = false;
+    bool pair_end = false, thirdPartyCount = false, do_correction = false, do_polish = false, meta = false;
     if (!parse_args(argv,argc,path_to_file,dir_pairs,
-                    output_path, path_unitigs, program, pair_end, thirdPartyCount, do_correction, do_polish))
+                    output_path, path_unitigs, program, pair_end, thirdPartyCount, do_correction, do_polish, meta))
         exit(0);
     SequenceContainer sc_single, sc_paired;
     if (path_to_file != "")
@@ -99,6 +102,11 @@ int main(int argv, char ** argc){
         std::cout <<"PairedDir: "<<dir_pairs<<"\n";
         sc_paired.load(dir_pairs, true);
         std::cout << "Number of paired-end reads: "<< sc_paired.getIndex().size()<<"\n";
+    }
+    if (meta)
+    {
+        boostDBG<true> boostDBG(path_to_file, dir_pairs, &sc_paired);
+        exit(1);
     }
     if (do_correction)
     {
