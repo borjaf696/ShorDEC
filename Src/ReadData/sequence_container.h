@@ -243,6 +243,9 @@ public:
 		}
 	}
 
+	void write_left_chains();
+	void write_right_chains();
+
 private:
 	size_t readFasta(std::vector<FastaRecord>& record
             ,const std::string&,bool,size_t);

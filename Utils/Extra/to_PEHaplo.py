@@ -24,10 +24,10 @@ def change_reads():
 		with open(output_file, 'w+') as f2:
 			for i,line in enumerate(f.readlines()):
 				if i % 4 == 0:
-					f2.write(line.split(' ')[0]+extra+'\n')
+					f2.write('>'+str(i)+extra+'\n')
 					if line.split('\n')[0][0]!='@':
 						print line
-				else:
+				elif i % 4 == 1:
 					f2.write(line)
 
 if __name__=='__main__':

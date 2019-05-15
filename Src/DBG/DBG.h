@@ -830,7 +830,7 @@ public:
                 boost::out_edges(vertex, _g);
         for(; neighbors.first != neighbors.second; ++neighbors.first)
         {
-            if (!_g[*neighbors.first].active)
+            if (_g[*neighbors.first].active)
                 neigh.push_back(_g[boost::target(*neighbors.first,_g)].node);
         }
         return neigh;

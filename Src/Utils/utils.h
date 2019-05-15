@@ -213,6 +213,31 @@ bool same(const unordered_set<T> & set1, const unordered_set<T> & set2)
     return true;
 }
 /*
+ * Parsing
+ */
+struct Parse{
+    /*
+     * Get fasta ids from sga files
+     */
+    static std::unordered_set<uint32_t> getIdsFromFiles(std::string path)
+    {
+        std::unordered_set<uint32_t> ids;
+        std::ifstream infile(path);
+        for( std::string line; getline( infile, line ); )
+        {
+            if (line[0] == '>')
+            {
+                std::stringstream ss(line);
+                string token;
+                getline(ss,token, ' ');
+                token.erase(0,1);
+                ids.emplace(stoi(token));
+            }
+        }
+        return ids;
+    }
+};
+/*
  * System operations
  */
 struct System{
@@ -237,6 +262,15 @@ struct System{
             }
         }
         return output;
+    }
+
+    static void execute(std::string instruction)
+    {
+        if (system(instruction.c_str()))
+        {
+            cout << "Fail on: "<<instruction<<"\n";
+            exit(1);
+        }
     }
 
     static std::string appendFiles(std::vector<string> files, std::string newFile)
@@ -293,6 +327,10 @@ struct Parameters
             Parameters::get().full_info = param;
         if (param_read == "metagenomic")
             Parameters::get().metagenomic = param;
+        if (param_read == "remove_duplicates")
+            Parameters::get().remove_duplicates = param;
+        if (param_read == "numThreads")
+            Parameters::get().numThreads = param;
     }
     /*
     * Calculate H.
@@ -365,7 +403,7 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
-    bool full_info = false, metagenomic = false;
+    bool full_info = false, metagenomic = false, remove_duplicates = false;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;

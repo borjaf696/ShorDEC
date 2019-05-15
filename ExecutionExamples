@@ -7,6 +7,8 @@ Single_end (big case):
 
 ./Src/test -s ../DataSets/DataPrueba/vihtrimmedpear/gbenchmark.assembled.fastq -p ../DataSets/DataPrueba/vihtrimmedpear/Pairs/ -o ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered.gfa -k 20 -r 0.05 -c dsk -g 40000
 
+./bin/viaDBG -s ../Datasets/Helsinki2.0/definitivo/pear.assembled.fastq -p ../Datasets/Helsinki2.0/definitivo/pair/ ../Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.00095 -c dsk -n -t 32
+
 OUR
 ./Src/test_test -p ../DataSets/DataPrueba/vihtrimmedpear/Pairs/ -o Output/ -u ../Output/UnitigsDiscovered.gfa -k 80 -r 0.05 -c dsk -g 40000
 ./Src/test -p ../DataSets/DataPrueba/simulaReads/Full100xErrors/ -o Output/ -u ../Output/UnitigsDiscovered.gfa -k 80 -r 0.016 -c dsk -g 45000

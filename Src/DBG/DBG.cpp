@@ -382,7 +382,25 @@ void  boostDBG<true>::_insert_extra(SequenceContainer * sc, unordered_set<Node> 
     //Lets try
     Parameters::get().kmerSize-=1;
     size_t adds = 0, num_read = 0;
-    //Parameters::get().kmerSize -= 1;
+    unordered_set<uint32_t> ids;
+    if (Parameters::get().remove_duplicates)
+    {
+        ids = Parse::getIdsFromFiles("left_reads.rmdup.fa");
+        size_t numThreads = Parameters::get().numThreads;
+        //Fichero1 -> left_reads.fa
+        sc->write_left_chains();
+        System::execute("bash -c \"sga index -t "+std::to_string(numThreads)+" left_reads.fa\"");
+        System::execute("bash -c \"sga rmdup -t "+std::to_string(numThreads)+" left_reads.fa\"");
+        //Fichero2 -> rigth_reads.fa
+        sc->write_right_chains();
+        System::execute("bash -c \"sga index -t "+std::to_string(numThreads)+" right_reads.fa\"");
+        System::execute("bash -c \"sga rmdup -t "+std::to_string(numThreads)+" right_reads.fa\"");
+        for (auto id: Parse::getIdsFromFiles("right_reads.rmdup.fa"))
+        {
+            ids.emplace(id);
+        }
+        cout << "number of reads: "<<sc->size()<<" NumberIds: "<<ids.size()<<endl;
+    }
     #pragma omp parallel
     {
         #pragma omp single
@@ -393,67 +411,60 @@ void  boostDBG<true>::_insert_extra(SequenceContainer * sc, unordered_set<Node> 
                 Progress::update(num_read++);
                 bool check = ((read.first.getId() % 4) == 0);
                 if (check && ((read.first.getId() % 4) < 2)) {
-                    unordered_set<Node>::iterator prev_node, prev_node_pair;
-                    for (auto k: IterKmers<true>(read.second.sequence, sc->getSeq(read.second.getPairId()))) {
-                        FuncNode nonstd_pk = k.pair_kmer;
-                        pair <Node, Node> sep_nodes = nonstd_pk.getKmers();
-                        /*Node node_aux_left = sep_nodes.first, node_aux_right = sep_nodes.second;
-                        node_aux_left.standard();node_aux_right.standard();
-                        if (solids->find(node_aux_left) == solids->end() || solids->find(node_aux_right) == solids->end())
-                            continue;
-                        pair <Kmer, Kmer> nodes_left = sep_nodes.first.preffixsuffix(),
-                                nodes_right = sep_nodes.second.preffixsuffix();
-                        unordered_set<Node>::iterator node_f_it = nodes->find(nodes_left.first),
-                                node_s_it = nodes->find(nodes_right.first);*/
-                        unordered_set<Node>::iterator node_f_it = nodes->find(sep_nodes.first),
-                                node_s_it = nodes->find(sep_nodes.second);
-                        if (node_f_it == node_s_it)
-                            continue;
-                        /*
-                         * Forward
-                         */
-                        if ((node_f_it != nodes->end()) && (node_s_it != nodes->end()))
-                        {
-                            graphBU node_bu_l = local_map[(*node_f_it)];
-                            graphBU rep_node = _representants_map[local_map[(*node_s_it)]];
-                            unordered_set<Node>::iterator representant = nodes->find(_g[rep_node].node);
-                            #pragma omp critical(update)
-                            {
-                                if(_representants_hits[rep_node].find(node_bu_l) == _representants_hits[rep_node].end())
-                                    _representants_hits[rep_node][node_bu_l] = 1;
-                                else
-                                    _representants_hits[rep_node][node_bu_l]++;
-                                if (_representants_hits[rep_node][node_bu_l] == LIMIT_TO_REP) {
-                                    _extra_info.insert(node_f_it, representant, adds);
-                                    _node_reads[(*node_s_it)].emplace(read.first.getId());
-                                }
-                            };
-                        }
-
-                        /*
-                         * Reverse
-                         */
-                        if (Parameters::get().full_info)
-                        {
-                            unordered_set<Node>::iterator node_f_it_rc = nodes->find(sep_nodes.first.rc()),
-                                    node_s_it_rc = nodes->find(sep_nodes.second.rc());
-                            if ((node_f_it_rc != nodes->end()) && (node_s_it_rc != nodes->end()))
-                            {
-                                graphBU node_bu_r = local_map[(*node_s_it_rc)];
-                                graphBU rep_node = _representants_map[local_map[(*node_f_it_rc)]];
+                    bool dup_check = (Parameters::get().remove_duplicates)?(ids.find(read.first.getId())!=ids.end()):true;
+                    if (dup_check) {
+                        unordered_set<Node>::iterator prev_node, prev_node_pair;
+                        for (auto k: IterKmers<true>(read.second.sequence, sc->getSeq(read.second.getPairId()))) {
+                            FuncNode nonstd_pk = k.pair_kmer;
+                            pair <Node, Node> sep_nodes = nonstd_pk.getKmers();
+                            unordered_set<Node>::iterator node_f_it = nodes->find(sep_nodes.first),
+                                    node_s_it = nodes->find(sep_nodes.second);
+                            if (node_f_it == node_s_it)
+                                continue;
+                            /*
+                             * Forward
+                             */
+                            if ((node_f_it != nodes->end()) && (node_s_it != nodes->end())) {
+                                graphBU node_bu_l = local_map[(*node_f_it)];
+                                graphBU rep_node = _representants_map[local_map[(*node_s_it)]];
                                 unordered_set<Node>::iterator representant = nodes->find(_g[rep_node].node);
                                 #pragma omp critical(update)
                                 {
-                                    if (_representants_hits[rep_node].find(node_bu_r) ==
+                                    if (_representants_hits[rep_node].find(node_bu_l) ==
                                         _representants_hits[rep_node].end())
-                                        _representants_hits[rep_node][node_bu_r] = 1;
+                                        _representants_hits[rep_node][node_bu_l] = 1;
                                     else
-                                        _representants_hits[rep_node][node_bu_r]++;
-                                    if (_representants_hits[rep_node][node_bu_r] == LIMIT_TO_REP) {
-                                        _extra_info.insert(node_s_it_rc, representant, adds);
-                                        _node_reads[(*node_s_it_rc)].emplace(read.first.rc().getId());
+                                        _representants_hits[rep_node][node_bu_l]++;
+                                    if (_representants_hits[rep_node][node_bu_l] == LIMIT_TO_REP) {
+                                        _extra_info.insert(node_f_it, representant, adds);
+                                        _node_reads[(*node_s_it)].emplace(read.first.getId());
                                     }
                                 };
+                            }
+
+                            /*
+                             * Reverse
+                             */
+                            if (Parameters::get().full_info) {
+                                unordered_set<Node>::iterator node_f_it_rc = nodes->find(sep_nodes.first.rc()),
+                                        node_s_it_rc = nodes->find(sep_nodes.second.rc());
+                                if ((node_f_it_rc != nodes->end()) && (node_s_it_rc != nodes->end())) {
+                                    graphBU node_bu_r = local_map[(*node_s_it_rc)];
+                                    graphBU rep_node = _representants_map[local_map[(*node_f_it_rc)]];
+                                    unordered_set<Node>::iterator representant = nodes->find(_g[rep_node].node);
+                                    #pragma omp critical(update)
+                                    {
+                                        if (_representants_hits[rep_node].find(node_bu_r) ==
+                                            _representants_hits[rep_node].end())
+                                            _representants_hits[rep_node][node_bu_r] = 1;
+                                        else
+                                            _representants_hits[rep_node][node_bu_r]++;
+                                        if (_representants_hits[rep_node][node_bu_r] == LIMIT_TO_REP) {
+                                            _extra_info.insert(node_s_it_rc, representant, adds);
+                                            _node_reads[(*node_s_it_rc)].emplace(read.first.rc().getId());
+                                        }
+                                    };
+                                }
                             }
                         }
                     }

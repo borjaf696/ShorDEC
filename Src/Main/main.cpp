@@ -14,7 +14,7 @@ auto print_use = [](char ** argc)
 {printf("Usage: %s "
                 "-s [single_end_file] -p [paired_end_file] -k [kmer_size] -u [path_to_unitigs.gfa] -o [output file]"
                 " -c [dsk/jelly] -b [Do_Error_Correction (Default - FALSE)] -h [Do_polish (Default - FALSE)] -d [0 (ReverseComplement paired end/otherwise]"
-                "-f [use bot forward and reverse hits (Default - False)\n"
+                "-f [use bot forward and reverse hits (Default - False) -t [Number of threads (not fully parallelized)] -n [Remove duplicates (for speed)] \n"
         ,argc[0]);};
 
 bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& dir_pairs, std::string& path_to_write
@@ -22,7 +22,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
         ,bool & do_polish, bool & meta)
 {
     int opt = 0;
-    char optString[] = "s:k:o:u:h:t:r:c:g:p:bhfm";
+    char optString[] = "s:k:o:u:h:t:r:c:g:p:bhfmn";
     std::vector<bool> mandatory(3,false);
     while ((opt = getopt(argv,argc,optString))!=-1){
         switch (opt)
@@ -36,6 +36,9 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
             case 's':
                 path_to_file = optarg;
                 mandatory[0] = true;
+                break;
+            case 'n':
+                Parameters::get().remove_duplicates = true;
                 break;
             case 'f':
                 Parameters::get().full_info = true;
@@ -70,6 +73,7 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
                 Parameters::get().genome_size = atoi(optarg);
                 break;
             case 't':
+                Parameters::get().numThreads = atoi(optarg);
                 break;
         }
     }
@@ -144,7 +148,7 @@ int main(int argv, char ** argc){
     /*
      * Depending on pair_end info one approach or another
      */
-    Parameters::get().kmerSize = 120;
+    //Parameters::get().kmerSize = 120;
     if (pair_end)
     {
         DBG<true> * graph = new NaiveDBG<true>(sc_single, sc_paired, thirdPartyCount,path_to_file, dir_pairs, program, false);

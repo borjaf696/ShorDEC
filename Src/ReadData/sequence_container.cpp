@@ -455,3 +455,37 @@ void SequenceContainer::writeSequenceContainer(const std::string & filename) con
 	}
     fclose(fout);
 }
+
+void SequenceContainer::write_left_chains()
+{
+	FILE * fout = fopen("left_reads.fa","w");
+	if (!fout) throw std::runtime_error("Cant't open left_reads.fa");
+	for (auto & id_rec:_seqIndex)
+	{
+		if (id_rec.first.getId() % 4 == 0)
+		{
+			std::string corrected_read = id_rec.second.sequence.str()+"\n";
+			std::string header = ">"+std::to_string(id_rec.first.getId())+"\n";
+			fwrite(header.data(), sizeof(header.data()[0]), header.size(), fout);
+			fwrite(corrected_read.data(), sizeof(corrected_read.data()[0]), corrected_read.size(), fout);
+		}
+	}
+	fclose(fout);
+}
+
+void SequenceContainer::write_right_chains()
+{
+	FILE * fout = fopen("right_reads.fa","w");
+	if (!fout) throw std::runtime_error("Cant't open right_reads.fa");
+	for (auto & id_rec:_seqIndex)
+	{
+		if (id_rec.first.getId() % 4 == 0)
+		{
+			std::string corrected_read = getSeq(id_rec.second.getPairId()).str()+"\n";
+			std::string header = ">"+std::to_string(id_rec.first.getId())+"\n";
+			fwrite(header.data(), sizeof(header.data()[0]), header.size(), fout);
+			fwrite(corrected_read.data(), sizeof(corrected_read.data()[0]), corrected_read.size(), fout);
+		}
+	}
+	fclose(fout);
+}
