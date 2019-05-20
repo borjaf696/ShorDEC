@@ -47,7 +47,13 @@ The code accepts both fasta and fastq files.
 	* Default: False
 5. Remove duplicates:
 	* Ideally it makes no changes over the results. Unfortunately, it can improve or get worse, as before more is not always better. Nevertheless, speed is improved when removing duplicated reads.
-
+6. K-mer size:
+	* With the current dsk compilaton maximum k-mer size is 192.
+	* A higher one can be used recompiling DSK and modifying Utils/scripts/dsk_script.
 ### Use:
 	* make clean && make
-	* ./bin/viaDBG -s [single_end_reads] -p [paired_end_reads(dir)] -o [output] -u [unitigs file output] -k [kmer size] -h [polish (default No)] -b [if error correction(default No)] -d [if revcomplement paired end reads] -r [estimated error] -n [remove duplicated] -f [add full information]
+	* ./bin/viaDBG -s [single_end_reads] -p [paired_end_reads(dir)] -o [output] -u [unitigs file output] -k [kmer size] -h [polish (default No)] -b [if error correction(default No)] -d [if revcomplement paired end reads] -r [estimated error] -n [remove duplicated] -f [add full information] -t [threads]
+
+#### Example:
+	* ./bin/viaDBG -s ../Datasets/Helsinki2.0/definitivo/pear.assembled.fastq -p ../Datasets/Helsinki2.0/definitivo/pair/ -o Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.00095 -c dsk -n -t 1
+	* ./bin/viaDBG -p ../Datasets/Helsinki2.0/3-strain-ZIKV-20000x/ -o Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.0008 -c dsk -n -t 1
