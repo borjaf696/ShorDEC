@@ -679,9 +679,9 @@ public:
             parent_cliques = map<Node, vector<PairedInfoNode>>();
         }
         NodeInfo(Node node, int32_t id, PairedInfoNode extra):node(node), id(id),node_set(extra){}
-        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),id(nodeInfo.id),node_set(nodeInfo.node_set), coverage(nodeInfo.coverage)
+        NodeInfo(const NodeInfo & nodeInfo):node(nodeInfo.node),coverage(nodeInfo.coverage),id(nodeInfo.id),node_set(nodeInfo.node_set)
                 ,parent_cliques(nodeInfo.parent_cliques){}
-        NodeInfo(Node node, int32_t id, size_t ex_coverage):node(node), id(id),coverage(ex_coverage){
+        NodeInfo(Node node, int32_t id, size_t ex_coverage):node(node),coverage(ex_coverage), id(id){
         }
         NodeInfo& operator=(const NodeInfo& other)
         {
@@ -714,7 +714,7 @@ public:
 
     struct EdgeInfo {
         EdgeInfo():active(true){}
-        EdgeInfo(size_t coverage):active(true), coverage(coverage){}
+        EdgeInfo(size_t coverage): coverage(coverage),active(true){}
         EdgeInfo(int8_t nt_received, size_t id):nt(nt_received),id(id), active(true){}
         EdgeInfo& operator=(const EdgeInfo& other)
         {
@@ -1095,7 +1095,7 @@ private:
             target_node = (*target).second;
             _g[target_node].coverage = std::max(_g[target_node].coverage, coverage);
         }
-        edge_t edge = boost::add_edge(origin_node, target_node, EdgeInfo(coverage), _g).first;
+        boost::add_edge(origin_node, target_node, EdgeInfo(coverage), _g).first;
     }
     void _thirdPartyKmerCounting(string path_to_file_count, string dir_pairs, size_t * retries)
     {
