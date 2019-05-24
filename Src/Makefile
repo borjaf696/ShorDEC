@@ -1,18 +1,18 @@
-#Primero irian las librerias
+CXXFLAGS = -Wall -std=c++17 -g
 
-#Si quiero extender el Makefile poner el +=
-CXXFLAGS = -Wall -std=c++17 -g 
-
-#Poner luego un bin
 BIN_release = ../bin/viaDBG
 BIN_test = ../bin/viaDBG_test
 
-#El resto de la ejecucion
 release: CXXFLGS += -O3 -DNDEBUG
 release: test
 
 tests: CXXFLGS += -O3 -DNDEBUG
 tests: test_environment
+
+#Print
+p_obj := ${patsubst %.cpp,%.o,${wildcard Utils/*.cpp}}
+Utils/%.o: Utils/%.cpp Utils/*h
+	${CXX} -c ${CXXFLAGS} ${LDFLAGS} $< -o $@
 
 #Read, seq, kmer
 obj := ${patsubst %.cpp,%.o,${wildcard ReadData/*.cpp}}
@@ -37,8 +37,8 @@ m_code_release := Main/main.o
 m_code_tests := Main/test_environment.o
 
 
-test: ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
-	${CXX} ${obj} ${extender_obj} ${dbg_obj} ${m_code_release} -o ${BIN_release} ${LDFLAGS}
+test: ${p_obj} ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
+	${CXX} ${p_obj} ${obj} ${extender_obj} ${dbg_obj} ${m_code_release} -o ${BIN_release} ${LDFLAGS}
 
 test_environment: ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
 	${CXX} ${obj} ${extender_obj} ${dbg_obj} ${m_code_tests} -o ${BIN_test} ${LDFLAGS}
@@ -46,6 +46,7 @@ test_environment: ${obj} ${dbg_obj} ${extender_obj} ${m_main_obj}
 #Clean
 clean:
 	-rm ${obj}
+	-rm ${p_obj}
 	-rm ${dbg_obj}
 	-rm ${extender_obj}
 	-rm ${m_main_obj}

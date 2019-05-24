@@ -1,4 +1,3 @@
-#include <fstream>
 #include <math.h>
 #include <stdexcept>
 #include <fstream>

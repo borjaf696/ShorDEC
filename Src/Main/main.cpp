@@ -1,9 +1,23 @@
 #include <getopt.h>
 #include <iostream>
-#include <unordered_set>
 #include <vector>
+#include <unordered_set>
+#include <boost/config.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+#include <boost/program_options/detail/config_file.hpp>
+#include <boost/program_options/parsers.hpp>
+#include "../Utils/OptionPrinter.hpp"
 #include "../ReadData/sequence_container.h"
 #include "../DBG/path.h"
+
+namespace po = boost::program_options;
+namespace
+{
+    const size_t HELP = 2;
+    const size_t ERROR_IN_COMMAND_LINE = 1;
+    const size_t SUCCESS = 0;
+}
 
 auto print_blanks = [](size_t num_blanks)
 {
@@ -87,14 +101,71 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
 
 }
 
+int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::string * dir_pairs, std::string * path_to_write
+        ,std::string * path_unitigs, std::string * program, bool * pair_end, bool * thirdPartyCount, bool * do_correction
+        ,bool * do_polish, bool * meta)
+{
+    po::options_description des("Options");
+    des.add_options()
+            ("help,h","Help message")
+            ("meta,m",po::bool_switch(meta)->required(),"Metagenomic analysis")
+            ("correct,b",po::bool_switch(do_correction),"Do correction step")
+            ("single,s",po::value<std::string>(path_to_file),"Path to single-end file")
+            ("paired,p",po::value<std::string>(dir_pairs)->required(),"Path to directory with paired-end reads")
+            ("duplicated,n",po::bool_switch(&(Parameters::get().remove_duplicates)),"Remove duplicated reads")
+            ("fullInfo,f",po::bool_switch(&(Parameters::get().full_info)),"Use all information available")
+            ("kmerSize,k",po::value<size_t>(&(Parameters::get().kmerSize))->required(),"Size of the k-mers")
+            ("polish,h",po::bool_switch(do_polish),"Do polishing step")
+            ("output,o",po::value<std::string>(path_to_write)->required(),"Output sequence file")
+            ("unitigs,u",po::value<std::string>(path_unitigs)->required(),"Output unitigs file")
+            ("third,c",po::value<std::string>(program),"Third party to use on k-mer counting (dsk)")
+            ("error,r",po::value<double>(&(Parameters::get().missmatches))->required(),"Estimated error ratio")
+            (",t",po::value<size_t>(&(Parameters::get().numThreads)),"Number of threads to use");
+    po::variables_map vm;
+    try {
+        po::store(po::command_line_parser(argc,argv).options(des).run(),vm);
+        if ( vm.count("help")  )
+        {
+            std::cout << "viaDBG" << endl << endl;
+            rad::OptionPrinter::printStandardAppDesc("viaDBG",
+                                                     cout,
+                                                     des);
+            return HELP;
+        }
+        po::notify(vm); /*Required commands*/
+    }catch(boost::program_options::required_option& e)
+    {
+        rad::OptionPrinter::formatRequiredOptionError(e);
+        std::cerr << "ERROR: " << e.what() << endl << endl;
+        rad::OptionPrinter::printStandardAppDesc("viaDBG",
+                                                 cout,
+                                                 des);
+        return ERROR_IN_COMMAND_LINE;
+    }
+    catch(boost::program_options::error& e)
+    {
+        std::cerr << "ERROR: " << e.what() << endl << endl;
+        rad::OptionPrinter::printStandardAppDesc("viaDBG",
+                                                 cout,
+                                                 des);
+        return ERROR_IN_COMMAND_LINE;
+    }
+    return SUCCESS;
+}
+
 int main(int argv, char ** argc){
 
-	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program;
-    bool pair_end = false, thirdPartyCount = false, do_correction = false, do_polish = false, meta = false;
-    if (!parse_args(argv,argc,path_to_file,dir_pairs,
+	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program="dsk";
+    bool pair_end = false, thirdPartyCount = true, do_correction = false, do_polish = false, meta = false;
+    /*if (!parse_args(argv,argc,path_to_file,dir_pairs,
                     output_path, path_unitigs, program, pair_end, thirdPartyCount, do_correction, do_polish, meta))
+        exit(0);*/
+    if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program,
+            &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
         exit(0);
+    //cout << "Correct: "<<do_correction<<endl<<" Polish: "<<do_polish<<endl<<" Meta: "<<meta<<endl<<" ThirdParty: "<<
     SequenceContainer sc_single, sc_paired;
+    pair_end = (dir_pairs!="");
     if (path_to_file != "")
     {
         std::cout <<"SingleEnd: "<<path_to_file<<"\n";
