@@ -402,7 +402,7 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
-    bool full_info = false, metagenomic = false, remove_duplicates = false;
+    bool full_info = false, metagenomic = false, remove_duplicates = true;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;

@@ -108,7 +108,7 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
     po::options_description des("Options");
     des.add_options()
             ("help,h","Help message")
-            ("meta,m",po::bool_switch(meta)->required(),"Metagenomic analysis")
+            ("meta,m",po::bool_switch(meta),"Metagenomic analysis")
             ("correct,b",po::bool_switch(do_correction),"Do correction step")
             ("single,s",po::value<std::string>(path_to_file),"Path to single-end file")
             ("paired,p",po::value<std::string>(dir_pairs)->required(),"Path to directory with paired-end reads")

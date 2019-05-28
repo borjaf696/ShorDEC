@@ -74,9 +74,6 @@ void NaiveDBG<false>::_kmerCount() {
     bool first = false;
     size_t max_freq = 1;
     for (auto &read:_sc.getIndex()){
-        /*
-         * Particularidad mia de como he implementado el sequence container
-         */
         if (read.first.getId() % 2)
             continue;
         if (first)
@@ -97,15 +94,6 @@ void NaiveDBG<false>::_kmerCount() {
     Progress::update(_sc.getIndex().size());
 
     _buildGraphRepresentation(max_freq);
-    /*for (auto &k: _dbg_naive)
-        cout << "KmerNaive: "<<k.str()<<"\n";
-    for (auto &k: _dbg_nodes) {
-        cout << "KmerNodes: " << k.str() << "\n";
-        vector<Kmer> neigh = getKmerNeighbors(k);
-        for (auto n: neigh)
-            cout << "Vecinos: "<<n.str() << "\n";
-    }*/
-    //sleep(10000);
 }
 /*
  * Process ExtraInfo
@@ -145,8 +133,6 @@ void NaiveDBG<true>::_insert_extra_info()
                                 nodes_right = sep_nodes.second.preffixsuffix();
                         unordered_set<Node>::iterator node_f_it = _dbg_nodes.find(nodes_left.first),
                                 node_s_it = _dbg_nodes.find(nodes_right.first);
-                                /*node_f_it_rc = _dbg_nodes.find(nodes_left.first.rc()),
-                                node_s_it_rc = _dbg_nodes.find(nodes_right.first.rc());*/
                         if (node_f_it == node_s_it)
                             continue;
                         if ((node_f_it != _dbg_nodes.end()) && (node_s_it != _dbg_nodes.end())) {
@@ -154,50 +140,8 @@ void NaiveDBG<true>::_insert_extra_info()
                             {
                                 _extra_info.insert(node_f_it, node_s_it, adds);
                                 _node_reads[(*node_s_it)].emplace(read.first.getId());
-                                /*if ((node_f_it_rc != _dbg_nodes.end()) && (node_s_it_rc != _dbg_nodes.end())) {
-                                    _extra_info.insert(node_s_it_rc, node_f_it_rc, adds);
-                                    _node_reads[(*node_f_it_rc)].emplace(read.first.rc().getId());
-                                }*/
                             };
                         }
-                        /*pair <Node,Node> sep_nodes = k.pair_kmer.getKmers();
-                        unordered_set<Node>::iterator node_f_it = _dbg_nodes.find(sep_nodes.first),
-                                node_s_it = _dbg_nodes.find(sep_nodes.second);
-                        if (node_f_it != _dbg_nodes.end() && node_s_it != _dbg_nodes.end())
-                        {
-                            if (prev_right)
-                            {
-                                vector<Node> neighs_left = getKmerNeighbors_adhoc((*prev_node)),
-                                        neighs_right = getKmerNeighbors_adhoc((*prev_node_pair));
-                                if (find(neighs_left.begin(), neighs_left.end(),(*node_f_it)) != neighs_left.end() &&
-                                        find(neighs_right.begin(), neighs_right.end(),(*node_s_it)) != neighs_right.end())
-                                {
-                                    #pragma omp critical(update)
-                                    {
-                                        _extra_info.insert(node_f_it, node_s_it, adds);
-                                        _node_reads[(*node_s_it)].emplace(read.first.getId());
-                                        if (count == 1) {
-                                            _extra_info.insert(prev_node, prev_node_pair, adds);
-                                            _node_reads[(*prev_node_pair)].emplace(read.first.getId());
-                                        }
-                                    }
-                                    count++;
-                                    prev_node = node_f_it;
-                                    prev_node_pair = node_s_it;
-                                }else{
-                                    prev_right = false;
-                                    count = 0;
-                                }
-                            }else{
-                                prev_right = true;
-                                prev_node = node_f_it;
-                                prev_node_pair = node_s_it;
-                                count++;
-                            }
-                        }else{
-                            prev_right = false;
-                            count = 0;
-                        }*/
                     }
                 }
             };
@@ -324,15 +268,6 @@ void NaiveDBG<true>::_kmerCount()
     std::cout<<"Total Solid K-mers(Graph Edges): "<<_dbg_naive.size()
              <<" Total Graph Nodes: "<<_dbg_nodes.size()<<"\n";
     _kmers_map.clear();
-    //_extra_info.show_info();
-    /*for (auto &k: _dbg_naive)
-        cout << "KmerNaive: "<<k.str()<<"\n";
-    for (auto &k: _dbg_nodes) {
-        cout << "KmerNodes: " << k.str() << "\n";
-        vector <Kmer> neigh = getKmerNeighbors(k);
-        for (auto n: neigh)
-            cout << "Vecinos: " << n.str() << "\n";
-    }*/
 }
 
 /*
@@ -379,7 +314,7 @@ void  boostDBG<true>::_insert_extra(SequenceContainer * sc, unordered_set<Node> 
 {
     Progress::get().size_total = sc->size();
     cout << "STAGE: Adding extra info (boost-time)\n";
-    //Lets try
+    //Greedy solution :S
     Parameters::get().kmerSize-=1;
     size_t adds = 0, num_read = 0;
     unordered_set<uint32_t> ids;
@@ -539,10 +474,6 @@ void boostDBG<true>::_full_fil_matrix(size_t distance, size_t num_vertex, size_t
      * Recursion peak if we add all the inter-calls
      */
     size_t max_distance = (mode)?(mode==1)?(2*DELTA_PATH_LEN):(2*SHORT_LENGTH):(2*POLISH_PATH_LEN);
-    /*if (in_degree(cur_node) > 1)
-        (*token) = true;
-    if ((out_degree(cur_node) > 1) && (*token))
-        return;*/
     if (distance >= max_distance){
         return;
     }
@@ -654,9 +585,6 @@ void boostDBG<true>::_modify_info()
     vertex_iterator v, vend;
     size_t num_vertex = boost::num_vertices(_g), num_representants = _first_last.size();
     int * distance_matrix;
-    /*
-     * TODO: CAMBIAR A CONSTANTE
-     */
     size_t option = 1;
     if (FLOYD)
         distance_matrix = _floyds_warshall();
@@ -680,15 +608,6 @@ void boostDBG<true>::_modify_info()
             Progress::update(progress++);
         }
         Progress::update(num_representants);
-        //Representative - Short path
-        /*Progress::get().size_total = num_vertex;
-        for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v) {
-            distance = 0;
-            executions = 0;
-            _full_fil_matrix(distance, num_vertex, executions, (*v), (*v), 2, reach_by_read);
-            Progress::update(_g[*v].id);
-        }
-        Progress::update(num_vertex);*/
     }
     //Progression
     cout << "STAGE: Processing cliques\n";
@@ -697,7 +616,6 @@ void boostDBG<true>::_modify_info()
     size_t cont = 0;
     //#pragma omp parallel for
     for (size_t v = 0; v < num_vertex; ++v){
-    //for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v) {
             pair <out_iterator, out_iterator> neighbors =
                     boost::out_edges((v), _g);
             NodeInfo node_info = _g[v];
@@ -705,17 +623,7 @@ void boostDBG<true>::_modify_info()
             unordered_set<graphBU> node_extra = _map_extra_info[node_info.id];
             if (node_extra.empty())
                 continue;
-            //cout<<"NumNode: "<<cont<<endl;
-            //cout << "Num_Node: "<<node_info.id<<endl;
             for (; neighbors.first != neighbors.second; ++neighbors.first) {
-                /*
-                 * Local Graph which joins evey single reachable node (from the others)
-                 * Reminder:
-                 *      - There are several nodes which are not reachable from me but can belong to my cliques
-                 *      - Ocurre cuando toda la informacion contenida en un click por parte del hijo ya ha sido introducida
-                 *      en otro click con anterioridad. En este caso probablemente estemos hablando de un puente. (punto
-                 *      de conexion entre multiples bifurcaciones)
-                 */
                 auto endpoint = boost::target(*neighbors.first, _g);
                 NodeInfo neigh_info = _g[endpoint];
                 size_t curr_node = 0;
@@ -781,22 +689,6 @@ void boostDBG<true>::_modify_info()
                             }
                         }
                     }
-
-                    //Discretization
-                    /*size_t total = 0, jump = 30, size = 40;
-                    vector<size_t> discretizer(size,0);
-                    for (size_t i = 0; i < size; ++i)
-                    {
-                        discretizer[i] = total;
-                        total+=jump;
-                    }
-                    unordered_map<graphBU, size_t> tmp;
-                    for (auto p:representant_hits)
-                    {
-                        size_t place = std::min((size_t)(size-1),(size_t)floor(p.second / jump));
-                        tmp[p.first] = discretizer[place];
-                    }
-                    representant_hits = tmp;*/
                     //Remove representants with no more than MIN_REP element (pointless)
                     removed_representant.clear();
                     for (auto p:store_map)
@@ -806,25 +698,6 @@ void boostDBG<true>::_modify_info()
                             removed_representant.emplace(p.first);
                     }
                     local_vect = to_rep;
-                    /*if (node_info.node == Node("CATTGCCAGGACACATGACAGAGAGGTTTCAGGAAGCCATTGACAATCTCGCTGTGCTCATGCGAGCAGAGACTGGAAGTAGGCCCTACAAAGCAGCGGCAGCTCAACTGCCGGAGACC")) {
-                        cout << "Parent: "<<node_info.node.str()<<endl;
-                        cout << "Son: "<<neigh_info.node.str()<<endl;
-                        cout << "Local haplotype" << endl;
-                        for (auto s:local_vect)
-                            cout << " " << _g[s].node.str() << " ";
-                        cout << endl;
-                        cout << "Translate map + store_map" << endl;
-                        for (auto s: store_map) {
-                            cout << "Node: " << _g[s.first].node.str() << " " << s.first << endl;
-                            cout << "First: " << _g[(_represent_first_last[s.first]).first].node.str() << "\nLast: "
-                                 << _g[(_represent_first_last[s.first]).second].node.str() << endl;
-                            cout << "Number: " << translate_map[_g[s.first].node] << endl;
-                            for (auto p: s.second) {
-                                cout << " " << _g[p].node.str() << " " << endl;
-                            }
-                        }
-                        cin.get();
-                    }*/
                 }
                 for (auto s: removed_representant) {
                     local_vect.erase(s);
@@ -840,7 +713,6 @@ void boostDBG<true>::_modify_info()
                 {
                     NodeInfo s_info = _g[s];
                     vertex_graph source = boost::add_vertex(NodeInfo(s_info.node, curr_node++), local_graph);
-                    //representative_size[source] = store_map[s].size();
                     representative_size[source] = representant_hits[s];
                     local_node_map[s_info.node] = source;
                 }
@@ -863,32 +735,9 @@ void boostDBG<true>::_modify_info()
                             s_pair = _represent_first_last[s], t_pair = _represent_first_last[t];
                             reached = (reach[translator_vector[_g[s_pair.second].id]*num_representants+translator_vector[_g[t_pair.first].id]]
                                        || reach[translator_vector[_g[t_pair.second].id]*num_representants+translator_vector[_g[s_pair.first].id]]);
-                            /*reached_by_read = (reach_by_read[_g[s_pair.second].id*num_vertex+_g[t_pair.first].id]
-                                                || reach_by_read[_g[t_pair.second].id*num_vertex+_g[s_pair.first].id]);*/
                         }
                         bool add = true;
-                        /*if (!reached){
-                            if (option == 1) {
-                                //Parte de intersección de lecturas que no interesa
-                                if (getIntersection(_node_reads[_g[s_pair.first].node], _node_reads[_g[t_pair.second].node]).empty()
-                                    && getIntersection(_node_reads[_g[t_pair.first].node], _node_reads[_g[s_pair.second].node]).empty()) {
-                                    add = false;
-                                }else
-                                    reached = true;
-                            }
-                        }*/
                         if (reached) {
-                            /*if (node_info.node == Node("GTCTCGGGAAAGAGTGTGGACATGTACATCGAAAGAGCAGGTGATATCACATGGGAAAAAGACGCGGAAGTCACTGGAAACAGTCCCCGGCTTGACGTGGCACTGGATGAGAGTGGTGA")) {
-                                cout << "Nodes: "<<s_info.id<<" "<<t_info.id<<endl<<"Reached: "<<reached<<" ReachedByRead: "<<reached_by_read<<endl;
-                                cout << "Nodes(str): "<<s_info.node.str()<<" "<<t_info.node.str()<<endl;
-                                cout << "Sizes: "<<_node_reads[_g[s_pair.first].node].size()<< " "<<_node_reads[_g[t_pair.second].node].size()
-                                     <<" "<<_node_reads[_g[t_pair.first].node].size()<<" "<<_node_reads[_g[s_pair.second].node].size()<<endl;
-                                cout << "SizeIntersection(lastPadre-firstHijo): "<<getIntersection(_node_reads[_g[s_pair.first].node]
-                                        ,_node_reads[_g[t_pair.second].node]).size()<<endl;
-                                cout << "SizeIntersection(lastHijo-firstPadre): "<<getIntersection(_node_reads[_g[t_pair.first].node]
-                                        ,_node_reads[_g[s_pair.second].node]).size()<<endl;
-                                cin.get();
-                            }*/
                             if (add) {
                                 vertex_graph target = local_node_map[t_info.node];
                                 boost::add_edge(source, target, local_graph);
@@ -925,9 +774,6 @@ void boostDBG<true>::_modify_info()
                     {
                         _g[endpoint].parent_cliques[node_info.node].push_back(uniqueHaplotype);
                     }
-                    /*if (node_info.node == Node("AGAGTTGGTCACGACAACGGTTAGCAACATGGCCGAGGTGAGATCCTACTGCTACGAGGCATCAATATCGGACATGGCTTCGGACAGTCGCTGCCCAACACAAGGTGAAGCCTACCTTG")) {
-                        cout << "Este caso" << endl;
-                    }*/
                 } else {
                     output = findMaxClique < Graph_l, vertex_graph, vertex_it > (local_graph, idCliques, representative_size);
 
@@ -1073,13 +919,6 @@ void boostDBG<true>::_modify_info()
                                                 removes++;
                                                 break;
                                             }
-                                            /*if (isSame(intersections[i], intersections[j], IDENTITY_RATIO_UNION)){
-                                                _g[endpoint].parent_cliques[node_info.node][i] = getUnion(_g[endpoint].parent_cliques[node_info.node][i],
-                                                                                                      _g[endpoint].parent_cliques[node_info.node][j]);
-                                                fake_cliques[j] = true;
-                                                caso.push_back(5);
-                                                break;
-                                            }*/
                                         }
                                     }
                             }
@@ -1099,20 +938,6 @@ void boostDBG<true>::_modify_info()
                             }
                         }
                     }
-                    /*if (node_info.node == Node("GGGGGTACGGCCAAAAGCTGCACTTCACTTAGTCCATCCCAGGCTGCATCCAACTTCCACGGCCCACAATATGACACCAAGTCCTGCTTGACGTCCCCCCAATATGGATCAAGTCTTCC")) {
-                        cout << "Orginal size: " << fake_cliques.size() << endl;
-                        for (auto c:caso) {
-                            if (c == 4)
-                                cout << "Average Size: "<<average_size<<" ";
-                            if (c != 6)
-                                cout << "caso: " << c << endl;
-                        }
-                        cout << "Clique"<<endl;
-                        for (auto clique:_g[endpoint].parent_cliques[node_info.node])
-                            show_set(clique);
-                        cout << "Graph: "<<endl;
-                        show_graph<Graph_l , vertex_it>(local_graph);
-                    }*/
                     size_t count = 0, count2 = 0;
                     for (auto i: fake_cliques) {
                         if (i) {
@@ -1124,97 +949,8 @@ void boostDBG<true>::_modify_info()
                         }
                         count++;
                     }
-                    /*if (_g[endpoint].parent_cliques[node_info.node].size() > 2)
-                    {
-                        cout << "Padre: "<<node_info.node.str()<<endl;
-                        cout << "Nodo: "<<_g[endpoint].node.str()<<endl;
-                        cout << "Size: "<<(_g[endpoint].parent_cliques[node_info.node].size())<<endl;
-                        cout << "Graph: "<<endl;
-                        show_graph<Graph_l , vertex_it>(local_graph);
-                    }*/
-                    /*if (num_clicks){
-                        cout << "Kmer: "<<node_info.node.str()<<endl;
-                        cout << "Kmer-Neighbors: "<<neigh_info.node.str()<<endl;
-                        cout << "Graph\n";
-                        show_graph< Graph_l, vertex_it >(local_graph);
-                        cout << "PARENT INFO:"<<endl;
-                        show_set(node_info.node_set);
-                        cout <<"NEIGH INFO:"<<endl;
-                        show_set(neigh_info.node_set);
-                        cout << "Cliques with son:"<<endl;
-                        cout << "Offspring: "<<_g[endpoint].node.str()<<endl;
-                        for (auto clique: _g[endpoint].parent_cliques[node_info.node]) {
-                            cout <<"Clique"<<endl;
-                            show_set(getIntersection(clique, node_info.node_set));
-                        }
-                        for (auto clique: node_info.parent_cliques)
-                        {
-                            cout << "Parent: "<<clique.first.str()<<endl;
-                            for (auto c: clique.second)
-                                show_set(getIntersection(c, node_info.node_set));
-                        }
-                        cin.get();
-                    }*/
-                    /*for (auto p: store_map) {
-                        cout << "Representante: " << _g[p.first].node.str()<<" "<<p.second.size()<<" "<<floor(max_size*MIN_SIZE_REP)<< endl;
-                        for (auto p2:p.second)
-                            cout << _g[p2].node.str() << " ";
-                        cout << endl;
-                    }
-                    cout<< "Kmer(padre): "<<node_info.node.str()<<endl;
-                    cout<<"Kmer(hijo): "<<neigh_info.node.str()<<endl;
-                    cout << "Graph\n";
-                    show_graph< Graph_l, vertex_it >(local_graph);
-                    cout << "Cliques with son:"<<endl;
-                    cout << "Offspring: "<<_g[endpoint].node.str()<<endl;
-                    for (auto clique: _g[endpoint].parent_cliques[node_info.node]) {
-                        cout <<"Clique"<<endl;
-                        show_set(clique);
-                        cout <<"Intersection:"<<endl;
-                        show_set(getIntersection(clique, node_info.node_set));
-                    }
-                    cin.get();*/
-                    if (_g[endpoint].parent_cliques[node_info.node].size() == 0)
-                        cout << "ERROR: "<<node_info.node.str()<<" with son: "<<_g[endpoint].node.str()<<endl;
                     fake_cliques.clear();
-                    /*if (neigh_info.node == Node("AGAAGCAGGAGCCGATAGACAAGGAATTGTATCCTTTAACTTCCCTCAGATCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATA")) {
-                        cout << "Graph\n";
-                        show_graph< Graph_l, vertex_it >(local_graph);
-                        cout << "Cliques:"<<endl;
-                        for (auto clique: _g[endpoint].parent_cliques[node_info.node])
-                            show_set(clique);
-                        exit(1);
-                    }*/
                 }
-                /*if (node_info.node == Node("ATGACTGCTACACCACCAGGAACCCGCGATGCGTTTCCAGATTCCAACTCACCAATCATGGACACAGAAGTGGAAGTCCCAGAGAGAGCCTGGAGCTCAGGCTTTGACTGGGTGACGGA")
-                        || neigh_info.node == Node("ATGACTGCTACACCACCAGGAACCCGCGATGCGTTTCCAGATTCCAACTCACCAATCATGGACACAGAAGTGGAAGTCCCAGAGAGAGCCTGGAGCTCAGGCTTTGACTGGGTGACGGA")) {
-                    for (auto p: store_map) {
-                        cout << "Representante: " << _g[p.first].node.str() << " " << p.second.size() << " "<<representant_hits[p.first]<<" "
-                             << floor(max_size * MIN_SIZE_REP) << endl;
-                        cout << "First: "<<_g[_represent_first_last[p.first].first].node.str()<<endl
-                             <<"Second: "<<_g[_represent_first_last[p.first].second].node.str()<<endl;
-                        for (auto p2:p.second)
-                            cout << _g[p2].node.str() << " ";
-                        cout << endl;
-                    }
-                    cout << "Kmer(padre): " << node_info.node.str() << endl;
-                    cout << "Kmer(hijo): " << neigh_info.node.str() << endl;
-                    cout << "Graph\n";
-                    show_graph<Graph_l, vertex_it>(local_graph);
-                    cout << "Cliques with son:" << endl;
-                    cout << "Offspring: " << _g[endpoint].node.str() << endl;
-                    for (auto clique: _g[endpoint].parent_cliques[node_info.node]) {
-                        cout << "Clique" << endl;
-                        show_set(clique);
-                        cout << "Intersection:" << endl;
-                        show_set(getIntersection(clique, neigh_info.node_set));
-                    }
-                    cout << "Son paired info:" << endl;
-                    show_set(neigh_info.node_set);
-                    cout << "Parent pairs size: " << node_info.node_set.size() << endl;
-                    cout << "Neigh pairs size:" << neigh_info.node_set.size() << endl;
-                    cin.get();
-                }*/
             }
         }
     //Free Floyd
@@ -1276,10 +1012,8 @@ void boostDBG<true>::_transverse(const it_node &n,
     stack<DnaSequence> stack_seq;
     stack_node.emplace(n);
     stack_seq.emplace(first_seq);
-    size_t mas = 0, masSame = 0, menos = 0, igual = 0;
+    size_t mas = 0, masSame = 0, igual = 0;
     bool show = false;
-    /*if (_g[n.first].node == Node("TCTGGTTGTGCTTGAATGATTCCTAATGCATATTGTGAGTCTGTTACTATGTTTACTTCTAATCCCGAATCCTGCAAAGCTAGATAAATTGCTTGTAACTCAGTCTTCTGATTTGTTGT"))
-        show = true;*/
     while (!stack_node.empty()) {
         //cout << "Stack size: "<<stack_node.size()<<endl;
         it_node node_assay = stack_node.top();
@@ -1288,31 +1022,10 @@ void boostDBG<true>::_transverse(const it_node &n,
         DnaSequence sequence = stack_seq.top();
         stack_seq.pop();
         NodeInfo nodeInfo = _g[node_assay.first];
-        /*if (nodeInfo.node == Node("CCTACAGGGGCAAATGGTACATCAGGCCATATCACCTAGAACTTTAAATGCATGGGTAAAAGTAGTGGAAGAGAAGGCGTTCAGCCCAGAAGTAATACCCATGTTTTCAGCATTATCAG")){
-            cout << "KMER: "<<endl;
-            cout<<"Haplotype "<<endl;
-            show_set(node_assay.second);
-            cout << "SequenceLength: "<<sequence.length()<<endl;
-            cin.get();
-        }*/
         if (sequence.length() >= 100000)
             show = true;
         else
             show = false;
-        /*if (nodeInfo.node == Node("CCGGCTTGACGTGGCACTGGATGAGAGTGGTGATTTCTCCTTGGTAGAGGAGGATGGCCCACCCATGAGAGAGATCATACTCAGGGTGGTCCTGATGGCCATCTGTGGCATGAACCCAA")){
-            cout << "Haplotype: " << endl;
-            show_set(node_assay.second);
-            for (auto clique: nodeInfo.parent_cliques) {
-                cout << "Parent: " << clique.first.str() << endl;
-                for (auto c: clique.second) {
-                    cout << "Clique: " << endl;
-                    show_set(c);
-                    cout << "Intersection: " << endl;
-                    show_set(getIntersection(c, nodeInfo.node_set));
-                }
-            }
-            cin.get();
-        }*/
         size_t kmer_size = Parameters::get().kmerSize;
         pair <vector<it_node>, vector<it_node>> pair_neigh;
         if (!node_assay.second.empty()) {
@@ -1322,43 +1035,7 @@ void boostDBG<true>::_transverse(const it_node &n,
             for (auto n_l:neighs)
                 pair_neigh.first.push_back(it_node(n_l, PairedInfoNode()));
         }
-        /*if (node_assay.second.empty())
-        {
-            cout << "Kmer: "<<nodeInfo.node.str()<<"\n";
-            cout << "Paired_info: "<<endl;
-            show_set(nodeInfo.node_set);
-            cout << "Cliques: "<<endl;
-            for (auto n2: nodeInfo.parent_cliques){
-                cout << "Parent: "<<n2.first.str()<<endl;
-                for (auto clique: n2.second)
-                {
-                    cout << "Clique: "<<endl;
-                    show_set(clique);
-                }
-            }
-            cout << "Sequence: "<<sequence.str()<<endl;
-            cin.get();
-        }*/
-        /*if (nodeInfo.node == Node("AGAAGCAGGAGCCGATAGACAAGGAATTGTATCCTTTAACTTCCCTCAGATCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATA")) {
-            cout << "Kmer: " << nodeInfo.node.str() << "\n";
-            cout << "Haplotype: " << endl;
-            show_set(node_assay.second);
-            cout << "Intersection: " << endl;
-            show_set(getIntersection(node_assay.second, nodeInfo.node_set));
-            cout << "Paired_info: " << endl;
-            show_set(nodeInfo.node_set);
-            cout << "Neighbors: "<<pair_neigh.first.size()<<" "<<pair_neigh.second.size()<<endl;
-            cin.get();
-        }*/
         vector <it_node> neighbors = pair_neigh.first;
-        /*cout << "Kmer: "<<nodeInfo.node.str()<<endl;
-        cout << "Out: "<<neighbors.size() << " In: "<<in_nodes<<endl;
-        cout << "Seq so far: "<<sequence.str()<<endl;*/
-        /*if (show) {
-            cout << "Node: "<<nodeInfo.node.str()<<endl;
-            cout << "Sequence: "<<sequence.str()<<endl;
-            cout << "InDegree: "<<in_nodes<<" OutDegree: "<<neighbors.size()<<endl;
-        }*/
         if ((neighbors.size() == 1) /*(in_nodes == 1)*/) {
             if (rep_controller.find(it_node_set(node_assay)) == rep_controller.end()) {
                 rep_controller.emplace(it_node_set(node_assay));
@@ -1432,21 +1109,6 @@ void boostDBG<true>::_transverse(const it_node &n,
                     }
                     cin.get();
                 }
-                //Launching new sequences:
-                /*if (extended.find(node_assay.first) == extended.end()) {
-                    map_nodo_seq_start[node_assay.first] = vector<size_t>();
-                    extended.emplace(node_assay.first);
-                    for (auto n2: getKmerNeighbors(node_assay.first)) {
-                        NodeInfo neigh_info = _g[n2];
-                        for (auto hap: neigh_info.parent_cliques[nodeInfo.node])
-                        {
-                            DnaSequence sequence("");
-                            sequence.append_nuc_right(nodeInfo.node.at(0));
-                            map_nodo_seq_start[node_assay.first].push_back(seg);
-                            stack_seq.emplace(sequence);
-                            stack_node.emplace(pair<graphBU, PairedInfoNode>(n2, hap));
-                        }
-                    }*/
                     for (auto n2: pair_neigh.second) {
                         if (node_launched.find(it_node_set(n2)) == node_launched.end()) {
                             node_launched.emplace(it_node_set(n2));
@@ -1524,12 +1186,6 @@ void boostDBG<true>::_transverse(const it_node &n,
                         node_launched.emplace(it_node_set(node_assay));
                         for (auto n2:neighbors)
                         {
-                            /*if (show && _g[n2.first].node == Node("TAACTTCTGTATGTCATTGACAGTCCAGCTATCTTTTTCTGGCAGCACTATAGGCTGTACTGTCCATTTATCAGGATGGAGTTCATAACCCATCCAAAGGAATGGAGGTTCTTTCTGAT")){
-                                cout << "Hit"<<endl;
-                                show_set(n2.second);
-                                cout <<endl;
-                                cin.get();
-                            }*/
                             DnaSequence seq(sequence);
                             seq.append_nuc_right(nodeInfo.node.at(0));
                             stack_seq.emplace(seq);
@@ -1552,49 +1208,6 @@ void boostDBG<true>::_transverse(const it_node &n,
                     continue;
                 }
             }
-            /*if (in_nodes > 1)
-            {
-                if (neighbors.size()) {
-                    Node pivot = _g[in_neighbors[0].first].node;
-                    bool same_neigh = true;
-                    for (auto it:in_neighbors) {
-                        if (pivot != _g[it.first].node) {
-                            same_neigh = false;
-                            break;
-                        }
-                    }
-                    if (same_neigh) {
-                        //Launching new sequences:
-                        if (node_launched.find(it_node_set(node_assay)) == node_launched.end())
-                        {
-                            map_nodo_seq_start[node_assay.first] = vector<size_t>();
-                            node_launched.emplace(it_node_set(node_assay));
-                            for (auto n2:neighbors)
-                            {
-                                DnaSequence seq(sequence);
-                                seq.append_nuc_right(nodeInfo.node.at(0));
-                                map_nodo_seq_start[node_assay.first].push_back(seg);
-                                stack_seq.emplace(seq);
-                                stack_node.emplace(n2);
-                                //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
-                            }
-                            for (auto n2: pair_neigh.second)
-                            {
-                                if (node_launched.find(it_node_set(n2)) == node_launched.end()) {
-                                    node_launched.emplace(it_node_set(n2));
-                                    DnaSequence seq("");
-                                    seq.append_nuc_right(nodeInfo.node.at(0));
-                                    map_nodo_seq_start[node_assay.first].push_back(seg);
-                                    stack_seq.emplace(seq);
-                                    stack_node.emplace(n2);
-                                }
-                                //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
-                            }
-                        }
-                        continue;
-                    }
-                }
-            }*/
             /*
              * Get full chain
              */
@@ -1631,75 +1244,8 @@ void boostDBG<true>::_transverse(const it_node &n,
                     map_seq_nodo_end[seg - 1] = node_assay.first;
                 }*/
             }
-           /* if (in_nodes > 1)
-            {
-                menos++;
-                cout << "NEIGHBORS INDEGREE"<<endl;
-                cout << "Kmer: " << nodeInfo.node.str()<<"\n";
-                cout <<"Haplotype: "<<endl;
-                show_set(node_assay.second);
-                cout << "Intersection: "<<endl;
-                show_set(getIntersection(node_assay.second, nodeInfo.node_set));
-                cout << "Paired_info: "<<endl;
-                show_set(nodeInfo.node_set);
-                cout << "Cliques: "<<endl;
-                for (auto n2: nodeInfo.parent_cliques)
-                {
-                    cout << "Parent: "<<n2.first.str()<<endl;
-                    for (auto clique: n2.second){
-                        cout << "Clique: "<<endl;
-                        show_set(clique);
-                    }
-                }
-                cout << "Neighbors: "<<endl;
-                for (auto n2: pair_neigh.second) {
-                    cout << "Neighbor: "<<_g[n2.first].node.str()<<endl;
-                    cout << "Cliques with parent: "<<endl;
-                    for (auto cliques: _g[n2.first].parent_cliques) {
-                        cout << "Parent: "<<cliques.first.str()<<endl;
-                        if (cliques.first == nodeInfo.node.str())
-                        {
-                            for (auto click:cliques.second) {
-                                cout << "Clique: "<<endl;
-                                show_set(click);
-                                cout << "Intersection: "<<endl;
-                                show_set(getIntersection(click, nodeInfo.node_set));
-                                cout << "IsSame: "<<isSame(getIntersection(click, nodeInfo.node_set), getIntersection(node_assay.second, nodeInfo.node_set))<<endl;
-                            }
-                        }
-                    }
-                }
-                cin.get();
-                if (node_launched.find(it_node_set(node_assay)) != node_launched.end()) {
-                    map_seq_nodo_end[seg - 1] = node_assay.first;
-                }else {
-                    if (neighbors.size()) {
-                        map_nodo_seq_start[node_assay.first] = vector<size_t>();
-                        node_launched.emplace(it_node_set(node_assay));
-                        for (auto n2:neighbors) {
-                            DnaSequence seq = DnaSequence("");
-                            seq.append_nuc_right(nodeInfo.node.at(0));
-                            map_nodo_seq_start[node_assay.first].push_back(seg);
-                            stack_seq.emplace(seq);
-                            stack_node.emplace(n2);
-                            //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
-                        }
-                        //Launching new sequences:
-                        for (auto n2: pair_neigh.second) {
-                            DnaSequence seq("");
-                            seq.append_nuc_right(nodeInfo.node.at(0));
-                            map_nodo_seq_start[node_assay.first].push_back(seg);
-                            stack_seq.emplace(seq);
-                            stack_node.emplace(n2);
-                            //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
-                        }
-                    }
-                }
-            }*/
         }
     }
-    cout << "Mayor de 1: "<<mas<< " Mayor de 1 pero igual: "<<masSame<<"\n Menor de 0: "<<menos<<"\n Igual: "<<igual<<endl;
-    cout << "Num nodes transversed: "<<nodes_extended.size() <<" Nodes added: "<<node_launched.size()<<endl;
 }
 
 template<>
@@ -1709,59 +1255,15 @@ void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
     map <size_t, graphBU> map_seq_nodo_end;
     map <size_t, DnaSequence> map_seqs;
     unordered_set<graphBU> nodes_extended;
-    size_t launchs = 0;
     for (auto n:_in_0_pairs)
     {
         if (node_launched.find(n) == node_launched.end()) {
             DnaSequence sequence("");
-            cout << "Launch number: " << launchs++ << endl;
             sequence.append_nuc_right(_g[n.first].node.at(0));
             map_nodo_seq_start[n.first].push_back(seg);
             _transverse(n, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, sequence);
         }
     }
-    /*for (auto n:_in_0) {
-        NodeInfo node_info = _g[n];
-        if (map_nodo_seq_start.find(n) == map_nodo_seq_start.end())
-        {
-            map_nodo_seq_start[n] = vector<size_t>();
-        }
-        for (auto n2: getKmerNeighbors(n)) {
-            NodeInfo neigh_info = _g[n2];
-            if (nodes_extended.find(n2) == nodes_extended.end())
-            {
-                nodes_extended.emplace(n2);
-                //Cambiar neigh_info.node_set -> por haplotipo del padre
-                for (auto hap: neigh_info.parent_cliques[node_info.node]) {
-                    if (node_launched.find(it_node_set(pair<graphBU, PairedInfoNode>(n2, hap))) ==
-                        node_launched.end()) {
-                        node_launched.emplace(it_node_set(pair<graphBU, PairedInfoNode>(n2, hap)));
-                        DnaSequence sequence("");
-                        cout << "New launching: " << neigh_info.node.str() << "\n";
-                        sequence.append_nuc_right(node_info.node.at(0));
-                        map_nodo_seq_start[n].push_back(seg);
-                        _transverse(pair<graphBU, PairedInfoNode>(n2, hap), map_nodo_seq_start, map_seq_nodo_end,
-                                    map_seqs, nodes_extended,
-                                    sequence);
-                    }
-                }
-            }
-        }
-    }*/
-    /*
-    cout << "Seq_start: \n";
-    for (auto s:map_nodo_seq_start){
-        cout << _g[s.first].node.str()<<": ";
-        for (auto t:s.second) {
-            cout << t << "\t";
-        }
-        cout << "\n";
-    }
-    cout << "Seq end: \n";
-    for (auto s:map_seq_nodo_end){
-        cout << s.first <<":"<<_g[s.second].node.str();
-        cout << "\n";
-    }*/
     cout << "PercentageTransversed: "<<endl;
     cout << (float)(nodes_extended.size() /  boost::num_vertices(_g))<<"%"<< endl;
     cout << "Writing unitigs\n";
@@ -1830,22 +1332,12 @@ void boostDBG<true>::_remove_outliers(Extra<true> * paired, DBG<true> * dbg, uno
                         if (translator_vector[_g[node1].id] == INF || translator_vector[_g[node2].id] == INF)
                             cout << "FAIL mayusculo"<<endl;
                         if (reachable) {
-                            /*tmp[p.first] += p2.second;
-                            (tmp.find(p2.first)==tmp.end())?tmp[p2.first]=p.second:tmp[p2.first]+=p.second;*/
                             tmp[p.first]++;
                             (tmp.find(p2.first) == tmp.end()) ? tmp[p2.first] = 1 : tmp[p2.first]++;
                         }
                     }
                     set_pair_end_2.erase(p.first);
                 }
-                /*if (_g[i].node== Node("TACCAGAGTCACACAACAGACGGGCACACACTACTTGAAGCACTCAAGGCAAGCTTTATTGAGGCTTAAGCAGTGGGTTCCCTAGCTAGCCAGAGAGCTCCCAGGCTCAGATCTGGTCT")) {
-                    cout << "Writing FreqMap for: "<<_g[i].node.str()<<endl;
-                    for (auto p: tmp)
-                    {
-                        cout << "Pair: "<<(*(p.first)).str()<<" Freq: "<<p.second<<endl;
-                    }
-                    cin.get();
-                }*/
                 paired->mod_freqs(_g[i].node, tmp);
             }
         }
@@ -1895,18 +1387,6 @@ void boostDBG<true>::_get_representatives()
         stack<vertex_t> kmer_check;
         vector<vertex_t> unitig_tmp;
         kmer_check.push(p);
-        /*if ((boost::out_degree(p, _g) > 1) && (boost::in_degree(p,_g) > 0)) {
-            if (!visited[_g[p].id]) {
-                for (auto neigh: getKmerNeighbors(p))
-                    kmer_check.push(neigh);
-                visited[_g[p].id] = true;
-            }
-        }else{
-            if (!visited[_g[p].id]) {
-                kmer_check.push(p);
-                unitig_tmp.push_back(p);
-            }
-        }*/
         while(!kmer_check.empty())
         {
             vertex_t curr_kmer = kmer_check.top();
@@ -1933,21 +1413,6 @@ void boostDBG<true>::_get_representatives()
                     _representants_hits[representative] = unordered_map<graphBU, size_t>();
                     for (auto k:unitig_tmp)
                         _representants_map[k] = representative;
-                    /*if (_g[unitig_tmp[unitig_tmp.size()-1]].node == Node("CAGCAAGAGGCGAGGGGCGGCGACTGGTGAGTACGCCGAAATTTTGACTAGCGGAGGCTAGAAGGAGAGAGATGGGTGCGAGAGCGTCAGTATTAAGCGGGGGAGAATTGGATAGGTGG"))
-                    {
-                        cout << "Previous State: "<<prev_state<<endl;
-                        cout << "Outdegree: "<<out_degree<<endl;
-                        cout << "Indegree: "<<in_degree<<endl;
-                        cout << "UnitigTmp (size): "<<unitig_tmp.size()<<endl;
-                        cout << "UnitigTmp (first): "<<unitig_tmp[0]<<" Last: "<<unitig_tmp[unitig_tmp.size()-1]<<endl;
-                        cout << "Current kmer: "<<_g[curr_kmer].node.str()<<endl;
-                        for (auto p: unitig_tmp)
-                        {
-                            cout << " " << _g[p].node.str() << " ";
-                        }
-                        cout <<endl;
-                        cin.get();
-                    }*/
                 }
                 unitig_tmp.clear();
                 if ((in_degree > 1) && !prev_state && (out_degree <= 1))
@@ -2046,29 +1511,6 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
     cout << "STAGE: Adding paired-end information\n";
     _insertExtraInfo(local_map, dbg);
     _modify_info();
-    /*
-     *
-     */
-    /*Node test = Node("AATGAATCTGTAGTAATTAATTGTACAAGACCCAACAACAATACAAGAAGAAGGTTATC");
-    graphBU node = _getNode(test);
-    vector<graphBU> out_neighs = getKmerNeighbors(node);
-    unordered_map<Node,vertex_t> in_neighs;
-    pair<in_iterator,in_iterator> in_neighbors =
-            boost::in_edges(node, _g);
-    for (; in_neighbors.first != in_neighbors.second; ++in_neighbors.first)
-    {
-        in_neighs[_g[boost::source(*in_neighbors.first,_g)].node] = boost::source(*in_neighbors.first, _g);
-    }
-    for (auto m:_g[node].parent_cliques)
-    {
-        vertex_t neighNode = _getNode(m.first);
-        if (in_neighs.find(m.first) != in_neighs.end())
-        {
-            NodeInfo neighInfo = _g[in_neighs[m.first]];
-        }
-    }
-    exit(1);*/
-    //GetInDegree 0
     //show_info();
     vertex_iterator v, vend;
     cout << "STAGE: Getting starting points"<<endl;
@@ -2099,60 +1541,6 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
             }
         }
     }
-    /*for (boost::tie(v, vend) = boost::vertices(_g); v != vend; ++v)
-    {
-        if (in_degree(*v) == 0)
-        {
-            _in_0.push_back(*v);
-        }else{
-            bool end = true;
-            vector<unordered_set<Node>> all_p, tmp;
-            size_t cont = 0;
-            for (auto parent: _g[*v].parent_cliques) {
-                if (parent.second.empty()) {
-                    end = _g[*v].node_set.empty();
-                    continue;
-                }else{
-                    end = true;
-                    for (auto click: parent.second)
-                    {
-                        unordered_set<Node> result = isGetSubset(click, _g[*v].node_set);
-                        if (!result.empty()) {
-                            tmp.push_back(result);
-                        }
-                    }
-                    vector<unordered_set<Node>> all_p_tmp;
-                    for (auto set:all_p){
-                        for (auto set_2: tmp) {
-                            unordered_set <Node> sub_result = getIntersection(set_2, set);
-                            if (!sub_result.empty())
-                                all_p_tmp.push_back(sub_result);
-                        }
-                    }
-                    cont++;
-                    all_p = (all_p.empty())?tmp:all_p_tmp;
-                    if (all_p.empty())
-                        break;
-                    end = false;
-                    tmp.clear();
-                }
-            }
-            if (!end && cont > 1)
-                _in_0.push_back(*v);
-        }
-        if (_g[*v].node == Node("TGGAAGGGCTAATTCACTCCCAACAAAGACAAGATATCCTTGATCTGTGGGTCTACCACACACAAGGCTACTTCCCTGA")){
-            cout << "ExtraInfo: "<<endl;
-            show_set(_g[*v].node_set);
-            cout << "Parent cliques:"<<endl;
-            for (auto n:_g[*v].parent_cliques){
-                cout << "Parent: "<<n.first.str()<<"\n";
-                for (auto n2:n.second)
-                    show_set(n2);
-            }
-            cout << in_degree(it_node(*v, _g[*v].node_set),false) << endl;
-            exit(1);
-        }
-    }*/
     cout << "Suspicious Starts: "<<_in_0.size()<<endl;
     cout << "Suspicious Real Starts: "<<_in_0_pairs.size()<<endl;
     //cin.get();
@@ -2284,13 +1672,6 @@ void listDBG<false>::_buildNewGraph(DBG<false> * dbg)
         }
     }
     cout << "End Translation\n";
-    /*for (auto n:_solid_kmers)
-        cout << "Kmer: "<<n.str()<<":"<<n.hash()<<"\n";
-    cout << "Start Kmers: "<<_in_0.size()<<"\n";*/
-    //show_info();
-
-    /*for (auto n: _in_0)
-        cout << "StartPoint: "<<n.str()<<"\n";*/
 }
 
 template<>
