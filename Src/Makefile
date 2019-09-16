@@ -1,9 +1,9 @@
-CXXFLAGS = -Wall -Wreorder -std=c++17 -g
+CXXFLAGS = -std=c++17 -Wall -Wreorder -g
 
 BIN_release = ../bin/viaDBG
 BIN_test = ../bin/viaDBG_test
 
-release: CXXFLGS += -O3 -DNDEBUG
+release: CXXFLAGS += -O3 -DNDEBUG
 release: test
 
 tests: CXXFLGS += -O3 -DNDEBUG

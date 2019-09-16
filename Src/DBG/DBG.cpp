@@ -320,12 +320,12 @@ void  boostDBG<true>::_insert_extra(SequenceContainer * sc, unordered_set<Node> 
     unordered_set<uint32_t> ids;
     if (Parameters::get().remove_duplicates)
     {
-        ids = Parse::getIdsFromFiles("left_reads.rmdup.fa");
         size_t numThreads = Parameters::get().numThreads;
         //Fichero1 -> left_reads.fa
         sc->write_left_chains();
         System::execute("bash -c \"sga index -t "+std::to_string(numThreads)+" left_reads.fa\"");
         System::execute("bash -c \"sga rmdup -t "+std::to_string(numThreads)+" left_reads.fa\"");
+        ids = Parse::getIdsFromFiles("left_reads.rmdup.fa");
         //Fichero2 -> rigth_reads.fa
         sc->write_right_chains();
         System::execute("bash -c \"sga index -t "+std::to_string(numThreads)+" right_reads.fa\"");
@@ -487,8 +487,8 @@ void boostDBG<true>::_full_fil_matrix(size_t distance, size_t num_vertex, size_t
         if (tmp == source || check_store.find(tmp) != check_store.end())
             continue;
         check_store.emplace(tmp);
-        if (translator_vector[_g[tmp].id] != INF) {
-            if (translator_vector[_g[source].id] * num_vertex + translator_vector[_g[tmp].id] > reach_matrix.size()) {
+        if (translator_vector[_g[tmp].id] < INF) {
+            if ((translator_vector[_g[source].id] * num_vertex + translator_vector[_g[tmp].id]) > reach_matrix.size()) {
                 cout << "Source: "<<translator_vector[_g[source].id]<<" "<<"Tmp: "<<translator_vector[_g[tmp].id]<<endl;
                 cout << translator_vector[_g[source].id] * num_vertex + translator_vector[_g[tmp].id]<< "SizeMatriz: "<<reach_matrix.size()<<endl;
                 cout << "Fallo del tamanho" << endl;
@@ -583,7 +583,8 @@ void boostDBG<true>::_modify_info()
      * We are going to use pair_info (ExtraInfoNodes) to "modify" the graph including this new information
      */
     vertex_iterator v, vend;
-    size_t num_vertex = boost::num_vertices(_g), num_representants = _first_last.size();
+    size_t num_vertex = getVertex(), num_representants = getNumRepresentants();
+    //cout << "Num vertex: "<<num_vertex<<" Num representants: "<<getNumRepresentants()<<endl;
     int * distance_matrix;
     size_t option = 1;
     if (FLOYD)
@@ -616,18 +617,30 @@ void boostDBG<true>::_modify_info()
     size_t cont = 0;
     //#pragma omp parallel for
     for (size_t v = 0; v < num_vertex; ++v){
-            pair <out_iterator, out_iterator> neighbors =
-                    boost::out_edges((v), _g);
             NodeInfo node_info = _g[v];
             Progress::update(cont++);
-            unordered_set<graphBU> node_extra = _map_extra_info[node_info.id];
+            //unordered_set<graphBU> node_extra = _map_extra_info[node_info.id];
+            auto node_extra = getExtraInfoNode(v);
+            /*cout << "Nodo (extra size): "<<node_extra.size()<<endl;
+            for (auto i:node_extra)
+                cout<<i<<", ";
+            cout << endl;*/
             if (node_extra.empty())
                 continue;
+            auto endpoints = getKmerNeighbors(v);
+            for (auto endpoint: endpoints)
+            {
+            /*pair <out_iterator, out_iterator> neighbors =
+                        boost::out_edges((v), _g);
             for (; neighbors.first != neighbors.second; ++neighbors.first) {
-                auto endpoint = boost::target(*neighbors.first, _g);
+                auto endpoint = boost::target(*neighbors.first, _g);*/
                 NodeInfo neigh_info = _g[endpoint];
                 size_t curr_node = 0;
-                unordered_set <graphBU> neigh_extra = _map_extra_info[neigh_info.id];
+                //unordered_set <graphBU> neigh_extra = _map_extra_info[neigh_info.id];
+                auto neigh_extra = getExtraInfoNode(endpoint);
+                /*for (auto i:neigh_extra)
+                    cout<<i<<", ";
+                cout << endl;*/
                 if (neigh_extra.empty())
                     continue;
                 unordered_set <graphBU> local_vect = getUnion(node_extra,neigh_extra),last_set, removed_representant;
@@ -642,14 +655,18 @@ void boostDBG<true>::_modify_info()
                     unordered_set<graphBU> endpoints;
                     unordered_map<graphBU, size_t> representant_siege;
                     for (auto s:local_vect) {
-                        vertex_t representative = _representants_map[s];
+                        //graphBU representative = _representants_map[s];
+                        graphBU representative = getRepresentant(s);
+                        //cout << "S: "<<s<<"Representant: "<<representative << endl;
                         if (store_map.find(representative) == store_map.end()) {
                             to_rep.emplace(representative);
                             (in(node_extra, s)?
                                     representant_siege[representative] = 0:representant_siege[representative] = 1);
                             removed_representant.emplace(representative);
                             store_map[representative] = vector<vertex_t>(1, s);
-                            representant_hits[representative] = _representants_hits[representative][v]+_representants_hits[representative][endpoint];
+                            //representant_hits[representative] = _representants_hits[representative][v]+_representants_hits[representative][endpoint];
+                            representant_hits[representative] = getRepresentantHitsNode(representative, v) + getRepresentantHitsNode(representative, endpoint);
+                            //cout << "Hits: "<<representative<<" "<<representant_hits[representative]<<endl;
                             translate_map[_g[representative].node] = representative;
                             local_set.emplace(representative);
                         }else {
@@ -663,28 +680,36 @@ void boostDBG<true>::_modify_info()
                         }
                     }
                     for (auto k:getKmerNeighbors(endpoint)) {
-                        for (auto s: _map_extra_info[_g[k].id]){
-                            graphBU representative = _representants_map[s];
+                        //for (auto s: _map_extra_info[_g[k].id]){
+                        for (auto s: getExtraInfoNode(k)){
+                            //graphBU representative = _representants_map[s];
+                            graphBU representative = getRepresentant(s);
                             if (representant_hits.find(representative) != representant_hits.end())
-                                representant_hits[representative]+=_representants_hits[representative][k];
+                                //representant_hits[representative]+=_representants_hits[representative][k];
+                                representant_hits[representative] += getRepresentantHitsNode(representative, k);
                             else{
                                 to_rep.emplace(representative);
                                 store_map[representative] = vector<graphBU>(1,s);
-                                representant_hits[representative] = _representants_hits[representative][k];
+                                //representant_hits[representative] = _representants_hits[representative][k];
+                                representant_hits[representative] = getRepresentantHitsNode(representative, k);
                                 translate_map[_g[representative].node] = representative;
                                 local_set.emplace(representative);
                             }
                         }
                     }
                     for (auto k:getInKmerNeighbors(v)) {
-                        for (auto s: _map_extra_info[_g[k].id]){
-                            graphBU representative = _representants_map[s];
+                        //for (auto s: _map_extra_info[_g[k].id]){
+                        for (auto s: getExtraInfoNode(k)){
+                            //graphBU representative = _representants_map[s];
+                            graphBU representative = getRepresentant(s);
                             if (representant_hits.find(representative) != representant_hits.end())
-                                representant_hits[representative]+=_representants_hits[representative][k];
+                                //representant_hits[representative]+=_representants_hits[representative][k];
+                                representant_hits[representative] += getRepresentantHitsNode(representative, k);
                             else{
                                 store_map[representative] = vector<graphBU>(1,s);
-                                representant_hits[representative] = _representants_hits[representative][k];
+                                //representant_hits[representative] = _representants_hits[representative][k];
                                 translate_map[_g[representative].node] = representative;
+                                representant_hits[representative] = getRepresentantHitsNode(representative, k);
                                 local_set.emplace(representative);
                             }
                         }
@@ -705,47 +730,64 @@ void boostDBG<true>::_modify_info()
                 }
                 //cout << "LocalVect: "<<local_vect.size()<<"\n";
                 Graph_l local_graph;
-                unordered_map<Node, vertex_graph> local_node_map;
+                //unordered_map<Node, vertex_graph> local_node_map;
+                unordered_map<size_t, vertex_graph> local_node_map;
                 //cout << "NumIterations: "<<((size_t)last_set.size()*(last_set.size()-1)/2)<<endl;
                 last_set = local_vect;
                 unordered_map<vertex_graph, size_t> representative_size;
                 for (auto s:local_set)
                 {
                     NodeInfo s_info = _g[s];
+                    //cout << "S: "<<s<<" "<<getRepresentantTranslation(s)<<endl;
                     vertex_graph source = boost::add_vertex(NodeInfo(s_info.node, curr_node++), local_graph);
                     representative_size[source] = representant_hits[s];
-                    local_node_map[s_info.node] = source;
+                    //local_node_map[s_info.node] = source;
+                    local_node_map[getRepresentantTranslation(s)] = source;
                 }
                 for (auto s:last_set) {
                     NodeInfo s_info = _g[s];
-                    vertex_graph source = local_node_map[s_info.node];
+                    //vertex_graph source = local_node_map[s_info.node];
+                    vertex_graph source = local_node_map[getRepresentantTranslation(s)];
                     for (auto t:local_vect) {
                         if (s == t)
                             continue;
                         NodeInfo t_info = _g[t];
                         bool reached = false;
                         pair<graphBU, graphBU> s_pair, t_pair;
-                        if (option == 0)
-                            reached = ((FLOYD) ? (_reachable(distance_matrix, t_info.id, s_info.id) ||
-                                                   _reachable(distance_matrix, t_info.id, s_info.id))
-                                                : (reach[s_info.id * num_vertex + t_info.id] ||
-                                                   reach[t_info.id * num_vertex + s_info.id]));
                         if (option == 1)
                         {
                             s_pair = _represent_first_last[s], t_pair = _represent_first_last[t];
-                            reached = (reach[translator_vector[_g[s_pair.second].id]*num_representants+translator_vector[_g[t_pair.first].id]]
-                                       || reach[translator_vector[_g[t_pair.second].id]*num_representants+translator_vector[_g[s_pair.first].id]]);
+                            /*reached = (reach[translator_vector[_g[s_pair.second].id]*num_representants+translator_vector[_g[t_pair.first].id]]
+                                       || reach[translator_vector[_g[t_pair.second].id]*num_representants+translator_vector[_g[s_pair.first].id]]);*/
+                            reached = (reach[getRepresentantTranslation(s_pair.second)*num_representants+getRepresentantTranslation(t_pair.first)]
+                                       || reach[getRepresentantTranslation(t_pair.second)*num_representants+getRepresentantTranslation(s_pair.first)]);
+                            /*if (node_info.id < 20)
+                            {
+                                cout << "S_pair (s): " << s_pair.first << " " << s_pair.second << " Translation: "
+                                     << getRepresentantTranslation(s_pair.second) << " "
+                                     << getRepresentantTranslation(s_pair.first)
+                                     << " Tpair (t):" << t_pair.second << " " << t_pair.first << " Translation: "
+                                     << getRepresentantTranslation(t_pair.first)
+                                     << " " << getRepresentantTranslation(t_pair.second) << " " << reached << endl;
+                            }*/
                         }
                         bool add = true;
                         if (reached) {
                             if (add) {
-                                vertex_graph target = local_node_map[t_info.node];
+                                //vertex_graph target = local_node_map[t_info.node];
+                                vertex_graph target = local_node_map[getRepresentantTranslation(t)];
                                 boost::add_edge(source, target, local_graph);
+                                //cout << "Adding vertex from: "<<source<<" to "<<target<<endl;
                             }
                         }
                     }
                     local_vect.erase(s);
                 }
+                /*if (node_info.id < 20) {
+                    cout << "Node: "<<node_info.id<<endl;
+                    show_graph<Graph_l, vertex_it>(local_graph);
+                }*/
+
                 /*
                  * Polish Graph
                  */
@@ -772,11 +814,13 @@ void boostDBG<true>::_modify_info()
                     }
                     #pragma omp critical(update)
                     {
-                        _g[endpoint].parent_cliques[node_info.node].push_back(uniqueHaplotype);
+                        //_g[endpoint].parent_cliques[node_info.node].push_back(uniqueHaplotype);
+                        addHaplotype(endpoint, v, uniqueHaplotype);
                     }
                 } else {
+                    //cout << "V: "<<node_info.id<<endl;
                     output = findMaxClique < Graph_l, vertex_graph, vertex_it > (local_graph, idCliques, representative_size);
-
+                    //cout << "Output: "<<output.size()<<endl;
                     unordered_set <vertex_graph> edge_transversed;
                     float total_size = 0.0, average_size = 0.0;
                     size_t num_clicks = 0;
@@ -799,7 +843,8 @@ void boostDBG<true>::_modify_info()
                             }
                             #pragma omp critical(update)
                             {
-                                _g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                //_g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                addHaplotype(endpoint, v, local_haplotype);
                             }
                             total_size += local_haplotype.size();
                             num_clicks++;
@@ -809,6 +854,7 @@ void boostDBG<true>::_modify_info()
                             pair <size_t, vector<vertex_graph>> top_click = output.top();
                             output.pop();
                             vector <vertex_graph> clique = top_click.second;
+                            //cout << "Clique size: "<<clique.size()<<endl;
                             PairedInfoNode local_haplotype;
                             for (size_t i = 0; i < clique.size(); ++i) {
                                 Node node_clique = local_graph[clique[i]].node;
@@ -831,7 +877,8 @@ void boostDBG<true>::_modify_info()
                             }
                             #pragma omp critical(update)
                             {
-                                _g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                //_g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                addHaplotype(endpoint, v, local_haplotype);
                             }
                             total_size += local_haplotype.size();
                             num_clicks++;
@@ -858,7 +905,8 @@ void boostDBG<true>::_modify_info()
                                     }
                                     #pragma omp critical(update)
                                     {
-                                        _g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                        //_g[endpoint].parent_cliques[node_info.node].push_back(local_haplotype);
+                                        addHaplotype(endpoint, v, local_haplotype);
                                     }
                                     total_size += local_haplotype.size();
                                     num_clicks++;
@@ -867,21 +915,41 @@ void boostDBG<true>::_modify_info()
                         }
                     }
                     average_size = total_size / num_clicks;
-                    size_t removes = 0;
-                    vector<bool> fake_cliques(_g[endpoint].parent_cliques[node_info.node].size(), false);
+                    vector<PairedInfoNode> cliquesAvail = getCliquesWithParent(endpoint,v);
+                    PairedInfoNode pairedInfoNeigh = getPairedInfoNode(endpoint),
+                        pairedInfoNode = getPairedInfoNode(v);
+                    size_t removes = 0, numberCliques = cliquesAvail.size();
+                    vector<bool> fake_cliques(numberCliques/*_g[endpoint].parent_cliques[node_info.node].size()*/, false);
+                    vector<size_t> caso(numberCliques/*_g[endpoint].parent_cliques[node_info.node].size()*/,6);
                     vector<size_t> join_cliques;
                     vector<unordered_set<Node>> intersections;
-                    vector<size_t> caso(_g[endpoint].parent_cliques[node_info.node].size(),6);
-                    for (auto clique: _g[endpoint].parent_cliques[node_info.node])
-                        intersections.push_back(getIntersection(clique, neigh_info.node_set));
-                    for (uint16_t i = 0; i < _g[endpoint].parent_cliques[node_info.node].size(); ++i)
+                    if (numberCliques != _g[endpoint].parent_cliques[node_info.node].size()){
+                        cout << "ERROR! "<<numberCliques<<endl;
+                        exit(1);
+                    }
+                    /*for (auto clique: _g[endpoint].parent_cliques[node_info.node])
+                        intersections.push_back(getIntersection(clique, neigh_info.node_set));*/
+                    for (auto clique: cliquesAvail) {
+                        if (getIntersection(clique, pairedInfoNeigh) != getIntersection(clique,neigh_info.node_set))
+                        {
+                            cout << "ERROR! Intersecciones"<<endl;
+                            exit(1);
+                        }
+                        intersections.push_back(getIntersection(clique, pairedInfoNeigh));
+                    }
+                    for (uint16_t i = 0; i < numberCliques/*_g[endpoint].parent_cliques[node_info.node].size()*/; ++i)
                     {
                         if (fake_cliques[i])
                             continue;
                         size_t num_neighs = getKmerNeighbors(v).size(),
-                                clique_size = _g[endpoint].parent_cliques[node_info.node][i].size();
-                        unordered_set<Node> parent_none = getIntersection(_g[endpoint].parent_cliques[node_info.node][i], node_info.node_set),
-                                neigh_none = intersections[i];
+                                clique_size = cliquesAvail[i].size()/*_g[endpoint].parent_cliques[node_info.node][i].size()*/;
+                        /*unordered_set<Node> parent_none = getIntersection(_g[endpoint].parent_cliques[node_info.node][i], node_info.node_set),
+                                neigh_none = intersections[i];*/
+                        unordered_set<Node> parent_none = getIntersection(cliquesAvail[i],pairedInfoNode), neigh_none = intersections[i];
+                        if (parent_none != getIntersection(_g[endpoint].parent_cliques[node_info.node][i], node_info.node_set)){
+                            cout <<"ERROR! Parent None"<<endl;
+                            exit(1);
+                        }
                         if (neigh_none.empty() || parent_none.empty()) {
                             fake_cliques[i] = true;
                             if (parent_none.empty())
@@ -896,11 +964,18 @@ void boostDBG<true>::_modify_info()
                                 fake_cliques[i] = true;
                                 caso[i] = 4;
                             } else {
-                                    bool neigh_full = isSubset(_g[endpoint].parent_cliques[node_info.node][i],
+                                    /*bool neigh_full = isSubset(_g[endpoint].parent_cliques[node_info.node][i],
                                                                neigh_info.node_set, SIMILARITY_RATIO)
                                     , parent_full = isSubset(_g[endpoint].parent_cliques[node_info.node][i],
                                                              node_info.node_set, SIMILARITY_RATIO),
-                                            parent_same = isSame(parent_none, node_info.node_set, IDENTITY_RATIO);
+                                            parent_same = isSame(parent_none, node_info.node_set, IDENTITY_RATIO);*/
+                                    if (cliquesAvail[i] != _g[endpoint].parent_cliques[node_info.node][i]){
+                                        cout << "ERROR! CliquesAvail"<<endl;
+                                        exit(1);
+                                    }
+                                    bool neigh_full = isSubset(cliquesAvail[i],pairedInfoNeigh, SIMILARITY_RATIO),
+                                        parent_full = isSubset(cliquesAvail[i],pairedInfoNode, SIMILARITY_RATIO),
+                                        parent_same = isSame(parent_none,pairedInfoNode,IDENTITY_RATIO);
                                     if ((!neigh_full && parent_full) && !parent_same && (num_neighs > 1)) {
                                         fake_cliques[i] = true;
                                         caso[i] = 2;
@@ -908,7 +983,7 @@ void boostDBG<true>::_modify_info()
                                         removes++;
                                     } else {
                                         for (uint16_t j = 0;
-                                             j < _g[endpoint].parent_cliques[node_info.node].size(); ++j) {
+                                             j < numberCliques/*_g[endpoint].parent_cliques[node_info.node].size()*/; ++j) {
                                             if (i == j || fake_cliques[j])
                                                 continue;
                                             if (isSubset(intersections[i], intersections[j]) &&
@@ -932,7 +1007,7 @@ void boostDBG<true>::_modify_info()
                                 caso[i] = 4;
                         }
                         if (fake_cliques[i] && caso[i] == 4){
-                            if ( _g[endpoint].parent_cliques[node_info.node][i].size() > (average_size*CLICK_RATIO)) {
+                            if ( cliquesAvail[i].size()/*_g[endpoint].parent_cliques[node_info.node][i].size()*/ > (average_size*CLICK_RATIO)) {
                                 fake_cliques[i] = false;
                                 caso[i] = 6;
                             }
@@ -1000,18 +1075,21 @@ void boostDBG<true>::show_info(size_t max_it)
 
 template<>
 void boostDBG<true>::_transverse(const it_node &n,
-                                 map<graphBU, vector<size_t>> & map_nodo_seq_start,
+                                 map<size_t, vector<size_t>> & graphUnitigs,
                                  map<size_t, graphBU> & map_seq_nodo_end,
                                  map<size_t, DnaSequence> & map_seqs,
                                  unordered_set<graphBU> & nodes_extended,
-                                 DnaSequence & first_seq)
+                                 DnaSequence & first_seq,
+                                 size_t & seq_id)
 {
     //Mucho ojo con este controlador
     unordered_set<it_node_set, hash_fn> rep_controller;
     stack<it_node> stack_node;
     stack<DnaSequence> stack_seq;
+    stack<int> stack_prev_seqs;
     stack_node.emplace(n);
     stack_seq.emplace(first_seq);
+    stack_prev_seqs.emplace(-1);
     size_t mas = 0, masSame = 0, igual = 0;
     bool show = false;
     while (!stack_node.empty()) {
@@ -1046,9 +1124,12 @@ void boostDBG<true>::_transverse(const it_node &n,
                 for (uint i = 0; i < kmer_size - 1; ++i)
                     sequence.append_nuc_right(nodeInfo.node.at(i));
                 map_seq_nodo_end[seg] = node_assay.first;
-                map_seqs[seg++] = sequence;
+                map_seqs[seg] = sequence;
+                size_t seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
+                graphUnitigs[seqTmp].push_back(seg);
+                graphUnitigs[seg] = vector<size_t>();
+                seg++;
             }
-            //_transverse(neighbors[0], map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, sequence);
         } else {
             if (neighbors.size() == 0) {
                 igual++;
@@ -1114,13 +1195,11 @@ void boostDBG<true>::_transverse(const it_node &n,
                             node_launched.emplace(it_node_set(n2));
                             DnaSequence seq("");
                             seq.append_nuc_right(nodeInfo.node.at(0));
-                            map_nodo_seq_start[node_assay.first].push_back(seg);
+                            stack_prev_seqs.emplace(seg);
                             stack_seq.emplace(seq);
                             stack_node.emplace(n2);
-                            //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
                         }
                     }
-                //}
             }
             if (neighbors.size() > 1) {
                 if (show) {
@@ -1182,7 +1261,6 @@ void boostDBG<true>::_transverse(const it_node &n,
                     //Launching new sequences:
                     if (node_launched.find(it_node_set(node_assay)) == node_launched.end())
                     {
-                        map_nodo_seq_start[node_assay.first] = vector<size_t>();
                         node_launched.emplace(it_node_set(node_assay));
                         for (auto n2:neighbors)
                         {
@@ -1190,7 +1268,6 @@ void boostDBG<true>::_transverse(const it_node &n,
                             seq.append_nuc_right(nodeInfo.node.at(0));
                             stack_seq.emplace(seq);
                             stack_node.emplace(n2);
-                            //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
                         }
                         for (auto n2: pair_neigh.second)
                         {
@@ -1198,35 +1275,25 @@ void boostDBG<true>::_transverse(const it_node &n,
                                 node_launched.emplace(it_node_set(n2));
                                 DnaSequence seq("");
                                 seq.append_nuc_right(nodeInfo.node.at(0));
-                                map_nodo_seq_start[node_assay.first].push_back(seg);
+                                stack_prev_seqs.emplace(seg);
                                 stack_seq.emplace(seq);
                                 stack_node.emplace(n2);
                             }
-                            //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
                         }
                     }
                     continue;
                 }
             }
-            /*
-             * Get full chain
-             */
-            for (uint i = 0; i < kmer_size - 1; ++i)
-                sequence.append_nuc_right(nodeInfo.node.at(i));
-            map_seq_nodo_end[seg] = node_assay.first;
-            map_seqs[seg++] = sequence;
             if (neighbors.size() > 1) {
                 mas++;
                 if (node_launched.find(it_node_set(node_assay)) == node_launched.end()) {
-                    map_nodo_seq_start[node_assay.first] = vector<size_t>();
                     node_launched.emplace(it_node_set(node_assay));
                     for (auto n2: neighbors) {
                         DnaSequence seq("");
                         seq.append_nuc_right(nodeInfo.node.at(0));
-                        map_nodo_seq_start[node_assay.first].push_back(seg);
+                        stack_prev_seqs.emplace(seg);
                         stack_seq.emplace(seq);
                         stack_node.emplace(n2);
-                        //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
                     }
                     //Launching new sequences:
                     for (auto n2: pair_neigh.second) {
@@ -1234,16 +1301,21 @@ void boostDBG<true>::_transverse(const it_node &n,
                             node_launched.emplace(it_node_set(n2));
                             DnaSequence seq("");
                             seq.append_nuc_right(nodeInfo.node.at(0));
-                            map_nodo_seq_start[node_assay.first].push_back(seg);
+                            stack_prev_seqs.emplace(seg);
                             stack_seq.emplace(seq);
                             stack_node.emplace(n2);
                         }
-                        //_transverse(n2, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, seq);
                     }
-                } /*else {
-                    map_seq_nodo_end[seg - 1] = node_assay.first;
-                }*/
+                }
             }
+            for (uint i = 0; i < kmer_size - 1; ++i)
+                sequence.append_nuc_right(nodeInfo.node.at(i));
+            map_seq_nodo_end[seg] = node_assay.first;
+            map_seqs[seg] = sequence;
+            size_t seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
+            graphUnitigs[seqTmp].push_back(seg);
+            graphUnitigs[seg] = vector<size_t>();
+            seg++;
         }
     }
 }
@@ -1251,17 +1323,18 @@ void boostDBG<true>::_transverse(const it_node &n,
 template<>
 void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
     cout << "--------------------------------\nBoostDBG extension\n--------------------------------\n";
-    map <graphBU, vector<size_t>> map_nodo_seq_start;
+    map <size_t, vector<size_t>> map_nodo_seq_start;
     map <size_t, graphBU> map_seq_nodo_end;
     map <size_t, DnaSequence> map_seqs;
     unordered_set<graphBU> nodes_extended;
+    size_t seqId = 0;
     for (auto n:_in_0_pairs)
     {
         if (node_launched.find(n) == node_launched.end()) {
             DnaSequence sequence("");
             sequence.append_nuc_right(_g[n.first].node.at(0));
             map_nodo_seq_start[n.first].push_back(seg);
-            _transverse(n, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, sequence);
+            _transverse(n, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, sequence, seqId);
         }
     }
     cout << "PercentageTransversed: "<<endl;
@@ -1279,7 +1352,7 @@ void boostDBG<true>::_remove_outliers(Extra<true> * paired, DBG<true> * dbg, uno
     size_t distance, executions;
     unordered_set<graphBU> check_store;
     //Polishing
-    cout << "Inner Stage: Filling reach matriz for polishing"<<endl;
+    cout << "Inner Stage: Filling out reach matrix for polishing"<<endl;
     Progress::get().size_total = num_representants;
     bool option = false;
     size_t progress = 0;
@@ -1296,7 +1369,7 @@ void boostDBG<true>::_remove_outliers(Extra<true> * paired, DBG<true> * dbg, uno
     //Checking outliers: not naive way
     Progress::get().size_total = num_vertex;
     size_t cont = 0;
-    if (DO_POLISH) {
+    if (Parameters::get().polish) {
         cout << "Inner Stage: Polishing paired-end information" << endl;
         //#pragma omp parallel for
         for (size_t i = 0; i < num_vertex; ++i) {
@@ -1429,7 +1502,7 @@ void boostDBG<true>::_get_representatives()
     /*
      * Fill vector
      */
-    size_t num_representant = 0;
+    size_t num_representant = 0, num_representants_real = 0;
     for (auto r:_represent_first_last) {
         if (_first_last.find(r.second.first) == _first_last.end()) {
             translator_vector[_g[r.second.first].id] = num_representant++;
@@ -1440,6 +1513,11 @@ void boostDBG<true>::_get_representatives()
             _first_last.emplace(r.second.second);
         }
     }
+    num_representants_real = num_representant;
+    num_representant = INF+1;
+    for (auto r:_represent_first_last)
+        if (_first_last.find(r.first) == _first_last.end())
+            translator_vector[_g[r.first].id] = num_representant++;
     /*
      * Remove
      */
@@ -1455,7 +1533,7 @@ void boostDBG<true>::_get_representatives()
         }
         nodes++;
     }
-    cout << "End: "<<_representants.size()<<" representantes. Numero de representantes: "<<num_representant<<endl;
+    cout << "End: "<<_representants.size()<<" representantes. Numero de representantes: "<<num_representants_real<<endl;
     //cin.get();
     //exit(1);
 }
@@ -1511,7 +1589,7 @@ boostDBG<true>::boostDBG(DBG<true> * dbg)
     cout << "STAGE: Adding paired-end information\n";
     _insertExtraInfo(local_map, dbg);
     _modify_info();
-    //show_info();
+    //show_info(20);
     vertex_iterator v, vend;
     cout << "STAGE: Getting starting points"<<endl;
     for (boost::tie(v,vend) = boost::vertices(_g);v!=vend;++v)
@@ -1619,7 +1697,7 @@ void listDBG<false>::_writeUnitigs(map <Node, vector<size_t>> map_nodo_seq_start
         for (auto origin: s.second)
             for (auto end: map_nodo_seq_start[map_seq_nodo_end[origin]])
                 links.push_back(pair<size_t,size_t>(end, origin));
-    UnitigExtender<false>::_write_gfa(file_to_path, seqs,links);
+    UnitigExtender<false>::_write_gfa(file_to_path, map_seqs,links);
 }
 
 template<>

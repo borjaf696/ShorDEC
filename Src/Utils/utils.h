@@ -23,6 +23,25 @@
 #define SMOOTH_FACTOR 1.0
 
 using namespace std;
+template<typename T>
+class OwnHash
+{
+public:
+    size_t operator()(const T &node) const
+    {
+        return node.hash();
+    }
+};
+template<>
+class OwnHash<size_t>
+{
+public:
+    size_t operator()(const size_t &node) const
+    {
+        return hash<size_t>()(node);
+    }
+};
+
 /*
  * Map -> histogram<K,Y>, histogram<K,container>
  */
@@ -330,6 +349,12 @@ struct Parameters
             Parameters::get().remove_duplicates = param;
         if (param_read == "numThreads")
             Parameters::get().numThreads = param;
+        if (param_read == "polish")
+            Parameters::get().polish = param;
+        if (param_read == "postProcess")
+            Parameters::get().postProcess = param;
+        if (param_read == "gfa")
+            Parameters::get().gfa = param;
     }
     /*
     * Calculate H.
@@ -402,7 +427,8 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
-    bool full_info = false, metagenomic = false, remove_duplicates = true;
+    bool full_info = false, metagenomic = false,
+        postProcess = false, remove_duplicates = true, polish = true, gfa = false;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;
@@ -501,6 +527,10 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std:
         for (tie(adjVertex, adjVertEnd) = boost::adjacent_vertices(vertex, graph); adjVertex != adjVertEnd; ++adjVertex) {
             candidateNeighbors.emplace(*adjVertex);
         }
+        //Testear
+        // std::vector<Vt> neighbors = graph.getNeighbors(vertex);
+        // for (auto n: neighbors)
+        //      candidateNeighbors.emplace(n);
 
         std::set<Vt> tmp;
 

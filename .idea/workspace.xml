@@ -65,7 +65,7 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Src/Main/main.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="450">
+            <state relative-caret-position="-585">
               <caret line="110" column="43" selection-start-line="110" selection-start-column="43" selection-end-line="110" selection-end-column="43" />
             </state>
           </provider>
@@ -207,12 +207,12 @@
       <option name="presentableId" value="Default" />
       <updated>1558682277376</updated>
       <workItem from="1558682279756" duration="8946000" />
-      <workItem from="1559053726066" duration="1394000" />
+      <workItem from="1559053726066" duration="1993000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10340000" />
+    <option name="totallyTimeSpent" value="10939000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="65" y="-4" width="1847" height="983" extended-state="6" />
@@ -279,7 +279,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Src/Main/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
+        <state relative-caret-position="-585">
           <caret line="110" column="43" selection-start-line="110" selection-start-column="43" selection-end-line="110" selection-end-column="43" />
         </state>
       </provider>
