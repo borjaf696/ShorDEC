@@ -1312,10 +1312,15 @@ void boostDBG<true>::_transverse(const it_node &n,
                 sequence.append_nuc_right(nodeInfo.node.at(i));
             map_seq_nodo_end[seg] = node_assay.first;
             map_seqs[seg] = sequence;
-            size_t seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
-            graphUnitigs[seqTmp].push_back(seg);
-            graphUnitigs[seg] = vector<size_t>();
-            seg++;
+            cout << "Stack_prev_size: "<<stack_prev_seqs.size()<<endl;
+            int seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
+            if (seqTmp != -1)
+            {
+                cout << "SeqTMP: "<<seqTmp<<endl;
+                graphUnitigs[seqTmp].push_back(seg);
+                graphUnitigs[seg] = vector<size_t>();
+                seg++;
+            }
         }
     }
 }

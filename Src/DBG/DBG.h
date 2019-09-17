@@ -1086,10 +1086,10 @@ public:
 
     void ProcessTigs(string path_to_write)
     {
-        cout << "Lets try Unitigs Pair_End graph\n";
+        cout << "Unitigs in APDB"<<endl;
         //UnitigExtender<P, graphBU>::full_extension(this, vector<graphBU>(), path_to_write);
         extension(vector<Node>(),path_to_write);
-        cout << "Unitigs donette\n";
+        cout << "Reported in : "<<path_to_write<<endl;
     }
     //Show methods
     void show_info()

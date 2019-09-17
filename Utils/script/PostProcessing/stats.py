@@ -4,8 +4,21 @@ import altair as alt
 import pandas as pd
 import numpy as np
 
-LOWERBOUND = 10
-UPPEROUND = 200
+LOWERBOUND = 20
+UPPEROUND = 300
+
+def __histogramToDf(histogram):
+    x = np.arange(len(histogram))
+    return pd.DataFrame({'x':x,'histogram':histogram})
+
+def __buildReverseCumulative(histogram):
+    size, cumm = len(histogram), 0
+    cummHisto = [0]*size
+    for i in range(size, 0, -1):
+        value = histogram[i-1]
+        cummHisto[i-1] = value + cumm
+        cumm += value
+    return cummHisto
 
 def __buildHistogram(pathHisto):
     histogram, numLine = [],0
@@ -18,8 +31,7 @@ def __buildHistogram(pathHisto):
                     numLine += 1
                 else:
                     numLine+=1
-    x = np.arange(len(histogram))
-    return pd.DataFrame({'x':x,'histogram':histogram})
+    return histogram
 
 def __exportChart(df,nameFile, type = 'line'):
     chart = alt.Chart(df)
@@ -27,7 +39,11 @@ def __exportChart(df,nameFile, type = 'line'):
         chart = chart.mark_line().encode(
             x='x',
             y='histogram')
-
+    if type == 'bar':
+        chart = chart.mark_bar().encode(
+            x='x',
+            y='histogram'
+        )
     chart.save(nameFile+'.html')
 
 if __name__=='__main__':
@@ -35,7 +51,12 @@ if __name__=='__main__':
 
     cmd = sys.argv[1]
     if cmd == 'histogram':
+        output_dir = 'stats/'
         pathHisto = sys.argv[2]
+        histogram = __buildHistogram(pathHisto)
         print('Processing histogram from: ',pathHisto)
-        df = __buildHistogram(pathHisto)
-        __exportChart(df, 'histogram')
+        df = __histogramToDf(histogram)
+        __exportChart(df, output_dir+'histogram','bar')
+        print('Process reverse cumulative histogram: ', pathHisto)
+        __exportChart(__histogramToDf(__buildReverseCumulative(histogram)),output_dir+'cumRevHistogram')
+
