@@ -45,6 +45,7 @@ public:
         /*
          * Write seqs -> gfa
          */
+        unordered_set<DnaSequence> removedSequences;
         for (auto& seq : _seqs)
         {
             string s_line = "S\t"+to_string(num_seq++)+"\t";
@@ -66,6 +67,7 @@ public:
 
     static void _write_gfa(string filename, map<size_t,DnaSequence> _seqs, vector<pair<size_t,size_t>> _links)
     {
+        cout << "Exporting GFA"<<endl;
         unordered_set<size_t> removed;
         FILE* fout = fopen(filename.c_str(), "w");
         std::cout << "FileName: "<<filename<<"\n";
@@ -75,7 +77,6 @@ public:
         string header = "H\tVN:Z:1\n";
         fwrite(header.data(), sizeof(header.data()[0])
                 ,header.size(), fout);
-        int num_seq = 0;
         /*
          * Write seqs -> gfa
          */
@@ -87,7 +88,7 @@ public:
                 removed.emplace(mseq.first);
                 continue;
             }
-            string s_line = "S\t"+to_string(num_seq++)+"\t";
+            string s_line = "S\t"+to_string(mseq.first)+"\t";
             s_line+= seq.str()+"\n";
             fwrite(s_line.data(), sizeof(s_line.data()[0]),
                    s_line.size(), fout);

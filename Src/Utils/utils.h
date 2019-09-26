@@ -359,6 +359,41 @@ struct Parameters
     /*
     * Calculate H.
     */
+    static size_t calculateAccumulativeParam(vector<size_t> histogram)
+    {
+        auto _medianFilter = [&histogram]()
+        {
+            int window = 12;
+            for (int i = window; i < ((int)histogram.size()-window); ++i)
+            {
+                vector<size_t> tmp_vect;
+                for (int j = -window; j < window; ++j)
+                    tmp_vect.push_back(histogram[i+j]);
+                sort(tmp_vect.begin(), tmp_vect.end());
+                histogram[i] = tmp_vect[floor(tmp_vect.size() / 2)];
+            }
+        };
+        _medianFilter();
+        bool check = false;
+        size_t window = 4;
+        for (size_t i = 1; i < histogram.size(); ++i)
+        {
+            if (histogram[i-1] > histogram[i])
+                check = true;
+            if (check)
+            {
+                size_t tend = 0;
+                for (size_t j = 0; j < window; ++j)
+                    tend +=(histogram[i+j+1] > histogram[i]);
+                if (tend > (window / 2))
+                    return i;
+            }
+        }
+        return 0;
+    }
+    /*
+    * Calculate H.
+    */
     static size_t calculateAccumulativeParam(vector<size_t> histogram, size_t totalBases, size_t avgLength)
     {
         size_t kmersAccumulated = 0, h = 0;
@@ -667,6 +702,7 @@ void createCountMapDSK(T * dbg, string path_to_file, vector<size_t> histogram, s
     {
         Parameters::get().accumulative_h = (Parameters::calculateAccumulativeParam(histogram, tb, avL)==1)?
                                            2:Parameters::calculateAccumulativeParam(histogram, tb, avL);
+        cout << "NewThreshold: "<<(Parameters::calculateAccumulativeParam(histogram))<<endl;
     }
     infile.close();
     infile.open(path_to_file);

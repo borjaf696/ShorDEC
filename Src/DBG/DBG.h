@@ -1331,8 +1331,9 @@ private:
         for (auto p:graphUnitigs)
         {
             size_t from = p.first;
-            for (auto to: p.second)
+            for (auto to: p.second) {
                 links.push_back(pair<size_t, size_t>(to, from));
+            }
         }
         UnitigExtender<false>::_write_gfa(file_to_path, map_seqs,links);
         UnitigExtender<false>::_write_fasta(file_to_path+".fasta", seqs);

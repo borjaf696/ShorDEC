@@ -1086,10 +1086,10 @@ void boostDBG<true>::_transverse(const it_node &n,
     unordered_set<it_node_set, hash_fn> rep_controller;
     stack<it_node> stack_node;
     stack<DnaSequence> stack_seq;
-    stack<int> stack_prev_seqs;
+    stack<size_t> stack_prev_seqs;
     stack_node.emplace(n);
     stack_seq.emplace(first_seq);
-    stack_prev_seqs.emplace(-1);
+    stack_prev_seqs.emplace(INF);
     size_t mas = 0, masSame = 0, igual = 0;
     bool show = false;
     while (!stack_node.empty()) {
@@ -1126,7 +1126,8 @@ void boostDBG<true>::_transverse(const it_node &n,
                 map_seq_nodo_end[seg] = node_assay.first;
                 map_seqs[seg] = sequence;
                 size_t seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
-                graphUnitigs[seqTmp].push_back(seg);
+                if (seqTmp != INF)
+                    graphUnitigs[seqTmp].push_back(seg);
                 graphUnitigs[seg] = vector<size_t>();
                 seg++;
             }
@@ -1262,10 +1263,12 @@ void boostDBG<true>::_transverse(const it_node &n,
                     if (node_launched.find(it_node_set(node_assay)) == node_launched.end())
                     {
                         node_launched.emplace(it_node_set(node_assay));
+                        size_t seqTmp = stack_prev_seqs.top();
                         for (auto n2:neighbors)
                         {
                             DnaSequence seq(sequence);
                             seq.append_nuc_right(nodeInfo.node.at(0));
+                            stack_prev_seqs.emplace(seqTmp);
                             stack_seq.emplace(seq);
                             stack_node.emplace(n2);
                         }
@@ -1280,6 +1283,7 @@ void boostDBG<true>::_transverse(const it_node &n,
                                 stack_node.emplace(n2);
                             }
                         }
+                        stack_prev_seqs.pop();
                     }
                     continue;
                 }
@@ -1312,15 +1316,13 @@ void boostDBG<true>::_transverse(const it_node &n,
                 sequence.append_nuc_right(nodeInfo.node.at(i));
             map_seq_nodo_end[seg] = node_assay.first;
             map_seqs[seg] = sequence;
-            cout << "Stack_prev_size: "<<stack_prev_seqs.size()<<endl;
             int seqTmp = stack_prev_seqs.top();stack_prev_seqs.pop();
-            if (seqTmp != -1)
+            if (seqTmp != INF)
             {
-                cout << "SeqTMP: "<<seqTmp<<endl;
                 graphUnitigs[seqTmp].push_back(seg);
-                graphUnitigs[seg] = vector<size_t>();
-                seg++;
             }
+            graphUnitigs[seg] = vector<size_t>();
+            seg++;
         }
     }
 }
@@ -1328,7 +1330,7 @@ void boostDBG<true>::_transverse(const it_node &n,
 template<>
 void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
     cout << "--------------------------------\nBoostDBG extension\n--------------------------------\n";
-    map <size_t, vector<size_t>> map_nodo_seq_start;
+    map <size_t, vector<size_t>> graphUnitigs;
     map <size_t, graphBU> map_seq_nodo_end;
     map <size_t, DnaSequence> map_seqs;
     unordered_set<graphBU> nodes_extended;
@@ -1338,14 +1340,13 @@ void boostDBG<true>::extension(vector <Node> in_0, string path_to_write) {
         if (node_launched.find(n) == node_launched.end()) {
             DnaSequence sequence("");
             sequence.append_nuc_right(_g[n.first].node.at(0));
-            map_nodo_seq_start[n.first].push_back(seg);
-            _transverse(n, map_nodo_seq_start, map_seq_nodo_end, map_seqs, nodes_extended, sequence, seqId);
+            _transverse(n, graphUnitigs, map_seq_nodo_end, map_seqs, nodes_extended, sequence, seqId);
         }
     }
     cout << "PercentageTransversed: "<<endl;
     cout << (float)(nodes_extended.size() /  boost::num_vertices(_g))<<"%"<< endl;
     cout << "Writing unitigs\n";
-    _writeUnitigs(map_nodo_seq_start,map_seq_nodo_end, map_seqs, path_to_write);
+    _writeUnitigs(graphUnitigs,map_seq_nodo_end, map_seqs, path_to_write);
 }
 
 template<>
