@@ -361,33 +361,37 @@ struct Parameters
     */
     static size_t calculateAccumulativeParam(vector<size_t> histogram)
     {
-        auto _medianFilter = [&histogram]()
+        /*auto _medianFilter = [&histogram]()
         {
-            int window = 12;
-            for (int i = window; i < ((int)histogram.size()-window); ++i)
+            int window = 12, histogramSize = (int) histogram.size();
+            vector<size_t> tmpHistogram(histogramSize, 0);
+            for (int i = 0; i < histogramSize; ++i)
             {
                 vector<size_t> tmp_vect;
-                for (int j = -window; j < window; ++j)
+                int iniJ = ((i < window)?-i:-window), endJ = ((i+window) > histogramSize)?(histogramSize - i - 1):window;
+                for (int j = iniJ; j < endJ; ++j)
                     tmp_vect.push_back(histogram[i+j]);
                 sort(tmp_vect.begin(), tmp_vect.end());
-                histogram[i] = tmp_vect[floor(tmp_vect.size() / 2)];
+                tmpHistogram[i] = tmp_vect[floor(tmp_vect.size() / 2)];
+                if (i == window) {
+                    for (auto j:tmp_vect)
+                        cout << " " << j << ",";
+                    cout << endl;
+                }
             }
-        };
-        _medianFilter();
-        bool check = false;
-        size_t window = 4;
+            size_t count = 0;
+            for (auto i: tmpHistogram)
+                histogram[count++] = i;
+        };*/
+        //_medianFilter();
+        size_t window = 15;
         for (size_t i = 1; i < histogram.size(); ++i)
         {
-            if (histogram[i-1] > histogram[i])
-                check = true;
-            if (check)
-            {
-                size_t tend = 0;
-                for (size_t j = 0; j < window; ++j)
-                    tend +=(histogram[i+j+1] > histogram[i]);
-                if (tend > (window / 2))
-                    return i;
-            }
+            size_t tend = 0;
+            for (size_t j = 0; j < window; ++j)
+                tend +=(histogram[i+j+1] > histogram[i]);
+            if (tend > (window / 2))
+                return i;
         }
         return 0;
     }
@@ -412,10 +416,14 @@ struct Parameters
                 kmersAccumulated+=k;
             else
                 kmersAccumulated+=(k*h);
-            if (((float)kmersAccumulated > threshold) || (total_kmers<Parameters::get().genome_size))
-            {
-                break;
-            }
+            if (Parameters::get().genome_size != 0) {
+                if (total_kmers < Parameters::get().genome_size)
+                    break;
+            } else
+                if (((float)kmersAccumulated > threshold))
+                {
+                    break;
+                }
             h++;
         }
         cout << "KmersErased: "<<kmersAccumulated<<endl;
@@ -703,6 +711,8 @@ void createCountMapDSK(T * dbg, string path_to_file, vector<size_t> histogram, s
         Parameters::get().accumulative_h = (Parameters::calculateAccumulativeParam(histogram, tb, avL)==1)?
                                            2:Parameters::calculateAccumulativeParam(histogram, tb, avL);
         cout << "NewThreshold: "<<(Parameters::calculateAccumulativeParam(histogram))<<endl;
+        if (Parameters::get().genome_size == 0)
+            Parameters::get().accumulative_h = Parameters::calculateAccumulativeParam(histogram);
     }
     infile.close();
     infile.open(path_to_file);

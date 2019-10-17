@@ -47,23 +47,21 @@ def __meadianFilter(histogram):
         histogram[i] = np.median(vect)
 
 def __studyHistogram(histogram):
-    window, check= 1, False
+    window = 1
     for i,val in enumerate(histogram):
         if i == 0:
             continue
-        if histogram[i] < histogram[i-1]:
-            check = True
-        if check:
-            vectTend = [False]*window
-            selection = min(window,len(histogram)-i)
-            for j in range(min(window, len(histogram)-i-1)):
-                vectTend[j] = (histogram[i+j+1] > histogram[i])
-            sumTend = 0
-            for b in vectTend:
-                if b:
-                    sumTend += 1
-                    if sumTend > (selection / 2):
-                        return i+LOWERBOUND
+        print('I: ',i,' ',histogram[i])
+        vectTend = [False]*window
+        selection = min(window,len(histogram)-i)
+        for j in range(min(window, len(histogram)-i-1)):
+            vectTend[j] = (histogram[i+j+1] > histogram[i])
+        sumTend = 0
+        for b in vectTend:
+            if b:
+                sumTend += 1
+                if sumTend > (selection / 2):
+                    return i+LOWERBOUND
     return 0
 
 def __exportChart(df,nameFile, type = 'line'):
