@@ -110,7 +110,7 @@ void SequenceContainer::loadFromFile(const std::string& fileName, bool is_paired
 	else
 		this->readFastq(records, fileName, is_paired, side_read);
     if (side_read)
-	    records.reserve(records.size() * (is_paired)?4:2);
+	    records.reserve(records.size() * ((is_paired)?4:2));
 	std::vector<FastaRecord> complements;
 	for (auto &record : records)
 	{
