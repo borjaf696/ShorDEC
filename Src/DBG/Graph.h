@@ -9,6 +9,7 @@
 #include "../ReadData/kmer.h"
 
 using namespace std;
+
 template<typename T>
 struct BUgraph{
     typedef T graphBU;
@@ -236,6 +237,14 @@ public:
     virtual Extra<P>* getPairedInfo() = 0;
     virtual vector<Parent_Node> getEngagers() = 0;
     virtual unordered_map<Parent_Node, unordered_set<size_t>> getNodeReads() = 0;
+    virtual size_t getVertex()
+    {
+        return 0;
+    }
+    virtual size_t getNumRepresentants()
+    {
+        return 0;
+    }
     /*
      * This is like a hot fix but however->polymorphism :(
      */
@@ -247,6 +256,47 @@ public:
 
     virtual vector<Parent_Node> getKmerNeighbors(Parent_Node) const = 0;
     virtual vector<Parent_Node> getInKmerNeighbors(Parent_Node) const = 0;
+    /*
+     * Paired end common methods
+     */
+    template<typename T>
+        unordered_set<T> getExtraInfoNode(size_t)
+    {
+        return unordered_set<T>();
+    }
+    template<typename T>
+        Parent_Paired_Info getPairedInfoNode(T)
+    {
+            return Parent_Paired_Info ();
+    }
+    template<typename T>
+        T getRepresentant(T t)
+    {
+            return t;
+    }
+    template<typename T>
+        size_t getRepresentantHitsNode(T, T)
+    {
+            return 0;
+    }
+    template<typename T>
+        size_t getRepresentantTranslation(T)
+    {
+            return 0;
+    }
+    template<typename T>
+        void addHaplotype(T, T, Parent_Paired_Info)
+    {}
+    template<typename T>
+        size_t getNumberCliques(T,T)
+    {
+            return 0;
+    }
+    template<typename T>
+        vector<Parent_Paired_Info> getCliquesWithParent(T,T)
+    {
+            return vector<Parent_Paired_Info>();
+    }
     //Show methods
     virtual void show_info() = 0;
     //Extension -> Todo: Move
@@ -277,7 +327,11 @@ public:
     }
     virtual void extension(vector<Parent_Node> in_0, string path_to_write) = 0;
 private:
-
+    /*template<typename T, typename G>
+    void _full_fil_matrix(size_t , size_t , size_t ,
+                          T , T , size_t , vector<bool> & ,
+                          bool * , G & )
+                          {}*/
     pair<size_t, Parent_Node> _Extension(Parent_Node kmer,vector<Parent_Node> & unitig,
                                   stack<Parent_Node> & out, stack<Parent_Node> & in,
                                   unordered_set<Parent_Node> added)

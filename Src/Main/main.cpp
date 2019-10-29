@@ -109,18 +109,21 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
     des.add_options()
             ("help,h","Help message")
             ("meta,m",po::bool_switch(meta),"Metagenomic analysis")
-            ("correct,b",po::bool_switch(do_correction),"Do correction step")
+            ("correct,b",po::bool_switch(do_correction),"Do correction step (high impact in time)")
             ("single,s",po::value<std::string>(path_to_file),"Path to single-end file")
             ("paired,p",po::value<std::string>(dir_pairs)->required(),"Path to directory with paired-end reads")
             ("duplicated,n",po::bool_switch(&(Parameters::get().remove_duplicates)),"Remove duplicated reads")
             ("fullInfo,f",po::bool_switch(&(Parameters::get().full_info)),"Use all information available")
             ("kmerSize,k",po::value<size_t>(&(Parameters::get().kmerSize))->required(),"Size of the k-mers")
-            ("polish,h",po::bool_switch(do_polish),"Do polishing step")
+            ("polish,h",po::bool_switch(&(Parameters::get().polish)),"Do polishing step (high impact in time)")
             ("output,o",po::value<std::string>(path_to_write)->required(),"Output sequence file")
             ("unitigs,u",po::value<std::string>(path_unitigs)->required(),"Output unitigs file")
             ("third,c",po::value<std::string>(program),"Third party to use on k-mer counting (dsk)")
-            ("error,r",po::value<double>(&(Parameters::get().missmatches))->required(),"Estimated error ratio")
-            (",t",po::value<size_t>(&(Parameters::get().numThreads)),"Number of threads to use");
+            ("error,r",po::value<double>(&(Parameters::get().missmatches)),"Estimated error ratio")
+            (",t",po::value<size_t>(&(Parameters::get().numThreads)),"Number of threads to use")
+            ("postprocess,",po::bool_switch(&(Parameters::get().postProcess)),"Post process output removing full duplicates")
+            (",g",po::value<size_t>(&(Parameters::get().genome_size))," Estimated number of nodes (only for testing purposes)")
+            ("outputfmt,",po::bool_switch(&(Parameters::get().gfa)),"GFA format activate");
     po::variables_map vm;
     try {
         po::store(po::command_line_parser(argc,argv).options(des).run(),vm);
@@ -132,7 +135,7 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
                                                      des);
             return HELP;
         }
-        po::notify(vm); /*Required commands*/
+        po::notify(vm);
     }catch(boost::program_options::required_option& e)
     {
         rad::OptionPrinter::formatRequiredOptionError(e);
@@ -153,8 +156,21 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
     return SUCCESS;
 }
 
-int main(int argv, char ** argc){
+void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection)
+{
+    std::cout << "**************************************CORE PARAMETERS*******************************"<<std::endl;
+    std::cout << "Single end file: "<<pathFile<<std::endl;
+    std::cout << "Paired end dir: "<<dirPairs<<std::endl;
+    std::cout << "Correction: "<<doCorrection<<std::endl;
+    std::cout << "Polishing: "<<Parameters::get().polish<<std::endl;
+    std::cout << "Remove duplicates: "<<Parameters::get().remove_duplicates<<std::endl;
+    std::cout << "Use revcomp information: "<<Parameters::get().full_info<<std::endl;
+    std::cout << "Missmatches: "<<Parameters::get().missmatches<<std::endl;
+    std::cout << "PostProcessing: "<<Parameters::get().postProcess<<std::endl;
+    std::cout << "************************************************************************************"<<std::endl;
+}
 
+int main(int argv, char ** argc){
 	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program="dsk";
     bool pair_end = false, thirdPartyCount = true, do_correction = false, do_polish = false, meta = false;
     /*if (!parse_args(argv,argc,path_to_file,dir_pairs,
@@ -163,6 +179,7 @@ int main(int argv, char ** argc){
     if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program,
             &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
         exit(0);
+    basicReport(path_to_file, dir_pairs, do_correction);
     //cout << "Correct: "<<do_correction<<endl<<" Polish: "<<do_polish<<endl<<" Meta: "<<meta<<endl<<" ThirdParty: "<<
     SequenceContainer sc_single, sc_paired;
     pair_end = (dir_pairs!="");
@@ -228,7 +245,7 @@ int main(int argv, char ** argc){
         if (dir_pairs != "")
             sc_paired.clear();
         boostDBG<true> boostDBG1(graph);
-        std::cout << "Creating unitigs and writing unitigs: " << path_unitigs << "\n";
+        std::cout << "Writing unitigs(core): " << path_unitigs << "\n";
         boostDBG1.ProcessTigs(path_unitigs);
         graph->clear();
     }else {

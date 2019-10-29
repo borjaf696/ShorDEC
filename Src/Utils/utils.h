@@ -23,6 +23,25 @@
 #define SMOOTH_FACTOR 1.0
 
 using namespace std;
+template<typename T>
+class OwnHash
+{
+public:
+    size_t operator()(const T &node) const
+    {
+        return node.hash();
+    }
+};
+template<>
+class OwnHash<size_t>
+{
+public:
+    size_t operator()(const size_t &node) const
+    {
+        return hash<size_t>()(node);
+    }
+};
+
 /*
  * Map -> histogram<K,Y>, histogram<K,container>
  */
@@ -330,6 +349,51 @@ struct Parameters
             Parameters::get().remove_duplicates = param;
         if (param_read == "numThreads")
             Parameters::get().numThreads = param;
+        if (param_read == "polish")
+            Parameters::get().polish = param;
+        if (param_read == "postProcess")
+            Parameters::get().postProcess = param;
+        if (param_read == "gfa")
+            Parameters::get().gfa = param;
+    }
+    /*
+    * Calculate H.
+    */
+    static size_t calculateAccumulativeParam(vector<size_t> histogram)
+    {
+        /*auto _medianFilter = [&histogram]()
+        {
+            int window = 12, histogramSize = (int) histogram.size();
+            vector<size_t> tmpHistogram(histogramSize, 0);
+            for (int i = 0; i < histogramSize; ++i)
+            {
+                vector<size_t> tmp_vect;
+                int iniJ = ((i < window)?-i:-window), endJ = ((i+window) > histogramSize)?(histogramSize - i - 1):window;
+                for (int j = iniJ; j < endJ; ++j)
+                    tmp_vect.push_back(histogram[i+j]);
+                sort(tmp_vect.begin(), tmp_vect.end());
+                tmpHistogram[i] = tmp_vect[floor(tmp_vect.size() / 2)];
+                if (i == window) {
+                    for (auto j:tmp_vect)
+                        cout << " " << j << ",";
+                    cout << endl;
+                }
+            }
+            size_t count = 0;
+            for (auto i: tmpHistogram)
+                histogram[count++] = i;
+        };*/
+        //_medianFilter();
+        size_t window = 15;
+        for (size_t i = 1; i < histogram.size(); ++i)
+        {
+            size_t tend = 0;
+            for (size_t j = 0; j < window; ++j)
+                tend +=(histogram[i+j+1] > histogram[i]);
+            if (tend > (window / 2))
+                return i;
+        }
+        return 0;
     }
     /*
     * Calculate H.
@@ -352,10 +416,14 @@ struct Parameters
                 kmersAccumulated+=k;
             else
                 kmersAccumulated+=(k*h);
-            if (((float)kmersAccumulated > threshold) || (total_kmers<Parameters::get().genome_size))
-            {
-                break;
-            }
+            if (Parameters::get().genome_size != 0) {
+                if (total_kmers < Parameters::get().genome_size)
+                    break;
+            } else
+                if (((float)kmersAccumulated > threshold))
+                {
+                    break;
+                }
             h++;
         }
         cout << "KmersErased: "<<kmersAccumulated<<endl;
@@ -402,7 +470,8 @@ struct Parameters
     size_t genome_size = 0;
     double num_unique_kmers = 0;
     size_t accumulative_h = 0;
-    bool full_info = false, metagenomic = false, remove_duplicates = true;
+    bool full_info = false, metagenomic = false,
+        postProcess = false, remove_duplicates = true, polish = true, gfa = false;
     size_t kmerSize;
     size_t numThreads;
     bool show = false;
@@ -501,6 +570,10 @@ std::priority_queue<pair<size_t,vector<Vt>>> findMaxClique(const G & graph, std:
         for (tie(adjVertex, adjVertEnd) = boost::adjacent_vertices(vertex, graph); adjVertex != adjVertEnd; ++adjVertex) {
             candidateNeighbors.emplace(*adjVertex);
         }
+        //Testear
+        // std::vector<Vt> neighbors = graph.getNeighbors(vertex);
+        // for (auto n: neighbors)
+        //      candidateNeighbors.emplace(n);
 
         std::set<Vt> tmp;
 
@@ -637,6 +710,9 @@ void createCountMapDSK(T * dbg, string path_to_file, vector<size_t> histogram, s
     {
         Parameters::get().accumulative_h = (Parameters::calculateAccumulativeParam(histogram, tb, avL)==1)?
                                            2:Parameters::calculateAccumulativeParam(histogram, tb, avL);
+        cout << "NewThreshold: "<<(Parameters::calculateAccumulativeParam(histogram))<<endl;
+        if (Parameters::get().genome_size == 0)
+            Parameters::get().accumulative_h = Parameters::calculateAccumulativeParam(histogram);
     }
     infile.close();
     infile.open(path_to_file);
