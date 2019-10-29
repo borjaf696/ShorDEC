@@ -102,8 +102,8 @@ bool parse_args(int argv, char **argc, std::string& path_to_file, std::string& d
 }
 
 int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::string * dir_pairs, std::string * path_to_write
-        ,std::string * path_unitigs, std::string * program, bool * pair_end, bool * thirdPartyCount, bool * do_correction
-        ,bool * do_polish, bool * meta)
+        ,std::string * path_unitigs, std::string * program, std::string * reference, std::string * metaquastPath
+        , bool * pair_end, bool * thirdPartyCount, bool * do_correction, bool * do_polish, bool * meta)
 {
     po::options_description des("Options");
     des.add_options()
@@ -123,7 +123,9 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
             (",t",po::value<size_t>(&(Parameters::get().numThreads)),"Number of threads to use")
             ("postprocess,",po::bool_switch(&(Parameters::get().postProcess)),"Post process output removing full duplicates")
             (",g",po::value<size_t>(&(Parameters::get().genome_size))," Estimated number of nodes (only for testing purposes)")
-            ("outputfmt,",po::bool_switch(&(Parameters::get().gfa)),"GFA format activate");
+            ("outputfmt,",po::bool_switch(&(Parameters::get().gfa)),"GFA format activate")
+            ("reference,",po::value<std::string>(reference),"Using this reference for metaquast")
+            ("metaquastpath,",po::value<std::string>(metaquastPath),"Metaquast path (default path ../quast/metaquast.py)");
     po::variables_map vm;
     try {
         po::store(po::command_line_parser(argc,argv).options(des).run(),vm);
@@ -171,13 +173,14 @@ void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection)
 }
 
 int main(int argv, char ** argc){
-	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program="dsk";
+	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program="dsk", reference = ""
+	        , metaquastPath = '../quast/metaquast.py';
     bool pair_end = false, thirdPartyCount = true, do_correction = false, do_polish = false, meta = false;
     /*if (!parse_args(argv,argc,path_to_file,dir_pairs,
                     output_path, path_unitigs, program, pair_end, thirdPartyCount, do_correction, do_polish, meta))
         exit(0);*/
-    if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program,
-            &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
+    if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program, &reference,
+            metaquastPath, &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
         exit(0);
     basicReport(path_to_file, dir_pairs, do_correction);
     //cout << "Correct: "<<do_correction<<endl<<" Polish: "<<do_polish<<endl<<" Meta: "<<meta<<endl<<" ThirdParty: "<<
@@ -258,6 +261,16 @@ int main(int argv, char ** argc){
         listDBG.ProcessTigs(path_unitigs);
         //Clean listDBG
         listDBG.clear();
+    }
+
+    /*
+     * Aligning reference
+     */
+    if (reference != "")
+    {
+        /*
+         * Alinear!
+         */
     }
     cout << "Thanks for trying our tool!"<<endl;
 
