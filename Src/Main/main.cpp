@@ -174,13 +174,13 @@ void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection)
 
 int main(int argv, char ** argc){
 	std::string path_to_file(""), dir_pairs(""), output_path, path_unitigs, program="dsk", reference = ""
-	        , metaquastPath = '../quast/metaquast.py';
+	        , metaquastPath("../quast/metaquast.py");
     bool pair_end = false, thirdPartyCount = true, do_correction = false, do_polish = false, meta = false;
     /*if (!parse_args(argv,argc,path_to_file,dir_pairs,
                     output_path, path_unitigs, program, pair_end, thirdPartyCount, do_correction, do_polish, meta))
         exit(0);*/
     if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program, &reference,
-            metaquastPath, &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
+            &metaquastPath, &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
         exit(0);
     basicReport(path_to_file, dir_pairs, do_correction);
     //cout << "Correct: "<<do_correction<<endl<<" Polish: "<<do_polish<<endl<<" Meta: "<<meta<<endl<<" ThirdParty: "<<
