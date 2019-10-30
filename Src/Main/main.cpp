@@ -10,6 +10,9 @@
 #include "../Utils/OptionPrinter.hpp"
 #include "../ReadData/sequence_container.h"
 #include "../DBG/path.h"
+#ifndef UTILS_H
+    #include "../Utils/utils.h"
+#endif
 
 namespace po = boost::program_options;
 namespace
@@ -271,6 +274,8 @@ int main(int argv, char ** argc){
         /*
          * Alinear!
          */
+        string alignInstr = "bash -c \""+metaquastPath+" --unique-mapping -r "+reference+" "+path_unitigs+".fasta";
+        System::execute(alignInstr);
     }
     cout << "Thanks for trying our tool!"<<endl;
 
