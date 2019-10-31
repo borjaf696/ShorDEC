@@ -5,7 +5,9 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include "../Utils/utils.h"
+#ifndef UTILS_H
+    #include "../Utils/utils.h"
+#endif
 
 class DnaSequence
 {

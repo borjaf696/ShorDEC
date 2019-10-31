@@ -10,9 +10,6 @@
 #include "../Utils/OptionPrinter.hpp"
 #include "../ReadData/sequence_container.h"
 #include "../DBG/path.h"
-#ifndef UTILS_H
-    #include "../Utils/utils.h"
-#endif
 
 namespace po = boost::program_options;
 namespace
@@ -161,7 +158,8 @@ int parse_args_boost(int argc, char **argv, std::string * path_to_file, std::str
     return SUCCESS;
 }
 
-void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection)
+void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection,
+        std::string metaquastPath, std::string reference)
 {
     std::cout << "**************************************CORE PARAMETERS*******************************"<<std::endl;
     std::cout << "Single end file: "<<pathFile<<std::endl;
@@ -172,6 +170,12 @@ void basicReport(std::string pathFile, std::string dirPairs, bool doCorrection)
     std::cout << "Use revcomp information: "<<Parameters::get().full_info<<std::endl;
     std::cout << "Missmatches: "<<Parameters::get().missmatches<<std::endl;
     std::cout << "PostProcessing: "<<Parameters::get().postProcess<<std::endl;
+    if (reference != "")
+    {
+        std::cout << "Align against reference: "<<true<<std::endl;
+        std::cout << "Reference: "<<reference << std::endl;
+        std::cout << "MetaquastPath: "<<metaquastPath<<std::endl;
+    }
     std::cout << "************************************************************************************"<<std::endl;
 }
 
@@ -185,7 +189,7 @@ int main(int argv, char ** argc){
     if (parse_args_boost(argv,argc, &path_to_file, &dir_pairs, &output_path,&path_unitigs,&program, &reference,
             &metaquastPath, &pair_end, &thirdPartyCount,&do_correction,&do_polish,&meta))
         exit(0);
-    basicReport(path_to_file, dir_pairs, do_correction);
+    basicReport(path_to_file, dir_pairs, do_correction, metaquastPath, reference);
     //cout << "Correct: "<<do_correction<<endl<<" Polish: "<<do_polish<<endl<<" Meta: "<<meta<<endl<<" ThirdParty: "<<
     SequenceContainer sc_single, sc_paired;
     pair_end = (dir_pairs!="");
