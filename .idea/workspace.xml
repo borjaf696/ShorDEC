@@ -10,20 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3f283af7-039d-4474-ba24-d4e7fe526c6c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Real/log-real" beforeDir="false" afterPath="$PROJECT_DIR$/Real/log-real" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/DBG/DBG.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/DBG/PathGraph.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/DBG/path.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/Extender/Extender.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/Main/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Src/Main/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/Main/main.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/Main/test_environment.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/ReadData/kmer.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/ReadData/sequence.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/ReadData/sequence_container.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/Utils/OptionPrinter.o" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -86,7 +73,7 @@
       <workItem from="1558682279756" duration="8946000" />
       <workItem from="1559053726066" duration="1993000" />
       <workItem from="1572428960949" duration="4268000" />
-      <workItem from="1573033532959" duration="4287000" />
+      <workItem from="1573033532959" duration="4882000" />
     </task>
     <servers />
   </component>

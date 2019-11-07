@@ -50,7 +50,7 @@ The code accepts both fasta and fastq files.
 6. Reference + metaquastPath:
 	* Allows to automatically check the results obtained from the execution by using metaquast. 
 		* --unique-mapping flag is activated by default
-		* >500 bp contigs are shown
+		* \>500 bp contigs are shown
 ### Dependencies:
 1. boostlib to build the graph, move through the file system and to show nicely the arguments.
 	* cd /home && wget http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.gz 
@@ -60,8 +60,10 @@ The code accepts both fasta and fastq files.
 	* ./bootstrap.sh --prefix=/usr/local --with-libraries=program_options,regex,filesystem,system
 	* export  
 	* ./b2 install 
-	* cd /home \
+	* cd /home 
 	* rm -rf boost_1_60_0
+	* export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
+	* (just in case) ls /usr/local/bin/
 2. SGA to remove duplicates for reporting contigs and remove duplicated reads.
 	* google-sparsehash: https://github.com/justinsb/google-sparsehash.git
 	* bamtools: https://github.com/pezmaster31/bamtools.git
@@ -77,5 +79,7 @@ The code accepts both fasta and fastq files.
 	* ./bin/viaDBG -s [single_end_reads] -p [paired_end_reads(dir)] -o [output] -u [unitigs file output] -k [kmer size] -h [polish (default No)] -b [if error correction(default No)] -d [if revcomplement paired end reads] -r [estimated error] -n [remove duplicated] -f [add full information] -t [num threads] --reference [path to reference] --metaquastpath [path to metaquast.py file] --postprocess [remove duplicates from contigs file]
 
 #### Example:
-	* ./bin/viaDBG -s ../Datasets/Helsinki2.0/definitivo/pear.assembled.fastq -p ../Datasets/Helsinki2.0/definitivo/pair/ -o Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.00095 -c dsk -n -t 32
-	* ./bin/viaDBG -p ../Datasets/Helsinki2.0/3-strain-ZIKV-20000x/ -o Output/SequenceContainer.fasta -u ../Output/UnitigsDiscovered_new.gfa -k 120 -r 0.0008 -c dsk -n -t 32
+	* screen -L -Logfile Real/log-real perf stat -d ./bin/viaDBG -s single-end-file -p paired-end-dir/ -o Output/ -u Results_Real/UnitigsDiscovered_new-Real.gfa -k 120 -c dsk -n -t 32 --postprocess --reference reference.fasta --metaquastpath bin/metaquast.py
+	* ./bin/viaDBG -p paired-end-file/ -o Output/SequenceContainer.fasta -u untiigs.fasta -k 120 -c dsk -n -t 32 --reference reference.fasta --metaquastpath bin/metaquast.py
+		* Obviously,***--reference*** & ***--metaquastpath*** are optional and their use is only for testing purpouses.
+
