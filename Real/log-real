@@ -221,3 +221,494 @@ Done!
 Reported in : Results_Real/UnitigsDiscovered_new-Real.gfa
 sh: 1: Syntax error: Unterminated quoted string
 Fail on: bash -c "/usr/local/bin/metaquast.py --unique-mapping -r ../data-viadbg/References/HIV/Together.fasta Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+**************************************CORE PARAMETERS*******************************
+Single end file: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+Paired end dir: ../data-viadbg/VIH-Trimmed+Pear/Pairs/
+Correction: 0
+Polishing: 0
+Remove duplicates: 1
+Use revcomp information: 0
+Missmatches: 0.00095
+PostProcessing: 1
+Align against reference: 1
+Reference: ../data-viadbg/References/HIV/Together.fasta
+MetaquastPath: /usr/local/bin/metaquast.py
+************************************************************************************
+SingleEnd: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq->Sequence Container
+Number of single-end reads: 1127128
+PairedDir: ../data-viadbg/VIH-Trimmed+Pear/Pairs/
+Is directory:  Pair_end
+File: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read2.fastq
+Read: 2
+File: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read1.fastq
+Read: 1
+Number of paired-end reads: 532032
+Appending files:
+F: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+F: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read2.fastq
+F: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read1.fastq
+INSTRUCTION: bash -c "./Utils/script/dsk_script newFile_tmp.fasta 120 output output.txt >/dev/null 2>&1"
+Histogram
+Previous Kmers: 0
+Number of unique Kmers: 1.3196e+07
+MissMatches: 0.00095
+Fail Expected Kmers: 2.52847e+07
+Total kmers: 13196013 0
+KmersErased: 25291868
+Remaining k-mers: 47726
+Fail Expected Kmers: 2.52847e+07
+Total kmers: 13196013 0
+KmersErased: 25291868
+Remaining k-mers: 47726
+NewThreshold: 110
+Total Number of Bases: 288989554
+Average length read: 256
+Total Kmers in all Reads: 0
+Threshold: 110
+Total Solid K-mers(Graph Edges): 51490 Total Graph Nodes: 102910
+Update DBG status:
+Total Solid k-Mers after cleaning: 44043 Total Graph Nodes: 87971
+END FILE
+STAGE: Building boost graph (standard)
+STAGE: Getting representatives
+Getting representatives
+Starts Size: 527
+Nodes still not visited: GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+Indegree: 1 Outdegree: 1
+Neighbor: GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+Nodes still not visited: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+Indegree: 1 Outdegree: 1
+Neighbor: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+End: 652 representantes. Numero de representantes: 1274
+STAGE: Getting and polishing paired info
+STAGE: Adding extra info (boost-time)
+Building index for left_reads.fa in memory using SAIS
+initializing SA
+[saca] calling mkqs on 9628198 suffixes 0.288493 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 17.24s CPU: 15.62s
+initializing SA
+[saca] calling mkqs on 9628198 suffixes 0.288493 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 17.20s CPU: 15.56s
+[timer - sga index] wall clock: 39.07s CPU: 35.52s
+[sga::rmdup] starting parallel-mode overlap computation with 32 threads
+[sga::process] processed 133008 sequences in 14.135398s (9409.568800 sequences/s)
+[timer - sga::rmdup] wall clock: 14.15s CPU: 12.87s
+Opening left_reads-thread0.rmhits.gz
+Opening left_reads-thread1.rmhits.gz
+Opening left_reads-thread2.rmhits.gz
+Opening left_reads-thread3.rmhits.gz
+Opening left_reads-thread4.rmhits.gz
+Opening left_reads-thread5.rmhits.gz
+Opening left_reads-thread6.rmhits.gz
+Opening left_reads-thread7.rmhits.gz
+Opening left_reads-thread8.rmhits.gz
+Opening left_reads-thread9.rmhits.gz
+Opening left_reads-thread10.rmhits.gz
+Opening left_reads-thread11.rmhits.gz
+Opening left_reads-thread12.rmhits.gz
+Opening left_reads-thread13.rmhits.gz
+Opening left_reads-thread14.rmhits.gz
+Opening left_reads-thread15.rmhits.gz
+Opening left_reads-thread16.rmhits.gz
+Opening left_reads-thread17.rmhits.gz
+Opening left_reads-thread18.rmhits.gz
+Opening left_reads-thread19.rmhits.gz
+Opening left_reads-thread20.rmhits.gz
+Opening left_reads-thread21.rmhits.gz
+Opening left_reads-thread22.rmhits.gz
+Opening left_reads-thread23.rmhits.gz
+Opening left_reads-thread24.rmhits.gz
+Opening left_reads-thread25.rmhits.gz
+Opening left_reads-thread26.rmhits.gz
+Opening left_reads-thread27.rmhits.gz
+Opening left_reads-thread28.rmhits.gz
+Opening left_reads-thread29.rmhits.gz
+Opening left_reads-thread30.rmhits.gz
+Opening left_reads-thread31.rmhits.gz
+[sga::rmdup] Removed 21901 substring reads
+[sga::rmdup] Removed 43480 identical reads
+[sga::rmdup] Kept 67627 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 65381 sequences in 2.678951s (24405.448252 sequences/s)
+[sga::process] processed 65381 sequences in 2.640505s (24760.793863 sequences/s)
+[timer - sga rmdup] wall clock: 31.10s CPU: 27.81s
+Building index for right_reads.fa in memory using SAIS
+initializing SA
+[saca] calling mkqs on 9304486 suffixes 0.289139 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 16.50s CPU: 14.21s
+initializing SA
+[saca] calling mkqs on 9304486 suffixes 0.289139 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 21.23s CPU: 13.98s
+[timer - sga index] wall clock: 45.59s CPU: 32.90s
+[sga::rmdup] starting parallel-mode overlap computation with 32 threads
+[sga::process] processed 133008 sequences in 32.181656s (4133.037778 sequences/s)
+[timer - sga::rmdup] wall clock: 32.21s CPU: 14.43s
+Opening right_reads-thread0.rmhits.gz
+Opening right_reads-thread1.rmhits.gz
+Opening right_reads-thread2.rmhits.gz
+Opening right_reads-thread3.rmhits.gz
+Opening right_reads-thread4.rmhits.gz
+Opening right_reads-thread5.rmhits.gz
+Opening right_reads-thread6.rmhits.gz
+Opening right_reads-thread7.rmhits.gz
+Opening right_reads-thread8.rmhits.gz
+Opening right_reads-thread9.rmhits.gz
+Opening right_reads-thread10.rmhits.gz
+Opening right_reads-thread11.rmhits.gz
+Opening right_reads-thread12.rmhits.gz
+Opening right_reads-thread13.rmhits.gz
+Opening right_reads-thread14.rmhits.gz
+Opening right_reads-thread15.rmhits.gz
+Opening right_reads-thread16.rmhits.gz
+Opening right_reads-thread17.rmhits.gz
+Opening right_reads-thread18.rmhits.gz
+Opening right_reads-thread19.rmhits.gz
+Opening right_reads-thread20.rmhits.gz
+Opening right_reads-thread21.rmhits.gz
+Opening right_reads-thread22.rmhits.gz
+Opening right_reads-thread23.rmhits.gz
+Opening right_reads-thread24.rmhits.gz
+Opening right_reads-thread25.rmhits.gz
+Opening right_reads-thread26.rmhits.gz
+Opening right_reads-thread27.rmhits.gz
+Opening right_reads-thread28.rmhits.gz
+Opening right_reads-thread29.rmhits.gz
+Opening right_reads-thread30.rmhits.gz
+Opening right_reads-thread31.rmhits.gz
+[sga::rmdup] Removed 15759 substring reads
+[sga::rmdup] Removed 26987 identical reads
+[sga::rmdup] Kept 90262 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 42746 sequences in 4.558993s (9376.193383 sequences/s)
+[sga::process] processed 42746 sequences in 4.373286s (9774.343594 sequences/s)
+[timer - sga rmdup] wall clock: 64.13s CPU: 27.43s
+number of reads: 532032 NumberIds: 109282
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Inner Stage: Filling out reach matrix for polishing
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Removing outliers
+Adding paired-end info
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+STAGE: Adding paired-end information
+Inner Stage: Building distance matrix (representative to representative)
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+STAGE: Processing cliques
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+
+STAGE: Getting starting points
+Suspicious Starts: 0
+Suspicious Real Starts: 5662
+Writing unitigs(core): Results_Real/UnitigsDiscovered_new-Real.gfa
+Unitigs in APDB
+--------------------------------
+BoostDBG extension
+--------------------------------
+PercentageTransversed: 
+0%
+Writing unitigs
+Exporting GFA
+FileName: Results_Real/UnitigsDiscovered_new-Real.gfa
+FileName: Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+Removing redundant unitigs
+Unitig duplicates removal
+Processing:  Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+Command:  ['sga', 'index', '-p', 'Results_Real', 'Results_Real/UnitigsDiscovered_new-Real.gfa.fasta']
+Building index for Results_Real/UnitigsDiscovered_new-Real.gfa.fasta in memory using SAIS
+initializing SA
+[saca] calling mkqs on 70742 suffixes 0.29175 using 1 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 1.68s CPU: 0.19s
+initializing SA
+[saca] calling mkqs on 70742 suffixes 0.29175 using 1 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 1.65s CPU: 0.20s
+[timer - sga index] wall clock: 3.54s CPU: 0.41s
+Command:  ['sga', 'rmdup', '-p', 'Results_Real', '-o', 'Results_Real/UnitigsDiscovered_new-Real.gfa.', 'Results_Real/UnitigsDiscovered_new-Real.gfa.fasta']
+[sga::rmdup] starting serial-mode overlap computation
+[sga::process] processed 138 sequences in 0.458369s (301.067481 sequences/s)
+[timer - sga::rmdup] wall clock: 0.51s CPU: 0.05s
+Opening Results_Real.rmhits.gz
+[sga::rmdup] Removed 36 substring reads
+[sga::rmdup] Removed 0 identical reads
+[sga::rmdup] Kept 102 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 36 sequences in 0.021117s (1704.787612 sequences/s)
+[sga::process] processed 36 sequences in 0.020569s (1750.206622 sequences/s)
+[timer - sga rmdup] wall clock: 0.99s CPU: 0.10s
+Done!
+Reported in : Results_Real/UnitigsDiscovered_new-Real.gfa
+/home/borja/anaconda3/lib/python3.7/site-packages/quast-5.0.2-py3.7.egg/EGG-INFO/scripts/metaquast.py --unique-mapping -r ../data-viadbg/References/HIV/Together.fasta Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+
+Version: 5.0.2, 3d46489a
+
+System information:
+  OS: Linux-5.0.0-32-generic-x86_64-with-debian-buster-sid (linux_64)
+  Python version: 3.7.3
+  CPUs number: 1
+
+Started: 2019-11-07 08:17:19
+
+Logging to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/metaquast.log
+NOTICE: Maximum number of threads is set to 1 (use --threads option to set it manually)
+
+Reference(s):
+  ../data-viadbg/References/HIV/Together.fasta ==> Together
+  All references were combined in combined_reference.fasta
+
+Contigs:
+  Pre-processing...
+  Results_Real/UnitigsDiscovered_new-Real.gfa.fasta ==> UnitigsDiscovered_new_Real.gfa
+
+Starting quast.py for the combined reference...
+/home/borja/anaconda3/lib/python3.7/site-packages/quast-5.0.2-py3.7.egg/EGG-INFO/scripts/quast.py --min-identity 90.0 --combined-ref --colors #E31A1C --ls solid Results_Real/UnitigsDiscovered_new-Real.gfa.fasta -R /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/combined_reference.fasta -o /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference --labels UnitigsDiscovered_new_Real.gfa
+
+Started: 2019-11-07 08:17:29
+
+Logging to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/quast.log
+NOTICE: Maximum number of threads is set to 1 (use --threads option to set it manually)
+
+CWD: /home/borja/Escritorio/viaDBG
+Main parameters: 
+  MODE: meta, threads: 1, min contig length: 500, min alignment length: 65, min alignment IDY: 90.0, \
+  ambiguity: one, threshold for extensive misassembly size: 1000
+
+Reference:
+  /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/combined_reference.fasta ==> combined_reference
+
+Contigs:
+  Pre-processing...
+  Results_Real/UnitigsDiscovered_new-Real.gfa.fasta ==> UnitigsDiscovered_new_Real.gfa
+
+2019-11-07 08:17:29
+Running Basic statistics processor...
+  Reference genome:
+    combined_reference.fasta, length = 48234, num fragments = 5, GC % = 42.37
+  Contig files: 
+    UnitigsDiscovered_new_Real.gfa
+  Calculating N50 and L50...
+    UnitigsDiscovered_new_Real.gfa, N50 = 2178, L50 = 24, Total length = 242337, GC % = 41.69, # N's per 100 kbp =  0.00
+  Drawing Nx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/basic_stats/Nx_plot.pdf
+  Drawing cumulative plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/basic_stats/cumulative_plot.pdf
+  Drawing GC content plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/basic_stats/GC_content_plot.pdf
+  Drawing UnitigsDiscovered_new_Real.gfa GC content plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/basic_stats/UnitigsDiscovered_new_Real.gfa_GC_content_plot.pdf
+Done.
+
+2019-11-07 08:17:35
+Running Contig analyzer...
+  UnitigsDiscovered_new_Real.gfa
+  Logging to files /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/contigs_report_UnitigsDiscovered_new_Real-gfa.stdout and contigs_report_UnitigsDiscovered_new_Real-gfa.stderr...
+  Aligning contigs to the reference
+  Analysis is finished.
+  Information about interspecies translocations by references for UnitigsDiscovered_new_Real_gfa is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/interspecies_translocations_by_refs_UnitigsDiscovered_new_Real_gfa.info
+  Drawing Intergenomic misassemblies (found and supposed) metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/intergenomic_misassemblies.pdf
+  Creating total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/misassemblies_report.txt, misassemblies_report.tsv, and misassemblies_report.tex
+  Transposed version of total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/transposed_report_misassemblies.txt, transposed_report_misassemblies.tsv, and transposed_report_misassemblies.tex
+  Creating total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/unaligned_report.txt, unaligned_report.tsv, and unaligned_report.tex
+  Drawing misassemblies by types plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/misassemblies_plot.pdf
+  Drawing misassemblies FRCurve plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/contigs_reports/misassemblies_frcurve_plot.pdf
+Done.
+
+2019-11-07 08:17:41
+Running NA-NGA calculation...
+  UnitigsDiscovered_new_Real.gfa, Largest alignment = 9122, NA50 = 2178, LA50 = 24
+  Drawing cumulative plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/aligned_stats/cumulative_plot.pdf
+  Drawing NAx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/aligned_stats/NAx_plot.pdf
+Done.
+
+2019-11-07 08:17:43
+Running Genome analyzer...
+  NOTICE: No file with genomic features were provided. Use the --features option if you want to specify it.
+
+  NOTICE: No file with operons were provided. Use the -O option if you want to specify it.
+  UnitigsDiscovered_new_Real.gfa
+  Analysis is finished.
+  Skipping drawing Genome fraction, % histogram... (less than 2 columns histogram makes no sense)
+Done.
+
+NOTICE: Genes are not predicted by default. Use --gene-finding or --glimmer option to enable it.
+
+2019-11-07 08:17:44
+Creating large visual summaries...
+This may take a while: press Ctrl-C to skip this step..
+  1 of 2: Creating Icarus viewers...
+  2 of 2: Creating PDF with all tables and plots...
+Done
+
+2019-11-07 08:17:48
+RESULTS:
+  Text versions of total report are saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/report.txt, report.tsv, and report.tex
+  Text versions of transposed total report are saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/transposed_report.txt, transposed_report.tsv, and transposed_report.tex
+  HTML version (interactive tables and plots) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/report.html
+  PDF version (tables and plots) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/report.pdf
+  Icarus (contig browser) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/combined_reference/icarus.html
+
+Partitioning contigs into bins aligned to each reference..
+  processing UnitigsDiscovered_new_Real.gfa
+
+Starting quast.py for the contigs aligned to Together... (logging to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/quast.log)
+/home/borja/anaconda3/lib/python3.7/site-packages/quast-5.0.2-py3.7.egg/EGG-INFO/scripts/quast.py --min-identity 90.0 --colors #E31A1C --ls solid --no-check-meta --contig-thresholds 1000,5000,10000,25000,50000 /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/UnitigsDiscovered_new_Real-gfa_to_Together.fasta -R /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/Together.fasta -o /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together --labels UnitigsDiscovered_new_Real.gfa
+
+Started: 2019-11-07 08:17:48
+
+Logging to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/quast.log
+NOTICE: Maximum number of threads is set to 1 (use --threads option to set it manually)
+
+CWD: /home/borja/Escritorio/viaDBG
+Main parameters: 
+  MODE: meta, threads: 1, min contig length: 500, min alignment length: 65, min alignment IDY: 90.0, \
+  ambiguity: one, threshold for extensive misassembly size: 1000
+
+Reference:
+  /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/Together.fasta ==> Together
+
+Contigs:
+  Pre-processing...
+  /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/quast_corrected_input/UnitigsDiscovered_new_Real-gfa_to_Together.fasta ==> UnitigsDiscovered_new_Real.gfa
+
+2019-11-07 08:17:48
+Running Basic statistics processor...
+  Reference genome:
+    Together.fasta, length = 48234, num fragments = 5, GC % = 42.37
+  Contig files: 
+    UnitigsDiscovered_new_Real.gfa
+  Calculating N50 and L50...
+    UnitigsDiscovered_new_Real.gfa, N50 = 2178, L50 = 24, Total length = 242337, GC % = 41.69, # N's per 100 kbp =  0.00
+  Drawing Nx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/basic_stats/Nx_plot.pdf
+  Drawing NGx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/basic_stats/NGx_plot.pdf
+  Drawing cumulative plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/basic_stats/cumulative_plot.pdf
+  Drawing GC content plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/basic_stats/GC_content_plot.pdf
+  Drawing UnitigsDiscovered_new_Real.gfa GC content plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/basic_stats/UnitigsDiscovered_new_Real.gfa_GC_content_plot.pdf
+Done.
+
+2019-11-07 08:17:50
+Running Contig analyzer...
+  UnitigsDiscovered_new_Real.gfa
+  Logging to files /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/contigs_report_UnitigsDiscovered_new_Real-gfa.stdout and contigs_report_UnitigsDiscovered_new_Real-gfa.stderr...
+  Aligning contigs to the reference
+  Analysis is finished.
+  Creating total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/misassemblies_report.txt, misassemblies_report.tsv, and misassemblies_report.tex
+  Transposed version of total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/transposed_report_misassemblies.txt, transposed_report_misassemblies.tsv, and transposed_report_misassemblies.tex
+  Creating total report...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/unaligned_report.txt, unaligned_report.tsv, and unaligned_report.tex
+  Drawing misassemblies by types plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/misassemblies_plot.pdf
+  Drawing misassemblies FRCurve plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/contigs_reports/misassemblies_frcurve_plot.pdf
+Done.
+
+2019-11-07 08:17:51
+Running NA-NGA calculation...
+  UnitigsDiscovered_new_Real.gfa, Largest alignment = 9122, NA50 = 2178, NGA50 = 8996, LA50 = 24, LGA50 = 3
+  Drawing cumulative plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/aligned_stats/cumulative_plot.pdf
+  Drawing NAx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/aligned_stats/NAx_plot.pdf
+  Drawing NGAx plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/aligned_stats/NGAx_plot.pdf
+Done.
+
+2019-11-07 08:17:52
+Running Genome analyzer...
+  NOTICE: No file with genomic features were provided. Use the --features option if you want to specify it.
+
+  NOTICE: No file with operons were provided. Use the -O option if you want to specify it.
+  UnitigsDiscovered_new_Real.gfa
+  Analysis is finished.
+  Skipping drawing Genome fraction, % histogram... (less than 2 columns histogram makes no sense)
+Done.
+
+NOTICE: Genes are not predicted by default. Use --gene-finding or --glimmer option to enable it.
+
+2019-11-07 08:17:53
+Creating large visual summaries...
+This may take a while: press Ctrl-C to skip this step..
+  1 of 2: Creating Icarus viewers...
+  2 of 2: Creating PDF with all tables and plots...
+Done
+
+2019-11-07 08:17:55
+RESULTS:
+  Text versions of total report are saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/report.txt, report.tsv, and report.tex
+  Text versions of transposed total report are saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/transposed_report.txt, transposed_report.tsv, and transposed_report.tex
+  HTML version (interactive tables and plots) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/report.html
+  PDF version (tables and plots) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/report.pdf
+  Icarus (contig browser) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/runs_per_reference/Together/icarus.html
+
+Skipping quast.py for the contigs not aligned anywhere (everything is aligned!)
+
+2019-11-07 08:17:55
+Summarizing results...
+  Drawing # contigs metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/num_contigs.pdf
+  Drawing Largest contig metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Largest_contig.pdf
+  Drawing Total length metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Total_length.pdf
+  Drawing Largest alignment metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Largest_alignment.pdf
+  Drawing Total aligned length metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Total_aligned_length.pdf
+  Drawing Total length (>= 1000 bp) metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Total_length_(ge_1000_bp).pdf
+  Drawing Total length (>= 10000 bp) metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Total_length_(ge_10000_bp).pdf
+  Drawing Total length (>= 50000 bp) metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Total_length_(ge_50000_bp).pdf
+  Drawing # misassemblies metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/num_misassemblies.pdf
+  Drawing metaQUAST summary misassemblies plot for UnitigsDiscovered_new_Real.gfa...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/UnitigsDiscovered_new_Real-gfa_misassemblies.pdf
+  Drawing Misassembled contigs length metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Misassembled_contigs_length.pdf
+  Drawing # mismatches per 100 kbp metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/num_mismatches_per_100_kbp.pdf
+  Drawing # indels per 100 kbp metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/num_indels_per_100_kbp.pdf
+  Drawing # N's per 100 kbp metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/num_Ns_per_100_kbp.pdf
+  Drawing Genome fraction (%) metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Genome_fraction.pdf
+  Drawing Duplication ratio metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/Duplication_ratio.pdf
+  Drawing NGA50 metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/NGA50.pdf
+  Drawing LGA50 metaQUAST summary plot...
+    saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/PDF/LGA50.pdf
+
+  Text versions of reports and plots for each metric (for all references and assemblies) are saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/summary/
+  Icarus (contig browser) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/icarus.html
+  Extended version of HTML-report (for all references and assemblies) is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/report.html
+
+MetaQUAST finished.
+  Log is saved to /home/borja/Escritorio/viaDBG/quast_results/results_2019_11_07_08_17_19/metaquast.log
+
+Finished: 2019-11-07 08:18:01
+Elapsed time: 0:00:41.528181
+Total NOTICEs: 6; WARNINGs: 0; non-fatal ERRORs: 0
+
+Thank you for using QUAST!
+Thanks for trying our tool!

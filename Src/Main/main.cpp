@@ -278,7 +278,7 @@ int main(int argv, char ** argc){
         /*
          * Alinear!
          */
-        string alignInstr = "bash -c \"python "+metaquastPath+" --unique-mapping -r "+reference+" "+path_unitigs+".fasta\"";
+        string alignInstr = "bash -c \"python "+metaquastPath+" --unique-mapping -r "+reference+" "+path_unitigs+".fasta >/dev/null 2>&1\"";
         System::execute(alignInstr);
     }
     cout << "Thanks for trying our tool!"<<endl;

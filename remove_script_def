@@ -1,0 +1,2 @@
+rm Results_Real* right_reads.* left_reads.* solids output.* histogram.txt newFile_tmp.fasta
+rm -r quast_results/*
