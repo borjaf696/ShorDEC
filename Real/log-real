@@ -1,0 +1,223 @@
+q^[[A^[[Bq**************************************CORE PARAMETERS*******************************
+Single end file: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+Paired end dir: ../data-viadbg/VIH-Trimmed+Pear/Pairs/
+Correction: 0
+Polishing: 0
+Remove duplicates: 1
+Use revcomp information: 0
+Missmatches: 0.00095
+PostProcessing: 1
+Align against reference: 1
+Reference: ../data-viadbg/References/HIV/Together.fasta
+MetaquastPath: /usr/local/bin/metaquast.py
+************************************************************************************
+SingleEnd: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq->Sequence Container
+Number of single-end reads: 1127128
+PairedDir: ../data-viadbg/VIH-Trimmed+Pear/Pairs/
+Is directory:  Pair_end
+File: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read2.fastq
+Read: 2
+File: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read1.fastq
+Read: 1
+Number of paired-end reads: 532032
+Appending files:
+F: ../data-viadbg/VIH-Trimmed+Pear/gbenchmark.assembled.fastq
+F: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read2.fastq
+F: ../data-viadbg/VIH-Trimmed+Pear/Pairs/read1.fastq
+INSTRUCTION: bash -c "./Utils/script/dsk_script newFile_tmp.fasta 120 output output.txt >/dev/null 2>&1"
+Histogram
+Previous Kmers: 0
+Number of unique Kmers: 1.3196e+07
+MissMatches: 0.00095
+Fail Expected Kmers: 2.52847e+07
+Total kmers: 13196013 0
+KmersErased: 25291868
+Remaining k-mers: 47726
+Fail Expected Kmers: 2.52847e+07
+Total kmers: 13196013 0
+KmersErased: 25291868
+Remaining k-mers: 47726
+NewThreshold: 110
+Total Number of Bases: 288989554
+Average length read: 256
+Total Kmers in all Reads: 0
+Threshold: 110
+Total Solid K-mers(Graph Edges): 51490 Total Graph Nodes: 102910
+Update DBG status:
+Total Solid k-Mers after cleaning: 44043 Total Graph Nodes: 87971
+END FILE
+STAGE: Building boost graph (standard)
+STAGE: Getting representatives
+Getting representatives
+Starts Size: 527
+Nodes still not visited: GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+Indegree: 1 Outdegree: 1
+Neighbor: GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+Nodes still not visited: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+Indegree: 1 Outdegree: 1
+Neighbor: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+End: 652 representantes. Numero de representantes: 1274
+STAGE: Getting and polishing paired info
+STAGE: Adding extra info (boost-time)
+Building index for left_reads.fa in memory using SAIS
+initializing SA
+[saca] calling mkqs on 9628198 suffixes 0.288493 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 16.41s CPU: 15.03s
+initializing SA
+[saca] calling mkqs on 9628198 suffixes 0.288493 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 24.30s CPU: 15.14s
+[timer - sga index] wall clock: 47.61s CPU: 34.57s
+[sga::rmdup] starting parallel-mode overlap computation with 32 threads
+[sga::process] processed 133008 sequences in 17.365848s (7659.171035 sequences/s)
+[timer - sga::rmdup] wall clock: 17.38s CPU: 13.42s
+Opening left_reads-thread0.rmhits.gz
+Opening left_reads-thread1.rmhits.gz
+Opening left_reads-thread2.rmhits.gz
+Opening left_reads-thread3.rmhits.gz
+Opening left_reads-thread4.rmhits.gz
+Opening left_reads-thread5.rmhits.gz
+Opening left_reads-thread6.rmhits.gz
+Opening left_reads-thread7.rmhits.gz
+Opening left_reads-thread8.rmhits.gz
+Opening left_reads-thread9.rmhits.gz
+Opening left_reads-thread10.rmhits.gz
+Opening left_reads-thread11.rmhits.gz
+Opening left_reads-thread12.rmhits.gz
+Opening left_reads-thread13.rmhits.gz
+Opening left_reads-thread14.rmhits.gz
+Opening left_reads-thread15.rmhits.gz
+Opening left_reads-thread16.rmhits.gz
+Opening left_reads-thread17.rmhits.gz
+Opening left_reads-thread18.rmhits.gz
+Opening left_reads-thread19.rmhits.gz
+Opening left_reads-thread20.rmhits.gz
+Opening left_reads-thread21.rmhits.gz
+Opening left_reads-thread22.rmhits.gz
+Opening left_reads-thread23.rmhits.gz
+Opening left_reads-thread24.rmhits.gz
+Opening left_reads-thread25.rmhits.gz
+Opening left_reads-thread26.rmhits.gz
+Opening left_reads-thread27.rmhits.gz
+Opening left_reads-thread28.rmhits.gz
+Opening left_reads-thread29.rmhits.gz
+Opening left_reads-thread30.rmhits.gz
+Opening left_reads-thread31.rmhits.gz
+[sga::rmdup] Removed 21901 substring reads
+[sga::rmdup] Removed 43480 identical reads
+[sga::rmdup] Kept 67627 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 65381 sequences in 2.286586s (28593.282737 sequences/s)
+[sga::process] processed 65381 sequences in 2.261780s (28906.878653 sequences/s)
+[timer - sga rmdup] wall clock: 32.43s CPU: 27.52s
+Building index for right_reads.fa in memory using SAIS
+initializing SA
+[saca] calling mkqs on 9304486 suffixes 0.289139 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 23.61s CPU: 13.89s
+initializing SA
+[saca] calling mkqs on 9304486 suffixes 0.289139 using 32 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 50.58s CPU: 14.00s
+[timer - sga index] wall clock: 83.26s CPU: 32.47s
+[sga::rmdup] starting parallel-mode overlap computation with 32 threads
+[sga::process] processed 133008 sequences in 31.833202s (4178.279018 sequences/s)
+[timer - sga::rmdup] wall clock: 31.90s CPU: 14.04s
+Opening right_reads-thread0.rmhits.gz
+Opening right_reads-thread1.rmhits.gz
+Opening right_reads-thread2.rmhits.gz
+Opening right_reads-thread3.rmhits.gz
+Opening right_reads-thread4.rmhits.gz
+Opening right_reads-thread5.rmhits.gz
+Opening right_reads-thread6.rmhits.gz
+Opening right_reads-thread7.rmhits.gz
+Opening right_reads-thread8.rmhits.gz
+Opening right_reads-thread9.rmhits.gz
+Opening right_reads-thread10.rmhits.gz
+Opening right_reads-thread11.rmhits.gz
+Opening right_reads-thread12.rmhits.gz
+Opening right_reads-thread13.rmhits.gz
+Opening right_reads-thread14.rmhits.gz
+Opening right_reads-thread15.rmhits.gz
+Opening right_reads-thread16.rmhits.gz
+Opening right_reads-thread17.rmhits.gz
+Opening right_reads-thread18.rmhits.gz
+Opening right_reads-thread19.rmhits.gz
+Opening right_reads-thread20.rmhits.gz
+Opening right_reads-thread21.rmhits.gz
+Opening right_reads-thread22.rmhits.gz
+Opening right_reads-thread23.rmhits.gz
+Opening right_reads-thread24.rmhits.gz
+Opening right_reads-thread25.rmhits.gz
+Opening right_reads-thread26.rmhits.gz
+Opening right_reads-thread27.rmhits.gz
+Opening right_reads-thread28.rmhits.gz
+Opening right_reads-thread29.rmhits.gz
+Opening right_reads-thread30.rmhits.gz
+Opening right_reads-thread31.rmhits.gz
+[sga::rmdup] Removed 15759 substring reads
+[sga::rmdup] Removed 26987 identical reads
+[sga::rmdup] Kept 90262 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 42746 sequences in 4.092298s (10445.475867 sequences/s)
+[sga::process] processed 42746 sequences in 4.044869s (10567.956589 sequences/s)
+[timer - sga rmdup] wall clock: 59.45s CPU: 26.47s
+number of reads: 532032 NumberIds: 109282
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Inner Stage: Filling out reach matrix for polishing
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+Removing outliers
+Adding paired-end info
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+STAGE: Adding paired-end information
+Inner Stage: Building distance matrix (representative to representative)
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+STAGE: Processing cliques
+0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100%
+
+STAGE: Getting starting points
+Suspicious Starts: 0
+Suspicious Real Starts: 5662
+Writing unitigs(core): Results_Real/UnitigsDiscovered_new-Real.gfa
+Unitigs in APDB
+--------------------------------
+BoostDBG extension
+--------------------------------
+PercentageTransversed: 
+0%
+Writing unitigs
+Exporting GFA
+FileName: Results_Real/UnitigsDiscovered_new-Real.gfa
+FileName: Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+Removing redundant unitigs
+Unitig duplicates removal
+Processing:  Results_Real/UnitigsDiscovered_new-Real.gfa.fasta
+Command:  ['sga', 'index', '-p', 'Results_Real', 'Results_Real/UnitigsDiscovered_new-Real.gfa.fasta']
+Building index for Results_Real/UnitigsDiscovered_new-Real.gfa.fasta in memory using SAIS
+initializing SA
+[saca] calling mkqs on 70742 suffixes 0.29175 using 1 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 0.53s CPU: 0.18s
+initializing SA
+[saca] calling mkqs on 70742 suffixes 0.29175 using 1 threads 
+[saca] mkqs finished
+[timer - SuffixArray Construction] wall clock: 0.45s CPU: 0.18s
+[timer - sga index] wall clock: 1.07s CPU: 0.38s
+Command:  ['sga', 'rmdup', '-p', 'Results_Real', '-o', 'Results_Real/UnitigsDiscovered_new-Real.gfa.', 'Results_Real/UnitigsDiscovered_new-Real.gfa.fasta']
+[sga::rmdup] starting serial-mode overlap computation
+[sga::process] processed 138 sequences in 0.159929s (862.882904 sequences/s)
+[timer - sga::rmdup] wall clock: 0.18s CPU: 0.04s
+Opening Results_Real.rmhits.gz
+[sga::rmdup] Removed 36 substring reads
+[sga::rmdup] Removed 0 identical reads
+[sga::rmdup] Kept 102 reads
+Rebuilding indices without duplicated reads
+[sga::process] processed 36 sequences in 0.014481s (2486.016159 sequences/s)
+[sga::process] processed 36 sequences in 0.027177s (1324.649520 sequences/s)
+[timer - sga rmdup] wall clock: 0.53s CPU: 0.09s
+Done!
+Reported in : Results_Real/UnitigsDiscovered_new-Real.gfa
+sh: 1: Syntax error: Unterminated quoted string
+Fail on: bash -c "/usr/local/bin/metaquast.py --unique-mapping -r ../data-viadbg/References/HIV/Together.fasta Results_Real/UnitigsDiscovered_new-Real.gfa.fasta

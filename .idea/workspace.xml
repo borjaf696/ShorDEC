@@ -11,8 +11,9 @@
   <component name="ChangeListManager">
     <list default="true" id="3f283af7-039d-4474-ba24-d4e7fe526c6c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Results_Real/UnitigsDiscovered_new-Real.gfa" beforeDir="false" afterPath="$PROJECT_DIR$/Results_Real/UnitigsDiscovered_new-Real.gfa" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Src/Main/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Src/Main/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Src/ReadData/sequence.h" beforeDir="false" afterPath="$PROJECT_DIR$/Src/ReadData/sequence.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Src/Main/main.o" beforeDir="false" afterPath="$PROJECT_DIR$/Src/Main/main.o" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/viaDBG" beforeDir="false" afterPath="$PROJECT_DIR$/bin/viaDBG" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -75,7 +76,8 @@
       <updated>1558682277376</updated>
       <workItem from="1558682279756" duration="8946000" />
       <workItem from="1559053726066" duration="1993000" />
-      <workItem from="1572428960949" duration="3675000" />
+      <workItem from="1572428960949" duration="4268000" />
+      <workItem from="1573033532959" duration="2722000" />
     </task>
     <servers />
   </component>
@@ -87,7 +89,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
