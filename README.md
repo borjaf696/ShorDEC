@@ -81,5 +81,6 @@ The code accepts both fasta and fastq files.
 #### Example:
 	* screen -L -Logfile Real/log-real perf stat -d ./bin/viaDBG -s single-end-file -p paired-end-dir/ -o Output/ -u Results_Real/UnitigsDiscovered_new-Real.gfa -k 120 -c dsk -n -t 32 --postprocess --reference reference.fasta --metaquastpath bin/metaquast.py
 	* ./bin/viaDBG -p paired-end-file/ -o Output/SequenceContainer.fasta -u untiigs.fasta -k 120 -c dsk -n -t 32 --reference reference.fasta --metaquastpath bin/metaquast.py
-		* Obviously,***--reference*** & ***--metaquastpath*** are optional and their use is only for testing purpouses.
+
+ Obviously,***--reference*** & ***--metaquastpath*** are optional and their use is only for testing purpouses.
 
