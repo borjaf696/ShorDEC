@@ -283,7 +283,9 @@ int main(int argv, char ** argc){
         /*
          * Move the html with alignment
          */
-        string htmlPath = "quast_results/latest/combined_reference/icarus_viewers/alignment_viewer.html", to = "/html/alignment.ejs";
+        string homedir = getenv("HOME");
+        string htmlPath = "quast_results/latest/combined_reference/icarus_viewers/alignment_viewer.html", to = homedir+"/html/alignment.ejs";
+
         System::cp(htmlPath, to);
     }
     cout << "Thanks for trying our tool!"<<endl;
