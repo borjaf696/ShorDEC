@@ -280,6 +280,11 @@ int main(int argv, char ** argc){
          */
         string alignInstr = "bash -c \"python "+metaquastPath+" --unique-mapping -r "+reference+" "+path_unitigs+".fasta >/dev/null 2>&1\"";
         System::execute(alignInstr);
+        /*
+         * Move the html with alignment
+         */
+        string htmlPath = "quast_results/latest/combined_reference/icarus_viewers/alignment_viewer.html", to = "/html/alignment.ejs";
+        System::cp(htmlPath, to);
     }
     cout << "Thanks for trying our tool!"<<endl;
 

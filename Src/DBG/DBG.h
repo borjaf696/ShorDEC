@@ -343,8 +343,8 @@ private:
         else if (files.size() == 1)
             path_to_file_count = files[0];
         string instruction = "";
-        if (third == "jelly")
-            instruction += "bash -c \"./Utils/script/jellyfish_script ";
+        if (retries > 0 )
+            instruction += "bash -c \"/Utils/script/dsk_script ";
         else
             instruction += "bash -c \"./Utils/script/dsk_script ";
         instruction += path_to_file_count+" ";
@@ -361,7 +361,7 @@ private:
             if (third == "jelly")
                 third = "dsk";
             else
-                third = "jelly";
+                third = "dsk";
             (*retries)++;
             _thirdPartyKmerCounting(path_to_file_count, dir_pairs, third, retries, last);
             return;

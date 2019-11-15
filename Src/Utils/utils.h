@@ -282,6 +282,12 @@ struct System{
         return output;
     }
 
+    static void cp(std::string from, std::string to)
+    {
+        namespace fs = boost::filesystem;
+        fs::rename(from, to);
+    }
+
     static void execute(std::string instruction)
     {
         if (system(instruction.c_str()))
