@@ -12,7 +12,6 @@
     <list default="true" id="3f283af7-039d-4474-ba24-d4e7fe526c6c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Src/DBG/DBG.h" beforeDir="false" afterPath="$PROJECT_DIR$/Src/DBG/DBG.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Utils/script/dsk_script_old" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/script/dsk_script_old" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +75,7 @@
       <workItem from="1559053726066" duration="1993000" />
       <workItem from="1572428960949" duration="4268000" />
       <workItem from="1573033532959" duration="5485000" />
-      <workItem from="1573739449286" duration="6593000" />
+      <workItem from="1573739449286" duration="7210000" />
     </task>
     <servers />
   </component>
