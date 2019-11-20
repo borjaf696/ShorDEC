@@ -3,6 +3,6 @@ kmerSize=$2
 output=$3
 outputtxt=$4
 echo $file
-./Utils/dsk/bin/dsk -file $file -kmer-size $kmerSize -max-memory 2 -abundance-min 1 -histo-max 50000 -out $output
-./Utils/dsk/bin/dsk2ascii -file $output -out $outputtxt
-./Utils/dsk/bin/h5dump -y -d histogram/histogram output.h5 > histogram.txt
+/Utils/dsk/bin2/dsk -file $file -kmer-size $kmerSize -max-memory 2 -abundance-min 1 -histo-max 50000 -out $output
+/Utils/dsk/bin2/dsk2ascii -file $output -out $outputtxt
+/Utils/dsk/bin/h5dump -y -d histogram/histogram $output.h5 > histogram.txt

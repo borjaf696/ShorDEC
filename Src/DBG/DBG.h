@@ -344,7 +344,7 @@ private:
             path_to_file_count = files[0];
         string instruction = "";
         if (retries > 0 )
-            instruction += "bash -c \"/Utils/script/dsk_script ";
+            instruction += "bash -c \"/Utils/script/dsk_script_old";
         else
             instruction += "bash -c \"./Utils/script/dsk_script ";
         instruction += path_to_file_count+" ";
