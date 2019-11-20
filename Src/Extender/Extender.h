@@ -109,6 +109,7 @@ public:
 
     static void _write_fasta(string filename, unordered_set<DnaSequence> _seqs, size_t minLength = 500, std::string execFile = "Utils/script/PostProcessing/removeDup.py")
     {
+        std::string execFile_alt = "/Utils/script/PostProcessing/removeDup.py"
         FILE* fout = fopen(filename.c_str(), "w");
         std::cout << "FileName: "<<filename<<endl;
         if (!fout)
@@ -127,7 +128,10 @@ public:
         if (Parameters::get().postProcess)
         {
             std::cout << "Removing redundant unitigs"<<std::endl;
-            System::execute("bash -c \"python "+execFile+" "+filename+"\"");
+            if (System::execute("bash -c \"python "+execFile+" "+filename+"\""))
+            {
+                System::execute("bash -c \"python "+execFile_alt+" "+filename+"\"")
+            }
             std::cout << "Done!"<<std::endl;
         }
     }

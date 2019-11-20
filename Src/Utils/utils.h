@@ -293,8 +293,10 @@ struct System{
         if (system(instruction.c_str()))
         {
             cout << "Fail on: "<<instruction<<"\n";
+            return 1;
             exit(1);
         }
+        return 0;
     }
 
     static std::string appendFiles(std::vector<string> files, std::string newFile)
