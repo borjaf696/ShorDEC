@@ -84,3 +84,5 @@ The code accepts both fasta and fastq files.
 
  Obviously,***--reference*** & ***--metaquastpath*** are optional and their use is only for testing purpouses.
 
+Funding:
+This research has received funding from the European Union's Horizon 2020 research and innovation programme under the Marie Sklodowska-Curie [grant agreement No 690941]; Ministerio de Ciencia, Innovación y Universidades [TIN2016-78011-C4-1-R; TIN2016-77158-C4-3-R; FPU17/02742]; Xunta de Galicia [ED431C 2017/58; ED431G/01; IN848D-2017-2350417; IN852A 2018/14]; and from Academy of Finland [308030, 314170, and 323233].
