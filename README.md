@@ -33,6 +33,10 @@ The code accepts both fasta and fastq files.
 	* If error is much higher the graph will not have enough nodes (solid information) and probably it will erase much more information than needed.
 	* If error is much lower the graph will have too much nodes (fake solid information) and the result contigs will not be as good as you expect.
 	* Current version does not use any error estimation! This problem has been overcome!
+
+3. To get the best possible results with the lowest number of contigs run after viaDBG, this way no repeated contigs will be reported:
+	* bcalm -in unitigs_reported_viaDBG -kmer-size same_as_for_viaDBG -out unitigs
+	
 ### Input:
 1. If pear:
 	* -s single-end-reads.fasta/fastq and -p paired-end-dir/
