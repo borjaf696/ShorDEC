@@ -34,7 +34,7 @@ The code accepts both fasta and fastq files.
 	* If error is much lower the graph will have too much nodes (fake solid information) and the result contigs will not be as good as you expect.
 	* Current version does not use any error estimation! This problem has been overcome!
 
-3. To get the best possible results with the lowest number of contigs run after viaDBG, this way no repeated contigs will be reported:
+3. To get the best possible results with the lowest number of contigs run after viaDBG, this way no repeated contigs will be reported. N50 might be lowered aswell as largest contig because only first or last node in a unitig will be added but not both. However, the rest of statistics are going to be much cleaner:
 	* bcalm -in unitigs_reported_viaDBG -kmer-size same_as_for_viaDBG -out unitigs
 	
 ### Input:
